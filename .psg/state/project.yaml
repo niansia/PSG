@@ -1,7 +1,1119 @@
 version: 1
-graph_revision: 218
-nodes: []
-edges: []
-tasks: []
-generated_at: '2026-09-01T07:49:00+00:00'
+graph_revision: 313
+nodes:
+- id: T-0001-C1
+  type: Constraint
+  title: Preserve the existing integrated P/S/G visual concept and friendly palette.
+  status: active
+  maturity: accepted
+  policy: mutable
+  revision: 2d1c8210ead1bd723c8ffbbd516a3c279a1d5789
+  confidence: 1.0
+  updated_at: '2026-09-01T16:16:53+00:00'
+  source:
+    kind: task_constraint
+    task_id: T-0001
+  provenance:
+  - agent_interpreted_user_intent
+  - task_projection
+  payload:
+    text: Preserve the existing integrated P/S/G visual concept and friendly palette.
+- id: T-0001-C2
+  type: Constraint
+  title: Use a deterministic repository-native SVG rather than a generated raster.
+  status: active
+  maturity: accepted
+  policy: mutable
+  revision: 2d1c8210ead1bd723c8ffbbd516a3c279a1d5789
+  confidence: 1.0
+  updated_at: '2026-09-01T16:16:53+00:00'
+  source:
+    kind: task_constraint
+    task_id: T-0001
+  provenance:
+  - agent_interpreted_user_intent
+  - task_projection
+  payload:
+    text: Use a deterministic repository-native SVG rather than a generated raster.
+- id: T-0001-C3
+  type: Constraint
+  title: Do not change runtime behavior, benchmark data, release version, or installation
+    commands.
+  status: active
+  maturity: accepted
+  policy: mutable
+  revision: 2d1c8210ead1bd723c8ffbbd516a3c279a1d5789
+  confidence: 1.0
+  updated_at: '2026-09-01T16:16:53+00:00'
+  source:
+    kind: task_constraint
+    task_id: T-0001
+  provenance:
+  - agent_interpreted_user_intent
+  - task_projection
+  payload:
+    text: Do not change runtime behavior, benchmark data, release version, or installation
+      commands.
+- id: T-0001-C4
+  type: Constraint
+  title: Keep the main README product-facing and approximately one third of its current
+    technical density.
+  status: active
+  maturity: accepted
+  policy: mutable
+  revision: 2d1c8210ead1bd723c8ffbbd516a3c279a1d5789
+  confidence: 1.0
+  updated_at: '2026-09-01T16:16:53+00:00'
+  source:
+    kind: task_constraint
+    task_id: T-0001
+  provenance:
+  - agent_interpreted_user_intent
+  - task_projection
+  payload:
+    text: Keep the main README product-facing and approximately one third of its current
+      technical density.
+- id: T-0001-AC1
+  type: Requirement
+  title: A repository-native SVG hero uses a black background and centers the integrated
+    PSG mark, PSG wordmark, and the full text project state graph without decorative
+    poster scenery.
+  status: pass
+  maturity: accepted
+  policy: mutable
+  revision: 2d1c8210ead1bd723c8ffbbd516a3c279a1d5789
+  confidence: 1.0
+  updated_at: '2026-09-01T16:35:55+00:00'
+  source:
+    kind: task_acceptance
+    task_id: T-0001
+  provenance:
+  - agent_interpreted_user_intent
+  - task_projection
+  payload:
+    evidence:
+      kind: runtime_verification
+      reference: V-0005
+      source: runtime_executed
+      trust_tier: RUNTIME_ATTESTED
+      worktree_fingerprint: 51daafcb3bed5f2ea0fdd94af7ec5d77ec94100b6235fae3d24de85eba151ea0
+    mandatory: true
+- id: T-0001-AC2
+  type: Requirement
+  title: README.md, README.zh-TW.md, README.zh-CN.md, and README.ja.md share the requested
+    concise product-first section order and localized content.
+  status: pass
+  maturity: accepted
+  policy: mutable
+  revision: 2d1c8210ead1bd723c8ffbbd516a3c279a1d5789
+  confidence: 1.0
+  updated_at: '2026-09-01T16:35:55+00:00'
+  source:
+    kind: task_acceptance
+    task_id: T-0001
+  provenance:
+  - agent_interpreted_user_intent
+  - task_projection
+  payload:
+    evidence:
+      kind: runtime_verification
+      reference: V-0005
+      source: runtime_executed
+      trust_tier: RUNTIME_ATTESTED
+      worktree_fingerprint: 51daafcb3bed5f2ea0fdd94af7ec5d77ec94100b6235fae3d24de85eba151ea0
+    mandatory: true
+- id: T-0001-AC3
+  type: Requirement
+  title: The measured OFF versus ON table uses Non-target edits, reports correctness
+    before efficiency, and explicitly states the measured token and wall-time overhead
+    without claiming end-to-end token savings.
+  status: pass
+  maturity: accepted
+  policy: mutable
+  revision: 2d1c8210ead1bd723c8ffbbd516a3c279a1d5789
+  confidence: 1.0
+  updated_at: '2026-09-01T16:35:56+00:00'
+  source:
+    kind: task_acceptance
+    task_id: T-0001
+  provenance:
+  - agent_interpreted_user_intent
+  - task_projection
+  payload:
+    evidence:
+      kind: runtime_verification
+      reference: V-0005
+      source: runtime_executed
+      trust_tier: RUNTIME_ATTESTED
+      worktree_fingerprint: 51daafcb3bed5f2ea0fdd94af7ec5d77ec94100b6235fae3d24de85eba151ea0
+    mandatory: true
+- id: T-0001-AC4
+  type: Requirement
+  title: Detailed Task Contract, trust/security, CLI/MCP, architecture, installation,
+    benchmark, and research material remains discoverable through focused documentation
+    links.
+  status: pass
+  maturity: accepted
+  policy: mutable
+  revision: 2d1c8210ead1bd723c8ffbbd516a3c279a1d5789
+  confidence: 1.0
+  updated_at: '2026-09-01T16:35:56+00:00'
+  source:
+    kind: task_acceptance
+    task_id: T-0001
+  provenance:
+  - agent_interpreted_user_intent
+  - task_projection
+  payload:
+    evidence:
+      kind: runtime_verification
+      reference: V-0005
+      source: runtime_executed
+      trust_tier: RUNTIME_ATTESTED
+      worktree_fingerprint: 51daafcb3bed5f2ea0fdd94af7ec5d77ec94100b6235fae3d24de85eba151ea0
+    mandatory: true
+- id: T-0001-AC5
+  type: Requirement
+  title: Documentation links and project validation checks pass.
+  status: pass
+  maturity: accepted
+  policy: mutable
+  revision: 2d1c8210ead1bd723c8ffbbd516a3c279a1d5789
+  confidence: 1.0
+  updated_at: '2026-09-01T16:35:56+00:00'
+  source:
+    kind: task_acceptance
+    task_id: T-0001
+  provenance:
+  - agent_interpreted_user_intent
+  - task_projection
+  payload:
+    evidence:
+      kind: runtime_verification
+      reference: V-0005
+      source: runtime_executed
+      trust_tier: RUNTIME_ATTESTED
+      worktree_fingerprint: 51daafcb3bed5f2ea0fdd94af7ec5d77ec94100b6235fae3d24de85eba151ea0
+    mandatory: true
+- id: T-0001
+  type: Task
+  title: 'Redesign the PSG README product surface and hero: replace the illustrated
+    banner with a black, centered SVG brand lockup, simplify the English README, and
+    apply equivalent localized structure to Traditional Chinese, Simplified Chinese,
+    and Japanese while preserving detailed technical truth in docs.'
+  status: shippable
+  maturity: accepted
+  policy: mutable
+  revision: 2d1c8210ead1bd723c8ffbbd516a3c279a1d5789
+  confidence: 1.0
+  updated_at: '2026-09-01T16:36:02+00:00'
+  source:
+    kind: psg_runtime
+  provenance:
+  - agent_interpreted_user_intent
+  - psg_runtime
+  payload:
+    builder_actor: codex
+    contract_version: 1
+    intent: 'Redesign the PSG README product surface and hero: replace the illustrated
+      banner with a black, centered SVG brand lockup, simplify the English README,
+      and apply equivalent localized structure to Traditional Chinese, Simplified
+      Chinese, and Japanese while preserving detailed technical truth in docs.'
+    risk: low
+    ship_gate:
+      recommendation: SHIP
+      status: SHIPPABLE
+- id: V-0001
+  type: Verification
+  title: policy:mutation-boundary
+  status: pass
+  maturity: accepted
+  policy: mutable
+  revision: 2d1c8210ead1bd723c8ffbbd516a3c279a1d5789
+  confidence: 1.0
+  updated_at: '2026-09-01T16:27:49+00:00'
+  source:
+    kind: runtime_executed
+    task_id: T-0001
+  provenance:
+  - runtime_attested
+  payload:
+    id: V-0001
+    task_id: T-0001
+    name: policy:mutation-boundary
+    kind: policy
+    command: null
+    result: pass
+    required: true
+    revision: 2d1c8210ead1bd723c8ffbbd516a3c279a1d5789
+    evidence:
+      phase: postflight
+      worktree_fingerprint: 914d1045b8d5324c7d29fc7f93d5fae60fb5329fb507b885ddd0c50fe84229d9
+      trust_tier: RUNTIME_ATTESTED
+      source: runtime_executed
+- id: V-0002
+  type: Verification
+  title: test
+  status: pass
+  maturity: accepted
+  policy: mutable
+  revision: 2d1c8210ead1bd723c8ffbbd516a3c279a1d5789
+  confidence: 1.0
+  updated_at: '2026-09-01T16:30:37+00:00'
+  source:
+    kind: runtime_executed
+    task_id: T-0001
+  provenance:
+  - runtime_attested
+  payload:
+    id: V-0002
+    task_id: T-0001
+    name: test
+    kind: test
+    command: test
+    result: pass
+    required: true
+    revision: 2d1c8210ead1bd723c8ffbbd516a3c279a1d5789
+    evidence:
+      reference: local:verification/V-0002.log
+      output_hash: sha256:7afc53a1537dbaa0ff7c2643a498acbf677c1c736c89e80e92325b693d34b29b
+      exit_code: 0
+      duration_seconds: 163.547
+      worktree_fingerprint: c0609b2f49ef104bc696092b5872b7e764d0f76f83340403cb3c5815cdaca500
+      trust_tier: RUNTIME_ATTESTED
+      kind: command_result
+      source: runtime_executed
+      check_name: test
+- id: V-0003
+  type: Verification
+  title: lint
+  status: pass
+  maturity: accepted
+  policy: mutable
+  revision: 2d1c8210ead1bd723c8ffbbd516a3c279a1d5789
+  confidence: 1.0
+  updated_at: '2026-09-01T16:30:37+00:00'
+  source:
+    kind: runtime_executed
+    task_id: T-0001
+  provenance:
+  - runtime_attested
+  payload:
+    id: V-0003
+    task_id: T-0001
+    name: lint
+    kind: lint
+    command: lint
+    result: pass
+    required: true
+    revision: 2d1c8210ead1bd723c8ffbbd516a3c279a1d5789
+    evidence:
+      reference: local:verification/V-0003.log
+      output_hash: sha256:82b3e6a6c090a57601d22943bd23fca9218d1031dbe5a7b754092f9a156b4f18
+      exit_code: 0
+      duration_seconds: 0.125
+      worktree_fingerprint: c0609b2f49ef104bc696092b5872b7e764d0f76f83340403cb3c5815cdaca500
+      trust_tier: RUNTIME_ATTESTED
+      kind: command_result
+      source: runtime_executed
+      check_name: lint
+- id: V-0004
+  type: Verification
+  title: policy:mutation-boundary
+  status: pass
+  maturity: accepted
+  policy: mutable
+  revision: 2d1c8210ead1bd723c8ffbbd516a3c279a1d5789
+  confidence: 1.0
+  updated_at: '2026-09-01T16:32:32+00:00'
+  source:
+    kind: runtime_executed
+    task_id: T-0001
+  provenance:
+  - runtime_attested
+  payload:
+    id: V-0004
+    task_id: T-0001
+    name: policy:mutation-boundary
+    kind: policy
+    command: null
+    result: pass
+    required: true
+    revision: 2d1c8210ead1bd723c8ffbbd516a3c279a1d5789
+    evidence:
+      phase: postflight
+      worktree_fingerprint: 51daafcb3bed5f2ea0fdd94af7ec5d77ec94100b6235fae3d24de85eba151ea0
+      trust_tier: RUNTIME_ATTESTED
+      source: runtime_executed
+- id: V-0005
+  type: Verification
+  title: test
+  status: pass
+  maturity: accepted
+  policy: mutable
+  revision: 2d1c8210ead1bd723c8ffbbd516a3c279a1d5789
+  confidence: 1.0
+  updated_at: '2026-09-01T16:35:17+00:00'
+  source:
+    kind: runtime_executed
+    task_id: T-0001
+  provenance:
+  - runtime_attested
+  payload:
+    id: V-0005
+    task_id: T-0001
+    name: test
+    kind: test
+    command: test
+    result: pass
+    required: true
+    revision: 2d1c8210ead1bd723c8ffbbd516a3c279a1d5789
+    evidence:
+      reference: local:verification/V-0005.log
+      output_hash: sha256:e929f6ed3e3d4e2e6aca90b16c31b4ac2f14c3650c30643ff3a976f372b158f2
+      exit_code: 0
+      duration_seconds: 159.844
+      worktree_fingerprint: 51daafcb3bed5f2ea0fdd94af7ec5d77ec94100b6235fae3d24de85eba151ea0
+      trust_tier: RUNTIME_ATTESTED
+      kind: command_result
+      source: runtime_executed
+      check_name: test
+- id: V-0006
+  type: Verification
+  title: lint
+  status: pass
+  maturity: accepted
+  policy: mutable
+  revision: 2d1c8210ead1bd723c8ffbbd516a3c279a1d5789
+  confidence: 1.0
+  updated_at: '2026-09-01T16:35:17+00:00'
+  source:
+    kind: runtime_executed
+    task_id: T-0001
+  provenance:
+  - runtime_attested
+  payload:
+    id: V-0006
+    task_id: T-0001
+    name: lint
+    kind: lint
+    command: lint
+    result: pass
+    required: true
+    revision: 2d1c8210ead1bd723c8ffbbd516a3c279a1d5789
+    evidence:
+      reference: local:verification/V-0006.log
+      output_hash: sha256:82b3e6a6c090a57601d22943bd23fca9218d1031dbe5a7b754092f9a156b4f18
+      exit_code: 0
+      duration_seconds: 0.14
+      worktree_fingerprint: 51daafcb3bed5f2ea0fdd94af7ec5d77ec94100b6235fae3d24de85eba151ea0
+      trust_tier: RUNTIME_ATTESTED
+      kind: command_result
+      source: runtime_executed
+      check_name: lint
+- id: V-0007
+  type: Verification
+  title: policy:mutation-boundary
+  status: pass
+  maturity: accepted
+  policy: mutable
+  revision: 2d1c8210ead1bd723c8ffbbd516a3c279a1d5789
+  confidence: 1.0
+  updated_at: '2026-09-01T16:36:01+00:00'
+  source:
+    kind: runtime_executed
+    task_id: T-0001
+  provenance:
+  - runtime_attested
+  payload:
+    id: V-0007
+    task_id: T-0001
+    name: policy:mutation-boundary
+    kind: policy
+    command: null
+    result: pass
+    required: true
+    revision: 2d1c8210ead1bd723c8ffbbd516a3c279a1d5789
+    evidence:
+      phase: ship_gate
+      worktree_fingerprint: 51daafcb3bed5f2ea0fdd94af7ec5d77ec94100b6235fae3d24de85eba151ea0
+      trust_tier: RUNTIME_ATTESTED
+      source: runtime_executed
+edges:
+- src: T-0001
+  type: constrained-by
+  dst: T-0001-C1
+  confidence: 1.0
+  provenance: task_projection
+  revision: 2d1c8210ead1bd723c8ffbbd516a3c279a1d5789
+  created_at: '2026-09-01T16:16:53+00:00'
+- src: T-0001
+  type: constrained-by
+  dst: T-0001-C2
+  confidence: 1.0
+  provenance: task_projection
+  revision: 2d1c8210ead1bd723c8ffbbd516a3c279a1d5789
+  created_at: '2026-09-01T16:16:53+00:00'
+- src: T-0001
+  type: constrained-by
+  dst: T-0001-C3
+  confidence: 1.0
+  provenance: task_projection
+  revision: 2d1c8210ead1bd723c8ffbbd516a3c279a1d5789
+  created_at: '2026-09-01T16:16:53+00:00'
+- src: T-0001
+  type: constrained-by
+  dst: T-0001-C4
+  confidence: 1.0
+  provenance: task_projection
+  revision: 2d1c8210ead1bd723c8ffbbd516a3c279a1d5789
+  created_at: '2026-09-01T16:16:53+00:00'
+- src: T-0001
+  type: requires
+  dst: T-0001-AC1
+  confidence: 1.0
+  provenance: task_projection
+  revision: 2d1c8210ead1bd723c8ffbbd516a3c279a1d5789
+  created_at: '2026-09-01T16:16:52+00:00'
+- src: T-0001
+  type: requires
+  dst: T-0001-AC2
+  confidence: 1.0
+  provenance: task_projection
+  revision: 2d1c8210ead1bd723c8ffbbd516a3c279a1d5789
+  created_at: '2026-09-01T16:16:52+00:00'
+- src: T-0001
+  type: requires
+  dst: T-0001-AC3
+  confidence: 1.0
+  provenance: task_projection
+  revision: 2d1c8210ead1bd723c8ffbbd516a3c279a1d5789
+  created_at: '2026-09-01T16:16:52+00:00'
+- src: T-0001
+  type: requires
+  dst: T-0001-AC4
+  confidence: 1.0
+  provenance: task_projection
+  revision: 2d1c8210ead1bd723c8ffbbd516a3c279a1d5789
+  created_at: '2026-09-01T16:16:52+00:00'
+- src: T-0001
+  type: requires
+  dst: T-0001-AC5
+  confidence: 1.0
+  provenance: task_projection
+  revision: 2d1c8210ead1bd723c8ffbbd516a3c279a1d5789
+  created_at: '2026-09-01T16:16:52+00:00'
+- src: T-0001
+  type: verified-by
+  dst: V-0001
+  confidence: 1.0
+  provenance: runtime_projection
+  revision: 2d1c8210ead1bd723c8ffbbd516a3c279a1d5789
+  created_at: '2026-09-01T16:27:49+00:00'
+- src: T-0001
+  type: verified-by
+  dst: V-0002
+  confidence: 1.0
+  provenance: runtime_projection
+  revision: 2d1c8210ead1bd723c8ffbbd516a3c279a1d5789
+  created_at: '2026-09-01T16:30:37+00:00'
+- src: T-0001
+  type: verified-by
+  dst: V-0003
+  confidence: 1.0
+  provenance: runtime_projection
+  revision: 2d1c8210ead1bd723c8ffbbd516a3c279a1d5789
+  created_at: '2026-09-01T16:30:37+00:00'
+- src: T-0001
+  type: verified-by
+  dst: V-0004
+  confidence: 1.0
+  provenance: runtime_projection
+  revision: 2d1c8210ead1bd723c8ffbbd516a3c279a1d5789
+  created_at: '2026-09-01T16:32:32+00:00'
+- src: T-0001
+  type: verified-by
+  dst: V-0005
+  confidence: 1.0
+  provenance: runtime_projection
+  revision: 2d1c8210ead1bd723c8ffbbd516a3c279a1d5789
+  created_at: '2026-09-01T16:35:17+00:00'
+- src: T-0001
+  type: verified-by
+  dst: V-0006
+  confidence: 1.0
+  provenance: runtime_projection
+  revision: 2d1c8210ead1bd723c8ffbbd516a3c279a1d5789
+  created_at: '2026-09-01T16:35:17+00:00'
+- src: T-0001
+  type: verified-by
+  dst: V-0007
+  confidence: 1.0
+  provenance: runtime_projection
+  revision: 2d1c8210ead1bd723c8ffbbd516a3c279a1d5789
+  created_at: '2026-09-01T16:36:01+00:00'
+- src: T-0001-AC1
+  type: targets
+  dst: file:README.ja.md
+  confidence: 1.0
+  provenance: task_projection
+  revision: 2d1c8210ead1bd723c8ffbbd516a3c279a1d5789
+  created_at: '2026-09-01T16:16:52+00:00'
+- src: T-0001-AC1
+  type: targets
+  dst: file:README.md
+  confidence: 1.0
+  provenance: task_projection
+  revision: 2d1c8210ead1bd723c8ffbbd516a3c279a1d5789
+  created_at: '2026-09-01T16:16:52+00:00'
+- src: T-0001-AC1
+  type: targets
+  dst: file:README.zh-CN.md
+  confidence: 1.0
+  provenance: task_projection
+  revision: 2d1c8210ead1bd723c8ffbbd516a3c279a1d5789
+  created_at: '2026-09-01T16:16:52+00:00'
+- src: T-0001-AC1
+  type: targets
+  dst: file:README.zh-TW.md
+  confidence: 1.0
+  provenance: task_projection
+  revision: 2d1c8210ead1bd723c8ffbbd516a3c279a1d5789
+  created_at: '2026-09-01T16:16:52+00:00'
+- src: T-0001-AC1
+  type: targets
+  dst: file:docs/visual-identity.md
+  confidence: 1.0
+  provenance: task_projection
+  revision: 2d1c8210ead1bd723c8ffbbd516a3c279a1d5789
+  created_at: '2026-09-01T16:16:52+00:00'
+- src: T-0001-AC2
+  type: targets
+  dst: file:README.ja.md
+  confidence: 1.0
+  provenance: task_projection
+  revision: 2d1c8210ead1bd723c8ffbbd516a3c279a1d5789
+  created_at: '2026-09-01T16:16:52+00:00'
+- src: T-0001-AC2
+  type: targets
+  dst: file:README.md
+  confidence: 1.0
+  provenance: task_projection
+  revision: 2d1c8210ead1bd723c8ffbbd516a3c279a1d5789
+  created_at: '2026-09-01T16:16:52+00:00'
+- src: T-0001-AC2
+  type: targets
+  dst: file:README.zh-CN.md
+  confidence: 1.0
+  provenance: task_projection
+  revision: 2d1c8210ead1bd723c8ffbbd516a3c279a1d5789
+  created_at: '2026-09-01T16:16:52+00:00'
+- src: T-0001-AC2
+  type: targets
+  dst: file:README.zh-TW.md
+  confidence: 1.0
+  provenance: task_projection
+  revision: 2d1c8210ead1bd723c8ffbbd516a3c279a1d5789
+  created_at: '2026-09-01T16:16:52+00:00'
+- src: T-0001-AC2
+  type: targets
+  dst: file:docs/visual-identity.md
+  confidence: 1.0
+  provenance: task_projection
+  revision: 2d1c8210ead1bd723c8ffbbd516a3c279a1d5789
+  created_at: '2026-09-01T16:16:52+00:00'
+- src: T-0001-AC3
+  type: targets
+  dst: file:README.ja.md
+  confidence: 1.0
+  provenance: task_projection
+  revision: 2d1c8210ead1bd723c8ffbbd516a3c279a1d5789
+  created_at: '2026-09-01T16:16:52+00:00'
+- src: T-0001-AC3
+  type: targets
+  dst: file:README.md
+  confidence: 1.0
+  provenance: task_projection
+  revision: 2d1c8210ead1bd723c8ffbbd516a3c279a1d5789
+  created_at: '2026-09-01T16:16:52+00:00'
+- src: T-0001-AC3
+  type: targets
+  dst: file:README.zh-CN.md
+  confidence: 1.0
+  provenance: task_projection
+  revision: 2d1c8210ead1bd723c8ffbbd516a3c279a1d5789
+  created_at: '2026-09-01T16:16:52+00:00'
+- src: T-0001-AC3
+  type: targets
+  dst: file:README.zh-TW.md
+  confidence: 1.0
+  provenance: task_projection
+  revision: 2d1c8210ead1bd723c8ffbbd516a3c279a1d5789
+  created_at: '2026-09-01T16:16:52+00:00'
+- src: T-0001-AC3
+  type: targets
+  dst: file:docs/visual-identity.md
+  confidence: 1.0
+  provenance: task_projection
+  revision: 2d1c8210ead1bd723c8ffbbd516a3c279a1d5789
+  created_at: '2026-09-01T16:16:52+00:00'
+- src: T-0001-AC4
+  type: targets
+  dst: file:README.ja.md
+  confidence: 1.0
+  provenance: task_projection
+  revision: 2d1c8210ead1bd723c8ffbbd516a3c279a1d5789
+  created_at: '2026-09-01T16:16:52+00:00'
+- src: T-0001-AC4
+  type: targets
+  dst: file:README.md
+  confidence: 1.0
+  provenance: task_projection
+  revision: 2d1c8210ead1bd723c8ffbbd516a3c279a1d5789
+  created_at: '2026-09-01T16:16:52+00:00'
+- src: T-0001-AC4
+  type: targets
+  dst: file:README.zh-CN.md
+  confidence: 1.0
+  provenance: task_projection
+  revision: 2d1c8210ead1bd723c8ffbbd516a3c279a1d5789
+  created_at: '2026-09-01T16:16:52+00:00'
+- src: T-0001-AC4
+  type: targets
+  dst: file:README.zh-TW.md
+  confidence: 1.0
+  provenance: task_projection
+  revision: 2d1c8210ead1bd723c8ffbbd516a3c279a1d5789
+  created_at: '2026-09-01T16:16:52+00:00'
+- src: T-0001-AC4
+  type: targets
+  dst: file:docs/visual-identity.md
+  confidence: 1.0
+  provenance: task_projection
+  revision: 2d1c8210ead1bd723c8ffbbd516a3c279a1d5789
+  created_at: '2026-09-01T16:16:52+00:00'
+- src: T-0001-AC5
+  type: targets
+  dst: file:README.ja.md
+  confidence: 1.0
+  provenance: task_projection
+  revision: 2d1c8210ead1bd723c8ffbbd516a3c279a1d5789
+  created_at: '2026-09-01T16:16:53+00:00'
+- src: T-0001-AC5
+  type: targets
+  dst: file:README.md
+  confidence: 1.0
+  provenance: task_projection
+  revision: 2d1c8210ead1bd723c8ffbbd516a3c279a1d5789
+  created_at: '2026-09-01T16:16:52+00:00'
+- src: T-0001-AC5
+  type: targets
+  dst: file:README.zh-CN.md
+  confidence: 1.0
+  provenance: task_projection
+  revision: 2d1c8210ead1bd723c8ffbbd516a3c279a1d5789
+  created_at: '2026-09-01T16:16:53+00:00'
+- src: T-0001-AC5
+  type: targets
+  dst: file:README.zh-TW.md
+  confidence: 1.0
+  provenance: task_projection
+  revision: 2d1c8210ead1bd723c8ffbbd516a3c279a1d5789
+  created_at: '2026-09-01T16:16:53+00:00'
+- src: T-0001-AC5
+  type: targets
+  dst: file:docs/visual-identity.md
+  confidence: 1.0
+  provenance: task_projection
+  revision: 2d1c8210ead1bd723c8ffbbd516a3c279a1d5789
+  created_at: '2026-09-01T16:16:53+00:00'
+tasks:
+- id: T-0001
+  intent: 'Redesign the PSG README product surface and hero: replace the illustrated
+    banner with a black, centered SVG brand lockup, simplify the English README, and
+    apply equivalent localized structure to Traditional Chinese, Simplified Chinese,
+    and Japanese while preserving detailed technical truth in docs.'
+  status: shippable
+  risk: low
+  context_budget: 12000
+  review_budget: 2
+  fix_budget: 2
+  review_rounds: 0
+  fix_cycles: 0
+  no_new_blocking_rounds: 0
+  baseline_snapshot: S-0001
+  baseline_git_rev: 2d1c8210ead1bd723c8ffbbd516a3c279a1d5789
+  graph_rev: 312
+  created_at: '2026-09-01T16:16:52+00:00'
+  updated_at: '2026-09-01T16:36:02+00:00'
+  payload:
+    authorized_forbidden:
+    - .github/**
+    - .psg/**
+    - benchmarks/*.py
+    - pyproject.toml
+    - src/**
+    - tests/**
+    authorized_read_only:
+    - benchmarks/README.md
+    - benchmarks/results/agentic-ab-latest.json
+    - benchmarks/results/latest.json
+    - benchmarks/results/task-boundary-latest.json
+    - docs/acceptance.md
+    - docs/architecture.md
+    - docs/installation.md
+    - research/README.md
+    - research/evaluation-plan.md
+    authorized_write:
+    - README.ja.md
+    - README.md
+    - README.zh-CN.md
+    - README.zh-TW.md
+    - docs/assets/psg-hero.svg
+    - docs/cli-and-mcp.md
+    - docs/task-contract.md
+    - docs/trust-and-security.md
+    - docs/visual-identity.md
+    builder_actor: codex
+    completion_boundary:
+      current_task_blockers: 0
+      evidence_fresh: true
+      fix_budget: 2
+      high_risk_review: false
+      mandatory_acceptance: pass_or_approved_waiver
+      mutation_guardrail: pass
+      required_verification: passing_fresh_trusted
+      review_budget: 2
+      stop_when_shippable: true
+    constraints:
+    - Preserve the existing integrated P/S/G visual concept and friendly palette.
+    - Use a deterministic repository-native SVG rather than a generated raster.
+    - Do not change runtime behavior, benchmark data, release version, or installation
+      commands.
+    - Keep the main README product-facing and approximately one third of its current
+      technical density.
+    context_confidence: 0.465
+    context_node_ids:
+    - T-0001
+    - file:README.md
+    - file:README.ja.md
+    - file:README.zh-CN.md
+    - file:README.zh-TW.md
+    - file:docs/visual-identity.md
+    - T-0001-AC5
+    - T-0001-C2
+    - T-0001-AC2
+    - T-0001-C1
+    - T-0001-AC4
+    - T-0001-C3
+    - T-0001-AC1
+    - T-0001-C4
+    - T-0001-AC3
+    contract_hash: sha256:b30f3ffd4a0890ff5a41910145b944eced006bbb8d7e676b78334a999f7817ed
+    contract_state: sealed
+    contract_version: 1
+    dependency_justifications: []
+    expansion_hops: 1
+    expansion_reasons:
+    - automatic bounded expansion after low-confidence routing
+    forbidden:
+    - src/**
+    - tests/**
+    - benchmarks/*.py
+    - .github/**
+    - pyproject.toml
+    - .psg/**
+    governance_baseline:
+      .psg/.gitignore: a7d8bdcefba82a95ebc021d87c629fdea21f13af953bf01e28b7cf8b0eeceb41
+      .psg/config.yaml: 62e14a38e58c105ecafd2ab23333b8450961f52b472796fc3c38767ad5daa8ec
+      .psg/policies.yaml: 227671c9d72980e62ca57b7bf3191ed3bfb889849662f881a5900c91fd91328f
+    non_goals:
+    - Change PSG runtime behavior.
+    - Re-run or reinterpret benchmark measurements.
+    - Add installation channels, host adapters, or release engineering changes.
+    - Modify the existing raster source asset.
+    read_only:
+    - docs/architecture.md
+    - docs/acceptance.md
+    - docs/installation.md
+    - benchmarks/README.md
+    - benchmarks/results/agentic-ab-latest.json
+    - benchmarks/results/task-boundary-latest.json
+    - benchmarks/results/latest.json
+    - research/README.md
+    - research/evaluation-plan.md
+    requires_scope_approval: false
+    review_boundary:
+      blocking_relations:
+      - caused_by_patch
+      - violates_acceptance
+      - violates_project_constraint
+      blocking_severities:
+      - blocker
+      - major
+      follow_up_relations:
+      - future_improvement
+      - pre_existing
+      - unrelated
+      no_scope_expansion_by_review: true
+      requires_sufficient_evidence: true
+    scope_approval_reasons: []
+    targets:
+    - README.md
+    - README.zh-TW.md
+    - README.zh-CN.md
+    - README.ja.md
+    - docs/assets/psg-hero.svg
+    - docs/visual-identity.md
+    - docs/task-contract.md
+    - docs/trust-and-security.md
+    - docs/cli-and-mcp.md
+    working_set:
+      forbidden:
+      - .github/**
+      - .psg/**
+      - benchmarks/*.py
+      - pyproject.toml
+      - src/**
+      - tests/**
+      rationale:
+        .github/**: explicit forbidden scope
+        .psg/**: explicit forbidden scope
+        README.ja.md: explicit/target write scope
+        README.md: explicit/target write scope
+        README.zh-CN.md: explicit/target write scope
+        README.zh-TW.md: explicit/target write scope
+        benchmarks/*.py: explicit forbidden scope
+        benchmarks/README.md: explicit read-only scope
+        benchmarks/results/agentic-ab-latest.json: explicit read-only scope
+        benchmarks/results/latest.json: explicit read-only scope
+        benchmarks/results/task-boundary-latest.json: explicit read-only scope
+        docs/acceptance.md: explicit read-only scope
+        docs/architecture.md: explicit read-only scope
+        docs/assets/psg-hero.svg: explicit write scope
+        docs/cli-and-mcp.md: explicit write scope
+        docs/installation.md: explicit read-only scope
+        docs/task-contract.md: explicit write scope
+        docs/trust-and-security.md: explicit write scope
+        docs/visual-identity.md: explicit/target write scope
+        pyproject.toml: explicit forbidden scope
+        research/README.md: explicit read-only scope
+        research/evaluation-plan.md: explicit read-only scope
+        src/**: explicit forbidden scope
+        tests/**: explicit forbidden scope
+      read: []
+      read_only:
+      - benchmarks/README.md
+      - benchmarks/results/agentic-ab-latest.json
+      - benchmarks/results/latest.json
+      - benchmarks/results/task-boundary-latest.json
+      - docs/acceptance.md
+      - docs/architecture.md
+      - docs/installation.md
+      - research/README.md
+      - research/evaluation-plan.md
+      write:
+      - README.ja.md
+      - README.md
+      - README.zh-CN.md
+      - README.zh-TW.md
+      - docs/assets/psg-hero.svg
+      - docs/cli-and-mcp.md
+      - docs/task-contract.md
+      - docs/trust-and-security.md
+      - docs/visual-identity.md
+    write:
+    - README.md
+    - README.zh-TW.md
+    - README.zh-CN.md
+    - README.ja.md
+    - docs/assets/psg-hero.svg
+    - docs/visual-identity.md
+    - docs/task-contract.md
+    - docs/trust-and-security.md
+    - docs/cli-and-mcp.md
+  criteria:
+  - id: T-0001-AC1
+    task_id: T-0001
+    text: A repository-native SVG hero uses a black background and centers the integrated
+      PSG mark, PSG wordmark, and the full text project state graph without decorative
+      poster scenery.
+    mandatory: true
+    status: pass
+    evidence:
+      kind: runtime_verification
+      reference: V-0005
+      source: runtime_executed
+      trust_tier: RUNTIME_ATTESTED
+      worktree_fingerprint: 51daafcb3bed5f2ea0fdd94af7ec5d77ec94100b6235fae3d24de85eba151ea0
+  - id: T-0001-AC2
+    task_id: T-0001
+    text: README.md, README.zh-TW.md, README.zh-CN.md, and README.ja.md share the
+      requested concise product-first section order and localized content.
+    mandatory: true
+    status: pass
+    evidence:
+      kind: runtime_verification
+      reference: V-0005
+      source: runtime_executed
+      trust_tier: RUNTIME_ATTESTED
+      worktree_fingerprint: 51daafcb3bed5f2ea0fdd94af7ec5d77ec94100b6235fae3d24de85eba151ea0
+  - id: T-0001-AC3
+    task_id: T-0001
+    text: The measured OFF versus ON table uses Non-target edits, reports correctness
+      before efficiency, and explicitly states the measured token and wall-time overhead
+      without claiming end-to-end token savings.
+    mandatory: true
+    status: pass
+    evidence:
+      kind: runtime_verification
+      reference: V-0005
+      source: runtime_executed
+      trust_tier: RUNTIME_ATTESTED
+      worktree_fingerprint: 51daafcb3bed5f2ea0fdd94af7ec5d77ec94100b6235fae3d24de85eba151ea0
+  - id: T-0001-AC4
+    task_id: T-0001
+    text: Detailed Task Contract, trust/security, CLI/MCP, architecture, installation,
+      benchmark, and research material remains discoverable through focused documentation
+      links.
+    mandatory: true
+    status: pass
+    evidence:
+      kind: runtime_verification
+      reference: V-0005
+      source: runtime_executed
+      trust_tier: RUNTIME_ATTESTED
+      worktree_fingerprint: 51daafcb3bed5f2ea0fdd94af7ec5d77ec94100b6235fae3d24de85eba151ea0
+  - id: T-0001-AC5
+    task_id: T-0001
+    text: Documentation links and project validation checks pass.
+    mandatory: true
+    status: pass
+    evidence:
+      kind: runtime_verification
+      reference: V-0005
+      source: runtime_executed
+      trust_tier: RUNTIME_ATTESTED
+      worktree_fingerprint: 51daafcb3bed5f2ea0fdd94af7ec5d77ec94100b6235fae3d24de85eba151ea0
+  issues: []
+  verifications:
+  - id: V-0001
+    task_id: T-0001
+    name: policy:mutation-boundary
+    kind: policy
+    command: null
+    result: pass
+    required: true
+    revision: 2d1c8210ead1bd723c8ffbbd516a3c279a1d5789
+    created_at: '2026-09-01T16:27:49+00:00'
+    evidence:
+      phase: postflight
+      worktree_fingerprint: 914d1045b8d5324c7d29fc7f93d5fae60fb5329fb507b885ddd0c50fe84229d9
+      trust_tier: RUNTIME_ATTESTED
+      source: runtime_executed
+  - id: V-0002
+    task_id: T-0001
+    name: test
+    kind: test
+    command: test
+    result: pass
+    required: true
+    revision: 2d1c8210ead1bd723c8ffbbd516a3c279a1d5789
+    created_at: '2026-09-01T16:30:37+00:00'
+    evidence:
+      reference: local:verification/V-0002.log
+      output_hash: sha256:7afc53a1537dbaa0ff7c2643a498acbf677c1c736c89e80e92325b693d34b29b
+      exit_code: 0
+      duration_seconds: 163.547
+      worktree_fingerprint: c0609b2f49ef104bc696092b5872b7e764d0f76f83340403cb3c5815cdaca500
+      trust_tier: RUNTIME_ATTESTED
+      kind: command_result
+      source: runtime_executed
+      check_name: test
+  - id: V-0003
+    task_id: T-0001
+    name: lint
+    kind: lint
+    command: lint
+    result: pass
+    required: true
+    revision: 2d1c8210ead1bd723c8ffbbd516a3c279a1d5789
+    created_at: '2026-09-01T16:30:37+00:00'
+    evidence:
+      reference: local:verification/V-0003.log
+      output_hash: sha256:82b3e6a6c090a57601d22943bd23fca9218d1031dbe5a7b754092f9a156b4f18
+      exit_code: 0
+      duration_seconds: 0.125
+      worktree_fingerprint: c0609b2f49ef104bc696092b5872b7e764d0f76f83340403cb3c5815cdaca500
+      trust_tier: RUNTIME_ATTESTED
+      kind: command_result
+      source: runtime_executed
+      check_name: lint
+  - id: V-0004
+    task_id: T-0001
+    name: policy:mutation-boundary
+    kind: policy
+    command: null
+    result: pass
+    required: true
+    revision: 2d1c8210ead1bd723c8ffbbd516a3c279a1d5789
+    created_at: '2026-09-01T16:32:32+00:00'
+    evidence:
+      phase: postflight
+      worktree_fingerprint: 51daafcb3bed5f2ea0fdd94af7ec5d77ec94100b6235fae3d24de85eba151ea0
+      trust_tier: RUNTIME_ATTESTED
+      source: runtime_executed
+  - id: V-0005
+    task_id: T-0001
+    name: test
+    kind: test
+    command: test
+    result: pass
+    required: true
+    revision: 2d1c8210ead1bd723c8ffbbd516a3c279a1d5789
+    created_at: '2026-09-01T16:35:16+00:00'
+    evidence:
+      reference: local:verification/V-0005.log
+      output_hash: sha256:e929f6ed3e3d4e2e6aca90b16c31b4ac2f14c3650c30643ff3a976f372b158f2
+      exit_code: 0
+      duration_seconds: 159.844
+      worktree_fingerprint: 51daafcb3bed5f2ea0fdd94af7ec5d77ec94100b6235fae3d24de85eba151ea0
+      trust_tier: RUNTIME_ATTESTED
+      kind: command_result
+      source: runtime_executed
+      check_name: test
+  - id: V-0006
+    task_id: T-0001
+    name: lint
+    kind: lint
+    command: lint
+    result: pass
+    required: true
+    revision: 2d1c8210ead1bd723c8ffbbd516a3c279a1d5789
+    created_at: '2026-09-01T16:35:17+00:00'
+    evidence:
+      reference: local:verification/V-0006.log
+      output_hash: sha256:82b3e6a6c090a57601d22943bd23fca9218d1031dbe5a7b754092f9a156b4f18
+      exit_code: 0
+      duration_seconds: 0.14
+      worktree_fingerprint: 51daafcb3bed5f2ea0fdd94af7ec5d77ec94100b6235fae3d24de85eba151ea0
+      trust_tier: RUNTIME_ATTESTED
+      kind: command_result
+      source: runtime_executed
+      check_name: lint
+  - id: V-0007
+    task_id: T-0001
+    name: policy:mutation-boundary
+    kind: policy
+    command: null
+    result: pass
+    required: true
+    revision: 2d1c8210ead1bd723c8ffbbd516a3c279a1d5789
+    created_at: '2026-09-01T16:36:01+00:00'
+    evidence:
+      phase: ship_gate
+      worktree_fingerprint: 51daafcb3bed5f2ea0fdd94af7ec5d77ec94100b6235fae3d24de85eba151ea0
+      trust_tier: RUNTIME_ATTESTED
+      source: runtime_executed
+generated_at: '2026-09-01T16:36:02+00:00'
 config_hash: 62e14a38e58c105ecafd2ab23333b8450961f52b472796fc3c38767ad5daa8ec

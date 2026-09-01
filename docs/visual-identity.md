@@ -1,6 +1,6 @@
 # PSG visual identity
 
-![PSG — project state graph](assets/psg-concept.png)
+![PSG — project state graph](assets/psg-hero.svg)
 
 ## Concept
 
@@ -13,6 +13,12 @@ The mark turns **P**, **S**, and **G** into one connected object rather than tre
 
 The friendly rounded form is intentional. PSG handles strict governance, but the product should feel like a helpful project companion rather than a security appliance.
 
+## Primary lockup
+
+`assets/psg-hero.svg` is the repository's primary hero and brand lockup. It uses a black canvas, the connected mark, the `PSG` wordmark, and the full lowercase name `project state graph`. A warm ivory outline separates only the pastel logo mark and nodes from the canvas; the wordmark remains unoutlined. The composition intentionally contains no decorative scenery, texture, or poster elements, so it reads as an identity rather than as an illustration.
+
+The original `assets/psg-concept.png` remains the exploratory concept artwork. It is not the primary README hero.
+
 ## Palette
 
 | Role | Approximate color |
@@ -22,6 +28,8 @@ The friendly rounded form is intentional. PSG handles strict governance, but the
 | Change orange | `#FF9563` |
 | Evidence yellow | `#F4C75A` |
 | Accepted mint | `#91D4B2` |
-| Paper background | `#FBF4E7` |
+| Dark canvas | `#0B0E13` |
+| Light wordmark | `#F7F8FA` |
+| Secondary type | `#B8C0CC` |
 
-The current asset is the v1 hero image and primary visual for the repository. Keep the words `project state graph` lowercase when used as the subtitle.
+Keep the words `project state graph` lowercase when used as the subtitle. Preserve the P/S/G paths and the four-node structure when adapting the mark; remove detail before adding decoration.
