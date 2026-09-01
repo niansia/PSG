@@ -42,7 +42,7 @@ This document maps the reviewed completion requirements to implemented behavior 
 | Live MCP transport | Git-backed MCP tools answer over real stdio within a bounded time | live stdio MCP regression test |
 | Cross-platform CI | Ubuntu/Windows/macOS on Python 3.10 and Ubuntu on Python 3.13 run tests, wheel build, and clean install smoke | `.github/workflows/ci.yml`, `scripts/build_release.py` |
 | Task-Boundary benchmark | 10 seeded scenarios report blocking precision, recall, and false reopening rate | `benchmarks/results/task-boundary-latest.json` |
-| Matched agentic benchmark | 10 paired tasks, one Codex CLI and model, same prompt and baseline commit, separate clean worktrees, hidden tests | `benchmarks/agentic_ab.py` harness only — no 10-pair run has been measured, so no result is published |
+| Matched agentic benchmark | 10 paired tasks, one Codex CLI and model, same prompt and baseline commit, separate clean worktrees, hidden tests, symmetric target disclosure | `benchmarks/results/agentic-ab-latest.json` and sanitized per-run traces |
 | Mechanics regression benchmark | 12 tasks; full selected-file contents plus tool payload counted; frozen mutation blocked | `benchmarks/results/latest.json` |
 
 ## Verified release results
@@ -51,7 +51,7 @@ This document maps the reviewed completion requirements to implemented behavior 
 - Ruff lint and format checks: **passing**.
 - Task-Boundary benchmark: **10/10 correct**, blocking precision **1.0**, blocking recall **1.0**, false reopening rate **0.0**.
 - Mechanics regression benchmark: **12/12 SHIPPABLE**.
-- Matched agentic OFF/ON benchmark: **not measured**. The harness is validated end to end, but the 10-pair run was not completed, so this release publishes no OFF/ON numbers.
+- Matched agentic OFF/ON benchmark (`end_to_end`, 10 pairs, 20/20 runs completed): task success **10/10 ON versus 9/10 OFF**, out-of-scope edits **2 ON versus 10 OFF**, zero regressions and zero false `SHIPPABLE` on both sides — at **+79% input tokens** and **+42% wall time** for ON. The cost is reported as prominently as the benefit.
 - Benchmark file-read reduction: **89.69%** versus disclosed all-files baseline.
 - Benchmark context-token reduction: **32.41%**, counting the serialized context payload and actual contents of every selected source file.
 - Unauthorized frozen mutation: **blocked**.

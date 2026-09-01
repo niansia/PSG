@@ -1,0 +1,915 @@
+{
+  "benchmark": "psg-agentic-ab-v2-end_to_end",
+  "correctness_non_inferior": true,
+  "protocol": {
+    "agent": "Codex CLI",
+    "conditions": {
+      "OFF": "PSG installed but disabled for the project",
+      "ON": "PSG enabled with a predeclared Task Contract and runtime enforcement"
+    },
+    "cost_limitation": "Codex CLI did not expose a per-run dollar charge; tokens and wall time are reported without inventing a price",
+    "file_read_metric": "lower-bound count of repository paths explicitly named in Codex command events",
+    "mode": "end_to_end",
+    "mode_meaning": "end_to_end: neither condition is told where the change belongs, so PSG must localize the request itself",
+    "model": "gpt-5.5",
+    "reasoning_effort": "low",
+    "same_prompt_per_pair": true,
+    "same_repository_commit_per_pair": true,
+    "separate_clean_worktrees": true,
+    "target_disclosure_is_symmetric": true,
+    "task_pairs": 10,
+    "timeout_seconds_per_run": 360
+  },
+  "published_at": "2026-09-01T14:57:29Z",
+  "runs": [
+    {
+      "agent_exit_code": 0,
+      "authorized_write": [],
+      "baseline_commit": "f2f38eac308e3cb608f8ab8a207297d749418ff6",
+      "baseline_exit_code": 0,
+      "baseline_output": "..                                                                       [100%]\n2 passed in 0.01s\n",
+      "changed_files": [
+        "src/text_tools.py",
+        "tests/test_existing.py"
+      ],
+      "condition": "OFF",
+      "contract_state": null,
+      "false_shippable": false,
+      "fix_cycles": null,
+      "hidden_exit_code": 0,
+      "hidden_output": ".                                                                        [100%]\n1 passed in 0.01s\n",
+      "mode": "end_to_end",
+      "model": "gpt-5.5",
+      "out_of_scope_edits": [
+        "tests/test_existing.py"
+      ],
+      "prompt": "Update slugify so leading/trailing separators disappear and any run of non-alphanumeric characters becomes one dash. Preserve lowercase output.",
+      "psg_task_status": null,
+      "reasoning_effort": "low",
+      "regression": false,
+      "requires_scope_approval": false,
+      "review_rounds": null,
+      "target": "src/text_tools.py",
+      "task_contract_id": null,
+      "task_id": "slugify",
+      "task_success": true,
+      "trace": "agentic-ab-traces\\slugify-off.jsonl",
+      "trace_inferred_unique_files_read": [],
+      "usage": {
+        "cached_input_tokens": 123904,
+        "input_tokens": 165917,
+        "output_tokens": 1731
+      },
+      "wall_time_seconds": 103.671
+    },
+    {
+      "agent_exit_code": 0,
+      "authorized_write": [
+        "src/text_tools.py"
+      ],
+      "baseline_commit": "f2f38eac308e3cb608f8ab8a207297d749418ff6",
+      "baseline_exit_code": 0,
+      "baseline_output": ".                                                                        [100%]\n1 passed in 0.01s\n",
+      "changed_files": [
+        "src/text_tools.py"
+      ],
+      "condition": "ON",
+      "contract_state": "sealed",
+      "false_shippable": false,
+      "fix_cycles": 0,
+      "hidden_exit_code": 0,
+      "hidden_output": ".                                                                        [100%]\n1 passed in 0.01s\n",
+      "mode": "end_to_end",
+      "model": "gpt-5.5",
+      "out_of_scope_edits": [],
+      "prompt": "Update slugify so leading/trailing separators disappear and any run of non-alphanumeric characters becomes one dash. Preserve lowercase output.",
+      "psg_task_status": "shippable",
+      "reasoning_effort": "low",
+      "regression": false,
+      "requires_scope_approval": false,
+      "review_rounds": 0,
+      "target": "src/text_tools.py",
+      "task_contract_id": "T-0001",
+      "task_id": "slugify",
+      "task_success": true,
+      "trace": "agentic-ab-traces\\slugify-on.jsonl",
+      "trace_inferred_unique_files_read": [
+        "src/text_tools.py"
+      ],
+      "usage": {
+        "cached_input_tokens": 335488,
+        "input_tokens": 371588,
+        "output_tokens": 1845
+      },
+      "wall_time_seconds": 94.21
+    },
+    {
+      "agent_exit_code": 0,
+      "authorized_write": [],
+      "baseline_commit": "f2f38eac308e3cb608f8ab8a207297d749418ff6",
+      "baseline_exit_code": 0,
+      "baseline_output": "...                                                                      [100%]\n3 passed in 0.01s\n",
+      "changed_files": [
+        "src/number_tools.py",
+        "tests/test_existing.py"
+      ],
+      "condition": "OFF",
+      "contract_state": null,
+      "false_shippable": false,
+      "fix_cycles": null,
+      "hidden_exit_code": 0,
+      "hidden_output": ".                                                                        [100%]\n1 passed in 0.01s\n",
+      "mode": "end_to_end",
+      "model": "gpt-5.5",
+      "out_of_scope_edits": [
+        "tests/test_existing.py"
+      ],
+      "prompt": "Update clamp so it raises ValueError when the minimum is greater than the maximum, while preserving normal inclusive clamping.",
+      "psg_task_status": null,
+      "reasoning_effort": "low",
+      "regression": false,
+      "requires_scope_approval": false,
+      "review_rounds": null,
+      "target": "src/number_tools.py",
+      "task_contract_id": null,
+      "task_id": "clamp",
+      "task_success": true,
+      "trace": "agentic-ab-traces\\clamp-off.jsonl",
+      "trace_inferred_unique_files_read": [],
+      "usage": {
+        "cached_input_tokens": 131712,
+        "input_tokens": 145535,
+        "output_tokens": 1378
+      },
+      "wall_time_seconds": 59.117
+    },
+    {
+      "agent_exit_code": 0,
+      "authorized_write": [
+        "src/catalog_00.py",
+        "src/catalog_01.py",
+        "src/catalog_02.py",
+        "src/catalog_03.py",
+        "src/contact_tools.py",
+        "src/number_tools.py",
+        "src/security_tools.py",
+        "src/tag_tools.py"
+      ],
+      "baseline_commit": "f2f38eac308e3cb608f8ab8a207297d749418ff6",
+      "baseline_exit_code": 0,
+      "baseline_output": ".                                                                        [100%]\n1 passed in 0.01s\n",
+      "changed_files": [
+        "src/number_tools.py"
+      ],
+      "condition": "ON",
+      "contract_state": "sealed",
+      "false_shippable": false,
+      "fix_cycles": 0,
+      "hidden_exit_code": 0,
+      "hidden_output": ".                                                                        [100%]\n1 passed in 0.01s\n",
+      "mode": "end_to_end",
+      "model": "gpt-5.5",
+      "out_of_scope_edits": [],
+      "prompt": "Update clamp so it raises ValueError when the minimum is greater than the maximum, while preserving normal inclusive clamping.",
+      "psg_task_status": "blocked",
+      "reasoning_effort": "low",
+      "regression": false,
+      "requires_scope_approval": true,
+      "review_rounds": 0,
+      "target": "src/number_tools.py",
+      "task_contract_id": "T-0001",
+      "task_id": "clamp",
+      "task_success": true,
+      "trace": "agentic-ab-traces\\clamp-on.jsonl",
+      "trace_inferred_unique_files_read": [],
+      "usage": {
+        "cached_input_tokens": 283904,
+        "input_tokens": 307627,
+        "output_tokens": 2615
+      },
+      "wall_time_seconds": 109.583
+    },
+    {
+      "agent_exit_code": 0,
+      "authorized_write": [],
+      "baseline_commit": "f2f38eac308e3cb608f8ab8a207297d749418ff6",
+      "baseline_exit_code": 0,
+      "baseline_output": "...                                                                      [100%]\n3 passed in 0.01s\n",
+      "changed_files": [
+        "src/config_tools.py",
+        "tests/test_existing.py"
+      ],
+      "condition": "OFF",
+      "contract_state": null,
+      "false_shippable": false,
+      "fix_cycles": null,
+      "hidden_exit_code": 0,
+      "hidden_output": ".                                                                        [100%]\n1 passed in 0.01s\n",
+      "mode": "end_to_end",
+      "model": "gpt-5.5",
+      "out_of_scope_edits": [
+        "tests/test_existing.py"
+      ],
+      "prompt": "Make parse_bool ignore surrounding whitespace and case, accept yes/no and 1/0, and raise ValueError for unknown text.",
+      "psg_task_status": null,
+      "reasoning_effort": "low",
+      "regression": false,
+      "requires_scope_approval": false,
+      "review_rounds": null,
+      "target": "src/config_tools.py",
+      "task_contract_id": null,
+      "task_id": "parse_bool",
+      "task_success": true,
+      "trace": "agentic-ab-traces\\parse_bool-off.jsonl",
+      "trace_inferred_unique_files_read": [
+        "src/config_tools.py",
+        "tests/test_existing.py"
+      ],
+      "usage": {
+        "cached_input_tokens": 179968,
+        "input_tokens": 206767,
+        "output_tokens": 1726
+      },
+      "wall_time_seconds": 74.062
+    },
+    {
+      "agent_exit_code": 0,
+      "authorized_write": [
+        "src/catalog_00.py",
+        "src/catalog_01.py",
+        "src/catalog_02.py",
+        "src/catalog_03.py",
+        "src/config_tools.py",
+        "src/contact_tools.py",
+        "src/tag_tools.py",
+        "src/text_tools.py"
+      ],
+      "baseline_commit": "f2f38eac308e3cb608f8ab8a207297d749418ff6",
+      "baseline_exit_code": 0,
+      "baseline_output": ".                                                                        [100%]\n1 passed in 0.01s\n",
+      "changed_files": [
+        "src/config_tools.py"
+      ],
+      "condition": "ON",
+      "contract_state": "sealed",
+      "false_shippable": false,
+      "fix_cycles": 0,
+      "hidden_exit_code": 0,
+      "hidden_output": ".                                                                        [100%]\n1 passed in 0.01s\n",
+      "mode": "end_to_end",
+      "model": "gpt-5.5",
+      "out_of_scope_edits": [],
+      "prompt": "Make parse_bool ignore surrounding whitespace and case, accept yes/no and 1/0, and raise ValueError for unknown text.",
+      "psg_task_status": "blocked",
+      "reasoning_effort": "low",
+      "regression": false,
+      "requires_scope_approval": true,
+      "review_rounds": 0,
+      "target": "src/config_tools.py",
+      "task_contract_id": "T-0001",
+      "task_id": "parse_bool",
+      "task_success": true,
+      "trace": "agentic-ab-traces\\parse_bool-on.jsonl",
+      "trace_inferred_unique_files_read": [],
+      "usage": {
+        "cached_input_tokens": 500224,
+        "input_tokens": 549193,
+        "output_tokens": 4222
+      },
+      "wall_time_seconds": 157.264
+    },
+    {
+      "agent_exit_code": 0,
+      "authorized_write": [],
+      "baseline_commit": "f2f38eac308e3cb608f8ab8a207297d749418ff6",
+      "baseline_exit_code": 0,
+      "baseline_output": "....                                                                     [100%]\n4 passed in 0.01s\n",
+      "changed_files": [
+        "src/price_tools.py",
+        "tests/test_existing.py"
+      ],
+      "condition": "OFF",
+      "contract_state": null,
+      "false_shippable": false,
+      "fix_cycles": null,
+      "hidden_exit_code": 1,
+      "hidden_output": "F                                                                        [100%]\n================================== FAILURES ===================================\n____________________________ test_hidden_discount _____________________________\n\n    def test_hidden_discount():\n>       assert discounted_total(80.0, 150.0) == 0.0\n\ntests\\test_hidden_discount.py:6: \n_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _\n\nsubtotal = 80.0, percent = 150.0\n\n    def discounted_total(subtotal: float, percent: float) -> float:\n        if subtotal < 0:\n            raise ValueError(\"subtotal must be non-negative\")\n        if percent < 0 or percent > 100:\n>           raise ValueError(\"percent must be between 0 and 100\")\nE           ValueError: percent must be between 0 and 100\n\nsrc\\price_tools.py:5: ValueError\n=========================== short test summary info ===========================\nFAILED tests/test_hidden_discount.py::test_hidden_discount - ValueError: perc...\n1 failed in 0.18s\n",
+      "mode": "end_to_end",
+      "model": "gpt-5.5",
+      "out_of_scope_edits": [
+        "tests/test_existing.py"
+      ],
+      "prompt": "Update discounted_total so percentage discounts are limited to 0 through 100 and negative subtotals are rejected with ValueError.",
+      "psg_task_status": null,
+      "reasoning_effort": "low",
+      "regression": false,
+      "requires_scope_approval": false,
+      "review_rounds": null,
+      "target": "src/price_tools.py",
+      "task_contract_id": null,
+      "task_id": "discount",
+      "task_success": false,
+      "trace": "agentic-ab-traces\\discount-off.jsonl",
+      "trace_inferred_unique_files_read": [],
+      "usage": {
+        "cached_input_tokens": 240128,
+        "input_tokens": 259837,
+        "output_tokens": 1968
+      },
+      "wall_time_seconds": 80.317
+    },
+    {
+      "agent_exit_code": 0,
+      "authorized_write": [
+        "src/config_tools.py",
+        "src/contact_tools.py",
+        "src/number_tools.py",
+        "src/paging_tools.py",
+        "src/price_tools.py",
+        "src/security_tools.py",
+        "src/tag_tools.py",
+        "src/text_tools.py"
+      ],
+      "baseline_commit": "f2f38eac308e3cb608f8ab8a207297d749418ff6",
+      "baseline_exit_code": 0,
+      "baseline_output": ".                                                                        [100%]\n1 passed in 0.01s\n",
+      "changed_files": [
+        "src/price_tools.py"
+      ],
+      "condition": "ON",
+      "contract_state": "sealed",
+      "false_shippable": false,
+      "fix_cycles": 0,
+      "hidden_exit_code": 0,
+      "hidden_output": ".                                                                        [100%]\n1 passed in 0.01s\n",
+      "mode": "end_to_end",
+      "model": "gpt-5.5",
+      "out_of_scope_edits": [],
+      "prompt": "Update discounted_total so percentage discounts are limited to 0 through 100 and negative subtotals are rejected with ValueError.",
+      "psg_task_status": "blocked",
+      "reasoning_effort": "low",
+      "regression": false,
+      "requires_scope_approval": true,
+      "review_rounds": 0,
+      "target": "src/price_tools.py",
+      "task_contract_id": "T-0001",
+      "task_id": "discount",
+      "task_success": true,
+      "trace": "agentic-ab-traces\\discount-on.jsonl",
+      "trace_inferred_unique_files_read": [
+        "src/price_tools.py"
+      ],
+      "usage": {
+        "cached_input_tokens": 329344,
+        "input_tokens": 348410,
+        "output_tokens": 2452
+      },
+      "wall_time_seconds": 103.982
+    },
+    {
+      "agent_exit_code": 0,
+      "authorized_write": [],
+      "baseline_commit": "f2f38eac308e3cb608f8ab8a207297d749418ff6",
+      "baseline_exit_code": 0,
+      "baseline_output": "....                                                                     [100%]\n4 passed in 0.01s\n",
+      "changed_files": [
+        "src/contact_tools.py",
+        "tests/test_existing.py"
+      ],
+      "condition": "OFF",
+      "contract_state": null,
+      "false_shippable": false,
+      "fix_cycles": null,
+      "hidden_exit_code": 0,
+      "hidden_output": ".                                                                        [100%]\n1 passed in 0.01s\n",
+      "mode": "end_to_end",
+      "model": "gpt-5.5",
+      "out_of_scope_edits": [
+        "tests/test_existing.py"
+      ],
+      "prompt": "Make normalize_email trim whitespace, lowercase the address, and reject values that do not contain exactly one @ with non-empty local and domain parts.",
+      "psg_task_status": null,
+      "reasoning_effort": "low",
+      "regression": false,
+      "requires_scope_approval": false,
+      "review_rounds": null,
+      "target": "src/contact_tools.py",
+      "task_contract_id": null,
+      "task_id": "email",
+      "task_success": true,
+      "trace": "agentic-ab-traces\\email-off.jsonl",
+      "trace_inferred_unique_files_read": [
+        "src/contact_tools.py",
+        "tests/test_existing.py"
+      ],
+      "usage": {
+        "cached_input_tokens": 222336,
+        "input_tokens": 235069,
+        "output_tokens": 2218
+      },
+      "wall_time_seconds": 87.201
+    },
+    {
+      "agent_exit_code": 0,
+      "authorized_write": [
+        "src/collection_tools.py",
+        "src/contact_tools.py",
+        "src/paging_tools.py"
+      ],
+      "baseline_commit": "f2f38eac308e3cb608f8ab8a207297d749418ff6",
+      "baseline_exit_code": 0,
+      "baseline_output": ".                                                                        [100%]\n1 passed in 0.01s\n",
+      "changed_files": [
+        "src/contact_tools.py"
+      ],
+      "condition": "ON",
+      "contract_state": "sealed",
+      "false_shippable": false,
+      "fix_cycles": 0,
+      "hidden_exit_code": 0,
+      "hidden_output": ".                                                                        [100%]\n1 passed in 0.01s\n",
+      "mode": "end_to_end",
+      "model": "gpt-5.5",
+      "out_of_scope_edits": [],
+      "prompt": "Make normalize_email trim whitespace, lowercase the address, and reject values that do not contain exactly one @ with non-empty local and domain parts.",
+      "psg_task_status": "blocked",
+      "reasoning_effort": "low",
+      "regression": false,
+      "requires_scope_approval": true,
+      "review_rounds": 0,
+      "target": "src/contact_tools.py",
+      "task_contract_id": "T-0001",
+      "task_id": "email",
+      "task_success": true,
+      "trace": "agentic-ab-traces\\email-on.jsonl",
+      "trace_inferred_unique_files_read": [],
+      "usage": {
+        "cached_input_tokens": 247680,
+        "input_tokens": 276326,
+        "output_tokens": 2083
+      },
+      "wall_time_seconds": 91.669
+    },
+    {
+      "agent_exit_code": 0,
+      "authorized_write": [],
+      "baseline_commit": "f2f38eac308e3cb608f8ab8a207297d749418ff6",
+      "baseline_exit_code": 0,
+      "baseline_output": "...                                                                      [100%]\n3 passed in 0.01s\n",
+      "changed_files": [
+        "src/collection_tools.py",
+        "tests/test_existing.py"
+      ],
+      "condition": "OFF",
+      "contract_state": null,
+      "false_shippable": false,
+      "fix_cycles": null,
+      "hidden_exit_code": 0,
+      "hidden_output": ".                                                                        [100%]\n1 passed in 0.02s\n",
+      "mode": "end_to_end",
+      "model": "gpt-5.5",
+      "out_of_scope_edits": [
+        "tests/test_existing.py"
+      ],
+      "prompt": "Update unique_items to remove duplicates while preserving first-seen order, including for unhashable list and dictionary values.",
+      "psg_task_status": null,
+      "reasoning_effort": "low",
+      "regression": false,
+      "requires_scope_approval": false,
+      "review_rounds": null,
+      "target": "src/collection_tools.py",
+      "task_contract_id": null,
+      "task_id": "dedupe",
+      "task_success": true,
+      "trace": "agentic-ab-traces\\dedupe-off.jsonl",
+      "trace_inferred_unique_files_read": [],
+      "usage": {
+        "cached_input_tokens": 195328,
+        "input_tokens": 207911,
+        "output_tokens": 1778
+      },
+      "wall_time_seconds": 70.308
+    },
+    {
+      "agent_exit_code": 0,
+      "authorized_write": [
+        "pyproject.toml",
+        "src/collection_tools.py",
+        "src/config_tools.py",
+        "src/contact_tools.py",
+        "src/number_tools.py",
+        "src/paging_tools.py",
+        "src/tag_tools.py"
+      ],
+      "baseline_commit": "f2f38eac308e3cb608f8ab8a207297d749418ff6",
+      "baseline_exit_code": 0,
+      "baseline_output": ".                                                                        [100%]\n1 passed in 0.01s\n",
+      "changed_files": [
+        "src/collection_tools.py"
+      ],
+      "condition": "ON",
+      "contract_state": "sealed",
+      "false_shippable": false,
+      "fix_cycles": 0,
+      "hidden_exit_code": 0,
+      "hidden_output": ".                                                                        [100%]\n1 passed in 0.01s\n",
+      "mode": "end_to_end",
+      "model": "gpt-5.5",
+      "out_of_scope_edits": [],
+      "prompt": "Update unique_items to remove duplicates while preserving first-seen order, including for unhashable list and dictionary values.",
+      "psg_task_status": "blocked",
+      "reasoning_effort": "low",
+      "regression": false,
+      "requires_scope_approval": true,
+      "review_rounds": 0,
+      "target": "src/collection_tools.py",
+      "task_contract_id": "T-0001",
+      "task_id": "dedupe",
+      "task_success": true,
+      "trace": "agentic-ab-traces\\dedupe-on.jsonl",
+      "trace_inferred_unique_files_read": [],
+      "usage": {
+        "cached_input_tokens": 220928,
+        "input_tokens": 238021,
+        "output_tokens": 1766
+      },
+      "wall_time_seconds": 77.137
+    },
+    {
+      "agent_exit_code": 0,
+      "authorized_write": [],
+      "baseline_commit": "f2f38eac308e3cb608f8ab8a207297d749418ff6",
+      "baseline_exit_code": 0,
+      "baseline_output": "....                                                                     [100%]\n4 passed in 0.01s\n",
+      "changed_files": [
+        "src/retry_tools.py",
+        "tests/test_existing.py"
+      ],
+      "condition": "OFF",
+      "contract_state": null,
+      "false_shippable": false,
+      "fix_cycles": null,
+      "hidden_exit_code": 0,
+      "hidden_output": ".                                                                        [100%]\n1 passed in 0.02s\n",
+      "mode": "end_to_end",
+      "model": "gpt-5.5",
+      "out_of_scope_edits": [
+        "tests/test_existing.py"
+      ],
+      "prompt": "Update retry_delay to use exponential backoff from the base delay, cap the result, and reject negative attempt numbers.",
+      "psg_task_status": null,
+      "reasoning_effort": "low",
+      "regression": false,
+      "requires_scope_approval": false,
+      "review_rounds": null,
+      "target": "src/retry_tools.py",
+      "task_contract_id": null,
+      "task_id": "retry_delay",
+      "task_success": true,
+      "trace": "agentic-ab-traces\\retry_delay-off.jsonl",
+      "trace_inferred_unique_files_read": [],
+      "usage": {
+        "cached_input_tokens": 173440,
+        "input_tokens": 185838,
+        "output_tokens": 1691
+      },
+      "wall_time_seconds": 74.448
+    },
+    {
+      "agent_exit_code": 0,
+      "authorized_write": [
+        "pyproject.toml",
+        "src/collection_tools.py",
+        "src/config_tools.py",
+        "src/contact_tools.py",
+        "src/number_tools.py",
+        "src/paging_tools.py",
+        "src/retry_tools.py"
+      ],
+      "baseline_commit": "f2f38eac308e3cb608f8ab8a207297d749418ff6",
+      "baseline_exit_code": 0,
+      "baseline_output": ".                                                                        [100%]\n1 passed in 0.01s\n",
+      "changed_files": [
+        "src/retry_tools.py"
+      ],
+      "condition": "ON",
+      "contract_state": "sealed",
+      "false_shippable": false,
+      "fix_cycles": 0,
+      "hidden_exit_code": 0,
+      "hidden_output": ".                                                                        [100%]\n1 passed in 0.01s\n",
+      "mode": "end_to_end",
+      "model": "gpt-5.5",
+      "out_of_scope_edits": [],
+      "prompt": "Update retry_delay to use exponential backoff from the base delay, cap the result, and reject negative attempt numbers.",
+      "psg_task_status": "blocked",
+      "reasoning_effort": "low",
+      "regression": false,
+      "requires_scope_approval": true,
+      "review_rounds": 0,
+      "target": "src/retry_tools.py",
+      "task_contract_id": "T-0001",
+      "task_id": "retry_delay",
+      "task_success": true,
+      "trace": "agentic-ab-traces\\retry_delay-on.jsonl",
+      "trace_inferred_unique_files_read": [],
+      "usage": {
+        "cached_input_tokens": 272256,
+        "input_tokens": 287339,
+        "output_tokens": 2365
+      },
+      "wall_time_seconds": 95.569
+    },
+    {
+      "agent_exit_code": 0,
+      "authorized_write": [],
+      "baseline_commit": "f2f38eac308e3cb608f8ab8a207297d749418ff6",
+      "baseline_exit_code": 0,
+      "baseline_output": ".                                                                        [100%]\n1 passed in 0.01s\n",
+      "changed_files": [
+        "src/security_tools.py",
+        "tests/test_existing.py"
+      ],
+      "condition": "OFF",
+      "contract_state": null,
+      "false_shippable": false,
+      "fix_cycles": null,
+      "hidden_exit_code": 0,
+      "hidden_output": ".                                                                        [100%]\n1 passed in 0.01s\n",
+      "mode": "end_to_end",
+      "model": "gpt-5.5",
+      "out_of_scope_edits": [
+        "tests/test_existing.py"
+      ],
+      "prompt": "Update redact_secret so secrets of length four or less are fully masked and longer secrets reveal only the final four characters.",
+      "psg_task_status": null,
+      "reasoning_effort": "low",
+      "regression": false,
+      "requires_scope_approval": false,
+      "review_rounds": null,
+      "target": "src/security_tools.py",
+      "task_contract_id": null,
+      "task_id": "redact",
+      "task_success": true,
+      "trace": "agentic-ab-traces\\redact-off.jsonl",
+      "trace_inferred_unique_files_read": [],
+      "usage": {
+        "cached_input_tokens": 166272,
+        "input_tokens": 195838,
+        "output_tokens": 1598
+      },
+      "wall_time_seconds": 65.557
+    },
+    {
+      "agent_exit_code": 0,
+      "authorized_write": [
+        ".gitignore",
+        "src/contact_tools.py",
+        "src/security_tools.py",
+        "tests/test_existing.py"
+      ],
+      "baseline_commit": "f2f38eac308e3cb608f8ab8a207297d749418ff6",
+      "baseline_exit_code": 0,
+      "baseline_output": ".                                                                        [100%]\n1 passed in 0.01s\n",
+      "changed_files": [
+        "src/security_tools.py",
+        "tests/test_existing.py"
+      ],
+      "condition": "ON",
+      "contract_state": "sealed",
+      "false_shippable": false,
+      "fix_cycles": 0,
+      "hidden_exit_code": 0,
+      "hidden_output": ".                                                                        [100%]\n1 passed in 0.01s\n",
+      "mode": "end_to_end",
+      "model": "gpt-5.5",
+      "out_of_scope_edits": [
+        "tests/test_existing.py"
+      ],
+      "prompt": "Update redact_secret so secrets of length four or less are fully masked and longer secrets reveal only the final four characters.",
+      "psg_task_status": "blocked",
+      "reasoning_effort": "low",
+      "regression": false,
+      "requires_scope_approval": true,
+      "review_rounds": 0,
+      "target": "src/security_tools.py",
+      "task_contract_id": "T-0001",
+      "task_id": "redact",
+      "task_success": true,
+      "trace": "agentic-ab-traces\\redact-on.jsonl",
+      "trace_inferred_unique_files_read": [
+        "src/security_tools.py",
+        "tests/test_existing.py"
+      ],
+      "usage": {
+        "cached_input_tokens": 546816,
+        "input_tokens": 583213,
+        "output_tokens": 2545
+      },
+      "wall_time_seconds": 145.199
+    },
+    {
+      "agent_exit_code": 0,
+      "authorized_write": [],
+      "baseline_commit": "f2f38eac308e3cb608f8ab8a207297d749418ff6",
+      "baseline_exit_code": 0,
+      "baseline_output": "...                                                                      [100%]\n3 passed in 0.01s\n",
+      "changed_files": [
+        "src/paging_tools.py",
+        "tests/test_existing.py"
+      ],
+      "condition": "OFF",
+      "contract_state": null,
+      "false_shippable": false,
+      "fix_cycles": null,
+      "hidden_exit_code": 0,
+      "hidden_output": ".                                                                        [100%]\n1 passed in 0.02s\n",
+      "mode": "end_to_end",
+      "model": "gpt-5.5",
+      "out_of_scope_edits": [
+        "tests/test_existing.py"
+      ],
+      "prompt": "Make page_window return a zero-based [start, stop) range, reject page numbers or sizes below one, and never return a stop beyond total items.",
+      "psg_task_status": null,
+      "reasoning_effort": "low",
+      "regression": false,
+      "requires_scope_approval": false,
+      "review_rounds": null,
+      "target": "src/paging_tools.py",
+      "task_contract_id": null,
+      "task_id": "page_window",
+      "task_success": true,
+      "trace": "agentic-ab-traces\\page_window-off.jsonl",
+      "trace_inferred_unique_files_read": [],
+      "usage": {
+        "cached_input_tokens": 218240,
+        "input_tokens": 237445,
+        "output_tokens": 2143
+      },
+      "wall_time_seconds": 84.67
+    },
+    {
+      "agent_exit_code": 0,
+      "authorized_write": [
+        ".gitignore",
+        "src/collection_tools.py",
+        "src/contact_tools.py",
+        "src/paging_tools.py",
+        "src/price_tools.py",
+        "tests/test_existing.py"
+      ],
+      "baseline_commit": "f2f38eac308e3cb608f8ab8a207297d749418ff6",
+      "baseline_exit_code": 0,
+      "baseline_output": "....                                                                     [100%]\n4 passed in 0.01s\n",
+      "changed_files": [
+        "src/paging_tools.py",
+        "tests/test_existing.py"
+      ],
+      "condition": "ON",
+      "contract_state": "sealed",
+      "false_shippable": false,
+      "fix_cycles": 0,
+      "hidden_exit_code": 0,
+      "hidden_output": ".                                                                        [100%]\n1 passed in 0.01s\n",
+      "mode": "end_to_end",
+      "model": "gpt-5.5",
+      "out_of_scope_edits": [
+        "tests/test_existing.py"
+      ],
+      "prompt": "Make page_window return a zero-based [start, stop) range, reject page numbers or sizes below one, and never return a stop beyond total items.",
+      "psg_task_status": "blocked",
+      "reasoning_effort": "low",
+      "regression": false,
+      "requires_scope_approval": true,
+      "review_rounds": 0,
+      "target": "src/paging_tools.py",
+      "task_contract_id": "T-0001",
+      "task_id": "page_window",
+      "task_success": true,
+      "trace": "agentic-ab-traces\\page_window-on.jsonl",
+      "trace_inferred_unique_files_read": [],
+      "usage": {
+        "cached_input_tokens": 278016,
+        "input_tokens": 296369,
+        "output_tokens": 2779
+      },
+      "wall_time_seconds": 98.753
+    },
+    {
+      "agent_exit_code": 0,
+      "authorized_write": [],
+      "baseline_commit": "f2f38eac308e3cb608f8ab8a207297d749418ff6",
+      "baseline_exit_code": 0,
+      "baseline_output": "...                                                                      [100%]\n3 passed in 0.01s\n",
+      "changed_files": [
+        "src/tag_tools.py",
+        "tests/test_existing.py"
+      ],
+      "condition": "OFF",
+      "contract_state": null,
+      "false_shippable": false,
+      "fix_cycles": null,
+      "hidden_exit_code": 0,
+      "hidden_output": ".                                                                        [100%]\n1 passed in 0.02s\n",
+      "mode": "end_to_end",
+      "model": "gpt-5.5",
+      "out_of_scope_edits": [
+        "tests/test_existing.py"
+      ],
+      "prompt": "Update parse_tags to split comma-separated input, trim whitespace, discard empty entries, compare case-insensitively, and preserve the first spelling of each tag.",
+      "psg_task_status": null,
+      "reasoning_effort": "low",
+      "regression": false,
+      "requires_scope_approval": false,
+      "review_rounds": null,
+      "target": "src/tag_tools.py",
+      "task_contract_id": null,
+      "task_id": "parse_tags",
+      "task_success": true,
+      "trace": "agentic-ab-traces\\parse_tags-off.jsonl",
+      "trace_inferred_unique_files_read": [],
+      "usage": {
+        "cached_input_tokens": 134784,
+        "input_tokens": 144467,
+        "output_tokens": 1609
+      },
+      "wall_time_seconds": 63.207
+    },
+    {
+      "agent_exit_code": 0,
+      "authorized_write": [
+        "pyproject.toml",
+        "src/collection_tools.py",
+        "src/config_tools.py",
+        "src/contact_tools.py",
+        "src/number_tools.py",
+        "src/tag_tools.py"
+      ],
+      "baseline_commit": "f2f38eac308e3cb608f8ab8a207297d749418ff6",
+      "baseline_exit_code": 0,
+      "baseline_output": ".                                                                        [100%]\n1 passed in 0.01s\n",
+      "changed_files": [
+        "src/tag_tools.py"
+      ],
+      "condition": "ON",
+      "contract_state": "sealed",
+      "false_shippable": false,
+      "fix_cycles": 0,
+      "hidden_exit_code": 0,
+      "hidden_output": ".                                                                        [100%]\n1 passed in 0.01s\n",
+      "mode": "end_to_end",
+      "model": "gpt-5.5",
+      "out_of_scope_edits": [],
+      "prompt": "Update parse_tags to split comma-separated input, trim whitespace, discard empty entries, compare case-insensitively, and preserve the first spelling of each tag.",
+      "psg_task_status": "blocked",
+      "reasoning_effort": "low",
+      "regression": false,
+      "requires_scope_approval": true,
+      "review_rounds": 0,
+      "target": "src/tag_tools.py",
+      "task_contract_id": "T-0001",
+      "task_id": "parse_tags",
+      "task_success": true,
+      "trace": "agentic-ab-traces\\parse_tags-on.jsonl",
+      "trace_inferred_unique_files_read": [],
+      "usage": {
+        "cached_input_tokens": 259456,
+        "input_tokens": 285397,
+        "output_tokens": 1955
+      },
+      "wall_time_seconds": 110.237
+    }
+  ],
+  "summary": {
+    "OFF": {
+      "cached_input_tokens": 1786112,
+      "false_shippable": 0,
+      "fix_cycles": 0,
+      "input_tokens": 1984624,
+      "out_of_scope_edits": 10,
+      "output_tokens": 17840,
+      "regressions": 0,
+      "reported_cost_usd": null,
+      "review_rounds": 0,
+      "task_success": 9,
+      "tasks": 10,
+      "unique_file_reads": 4,
+      "wall_time_seconds": 762.558
+    },
+    "ON": {
+      "cached_input_tokens": 3274112,
+      "false_shippable": 0,
+      "fix_cycles": 0,
+      "input_tokens": 3543483,
+      "out_of_scope_edits": 2,
+      "output_tokens": 24627,
+      "regressions": 0,
+      "reported_cost_usd": null,
+      "review_rounds": 0,
+      "task_success": 10,
+      "tasks": 10,
+      "unique_file_reads": 4,
+      "wall_time_seconds": 1083.603
+    }
+  }
+}

@@ -281,29 +281,30 @@ def _trace_file_reads(events: list[dict[str, Any]], known_paths: set[str]) -> li
     return sorted(reads)
 
 
-def _sanitizer(worktree: Path, base: Path) -> Callable[[str], str]:
-    """Redact local absolute paths so raw traces are publishable.
+def _path_pattern(raw: str) -> re.Pattern[str]:
+    """Match a local path however Codex happened to spell it in the trace.
 
-    Codex emits Windows paths both literally and JSON-escaped, so every rewrite
-    covers the backslash, forward-slash, and doubled-backslash spellings.
+    Paths arrive singly escaped, doubly escaped, and quadruply escaped (JSON inside
+    JSON), and a long command line is wrapped by the terminal, splitting a path
+    across a newline mid-word. Both defeat plain string replacement.
     """
+    gap = r"(?:\\r\\n|\\n|\r\n|\n)*"
+    separator = gap + r"[\\/]+" + gap
+    segments = []
+    for segment in re.split(r"[\\/]+", raw):
+        segments.append(gap.join(re.escape(char) for char in segment))
+    return re.compile(separator.join(segments), re.IGNORECASE)
+
+
+def _sanitizer(worktree: Path, base: Path) -> Callable[[str], str]:
+    """Redact local absolute paths so raw traces are publishable."""
     replacements = [
         (worktree, "<WORKTREE>"),
         (base, "<BENCHMARK_BASE>"),
         (Path(tempfile.gettempdir()), "<TMP>"),
         (Path.home(), "<USER_HOME>"),
     ]
-    backslash = chr(92)
-    patterns: list[tuple[re.Pattern[str], str]] = []
-    for source, token in replacements:
-        raw = str(source)
-        spellings = {
-            raw,
-            raw.replace(backslash, "/"),
-            raw.replace(backslash, backslash * 2),
-        }
-        for spelling in spellings:
-            patterns.append((re.compile(re.escape(spelling), re.IGNORECASE), token))
+    patterns = [(_path_pattern(str(source)), token) for source, token in replacements]
 
     def sanitize(value: str) -> str:
         for pattern, token in patterns:

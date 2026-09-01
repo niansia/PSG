@@ -213,11 +213,36 @@ python benchmarks/task_boundary_benchmark.py --output benchmarks/results/task-bo
 python benchmarks/agentic_ab.py --output benchmarks/results/agentic-ab-latest.json --traces benchmarks/results/agentic-ab-traces
 ```
 
-> **狀態：harness 已完成並端到端驗證；但這個 release 不包含已發布的 10 組結果。**
-> 完整執行需要的 Codex CLI 額度在跑完前就用盡，而部分執行不構成結果。PSG 不發布自己沒有測量過的
-> benchmark 數字。你可以執行上面的指令產生自己的結果；無論結果如何都會照實公布，包括 PSG 沒有幫助的結果。
+### 結果
 
-這是一個在 harness 自行產生的 repository 上執行的**受控配對 agentic benchmark**。它不是真實世界 benchmark，把它說成真實世界 benchmark 是不誠實的。詳見 [benchmark 方法與限制](benchmarks/README.md) —— 包含為什麼 `reported_cost_usd` 是 `null`，而不是從 token 數推算出來的價格。
+10 組配對、`end_to_end` 模式、Codex CLI 搭配 `gpt-5.5` low reasoning effort，2026-09-01。
+20 次執行全部完成，沒有任何一次 timeout。
+
+| | PSG 關閉 | PSG 開啟 |
+| --- | ---: | ---: |
+| **任務成功** | 9 / 10 | **10 / 10** |
+| 退化 | 0 | 0 |
+| 範圍外編輯 | 10 | **2** |
+| Input tokens | 1,984,624 | 3,543,483 |
+| Output tokens | 17,840 | 24,627 |
+| 執行時間 | 763 秒 | 1,084 秒 |
+| 錯誤的 `SHIPPABLE` | 0 | 0 |
+| 回報成本 | CLI 未提供 | CLI 未提供 |
+
+**PSG 把 agent 留在任務內，代價是多花 79% 的 input token。** 這句話的兩半都是結果。
+
+範圍效應是最乾淨的訊號。OFF 那 10 次範圍外編輯全部是同一個檔案：`tests/test_existing.py`。十個任務裡，agent 每一次都去改寫既有的共用測試套件來配合自己的改動。PSG 開啟時只發生兩次 —— 而那兩次，正是 PSG 自己把該測試檔封存進了寫入邊界。
+
+成本差距不是誤差範圍：input token +79%、output token +38%、執行時間 +42%，十組之間介於 +14% 到 +198%。
+
+### 這個結果沒有證明什麼
+
+- **十組是小樣本。** 這些是次數，不是統計顯著的效應。
+- **PSG 自己的定位很寬。** 封存的寫入邊界含 1～8 個檔案（中位數 7）。十組都包含正確的目標檔，所以召回率是完美的 —— 但精確度不是，而且其中九組被標記 `requires_scope_approval`。那是 PSG 正確地回報「我推導出的邊界太寬，不該無聲封存」，同時也正是那兩個 ON 任務讓測試檔進入範圍的原因。
+- **`unique_file_reads` 無法區分兩組** —— 兩邊都是 4。它是從指令事件中出現的路徑推得的下界，在這個 repository 上沒有鑑別力。
+- 這個 repository 是 harness 自己產生的。這是一個**受控配對 agentic benchmark**，不是真實世界 benchmark，把它說成真實世界 benchmark 是不誠實的。
+
+參見[原始結果](benchmarks/results/agentic-ab-latest.json)、[已脫敏的 traces](benchmarks/results/agentic-ab-traces)，以及 [benchmark 方法與限制](benchmarks/README.md) —— 包含為什麼 `reported_cost_usd` 是 `null`，而不是從 token 數推算出來的價格。
 
 ## 它會在你的專案裡加什麼？
 

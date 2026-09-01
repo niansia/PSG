@@ -2,6 +2,28 @@
 
 All notable changes to PSG are recorded here. Versions follow [semantic versioning](https://semver.org/).
 
+## [Unreleased]
+
+### Added
+
+- **The matched agentic OFF/ON benchmark now has a measured 10-pair result**, run in
+  `end_to_end` mode where neither condition is told which file to change. All 20 runs
+  completed. PSG ON reached 10/10 task success against 9/10 for OFF and cut out-of-scope
+  edits from 10 to 2 — every one of OFF's was the same shared test file — while spending
+  79% more input tokens and 42% more wall time. The cost is published as prominently as
+  the benefit, along with the finding that PSG's own localization sealed boundaries wider
+  than needed in nine of ten tasks.
+
+### Fixed
+
+- **Trace sanitization missed two spellings of a local path.** Codex writes paths into
+  traces singly, doubly, and quadruply escaped (JSON nested in JSON), and the terminal
+  wraps long command lines, splitting a path across a newline mid-word. Plain string
+  replacement caught neither, so `~/.codex/...` and temp paths survived into supposedly
+  redacted traces. Redaction now matches any escaping depth and tolerates a path broken by
+  a wrapped line. The published traces were re-redacted with the fixed matcher and verified
+  clean.
+
 ## [1.1.1] — 2026-09-01
 
 The sealing release. v1.1.0 shipped a Task Contract whose hash covered the scope a task

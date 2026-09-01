@@ -51,9 +51,11 @@ Other disclosed limits:
 - Raw traces are written to `results/agentic-ab-traces/` with local absolute paths redacted
   to `<WORKTREE>`, `<BENCHMARK_BASE>`, `<TMP>`, and `<USER_HOME>`.
 
-No 10-pair run has been completed yet, so `results/agentic-ab-latest.json` and
-`results/agentic-ab-traces/` are not in this repository. A partial run is not a result, and
-PSG does not publish numbers it did not measure.
+The published run is `results/agentic-ab-latest.json` with per-run traces in
+`results/agentic-ab-traces/`. It was produced in `end_to_end` mode on 2026-09-01; all 20 runs
+completed and none timed out. PSG ON reached 10/10 task success against 9/10 for OFF and cut
+out-of-scope edits from 10 to 2, while spending 79% more input tokens and 42% more wall time.
+Both directions are reported because both are the result.
 
 ## 2. Deterministic Task-Boundary benchmark
 
