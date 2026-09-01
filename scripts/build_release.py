@@ -82,6 +82,18 @@ def validate_skill_source() -> None:
     )
     if agent.get("interface", {}).get("display_name") != "PSG":
         raise SystemExit("agents/openai.yaml must present the PSG display name")
+    # An editor that saved CRLF on Windows would ship a bundle that differs, byte for
+    # byte, from the same checkout on Linux. Fail here rather than in CI.
+    crlf = sorted(
+        str(item.relative_to(SKILL_SOURCE))
+        for item in SKILL_SOURCE.rglob("*")
+        if item.is_file() and b"\r\n" in item.read_bytes()
+    )
+    if crlf:
+        raise SystemExit(
+            "Skill sources contain CRLF line endings and would not match a Linux "
+            f"checkout: {', '.join(crlf)}"
+        )
 
 
 def build_skill_archive(version: str, output_dir: Path) -> Path:

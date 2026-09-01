@@ -21,6 +21,8 @@ from .portable import PortableState
 from .router import ContextRouter
 from .store import Store
 from .task_contract import (
+    CONTRACT_STATE_DRAFT,
+    CONTRACT_STATE_SEALED,
     CONTRACT_VERSION,
     MAX_FIX_CYCLES,
     MAX_REVIEW_ROUNDS,
@@ -28,7 +30,9 @@ from .task_contract import (
     contract_hash,
     default_completion_boundary,
     default_review_boundary,
+    is_sealed,
     render_handoff,
+    requires_scope_approval,
     task_contract,
 )
 from .trust import (
@@ -40,7 +44,7 @@ from .trust import (
     evidence_trust,
     is_user_approved,
 )
-from .util import sha256_bytes
+from .util import sha256_bytes, utc_now
 from .verification import VerificationEngine, report_failed_checks
 
 VALID_NODE_TYPES = {
@@ -560,6 +564,13 @@ class PSG:
                 "dependency_justifications": dependency_justifications or [],
                 "governance_baseline": governance_baseline,
                 "contract_version": CONTRACT_VERSION,
+                # A task opens as a DRAFT: it states intent and requests scope, but
+                # holds no write authority until localization seals a concrete
+                # mutation boundary. More context must never mean more authority.
+                "contract_state": CONTRACT_STATE_DRAFT,
+                "authorized_write": [],
+                "authorized_read_only": [],
+                "authorized_forbidden": [],
                 "review_boundary": default_review_boundary(),
                 "completion_boundary": default_completion_boundary(
                     review_budget=selected_review_budget,
@@ -578,11 +589,8 @@ class PSG:
             for index, text in enumerate(acceptance_criteria, 1)
         ]
         self.store.create_task(task, criteria)
-        stored_task = self.store.get_task(task_id)
-        if stored_task:
-            stored_payload = stored_task["payload"]
-            stored_payload["contract_hash"] = contract_hash(stored_task)
-            self.store.update_task(task_id, payload_json=stored_payload)
+        # The contract hash is only meaningful once the authority it protects exists,
+        # so it is written by the seal in context_build, not here.
         revision = git.revision(self.root)
         self.store.upsert_node(
             {
@@ -595,7 +603,7 @@ class PSG:
                 "source": {"kind": "psg_runtime"},
                 "revision": revision,
                 "confidence": 1.0,
-                "provenance": ["user_explicit", "psg_runtime"],
+                "provenance": ["agent_interpreted_user_intent", "psg_runtime"],
                 "payload": {
                     "intent": intent.strip(),
                     "risk": risk,
@@ -624,7 +632,7 @@ class PSG:
                 "source": {"kind": "task_acceptance", "task_id": task_id},
                 "revision": revision,
                 "confidence": 1.0,
-                "provenance": ["user_explicit", "task_projection"],
+                "provenance": ["agent_interpreted_user_intent", "task_projection"],
                 "payload": {"mandatory": criterion["mandatory"], "evidence": {}},
             }
             self.store.upsert_node(requirement, bump=False)
@@ -664,7 +672,7 @@ class PSG:
                     "source": {"kind": "task_constraint", "task_id": task_id},
                     "revision": revision,
                     "confidence": 1.0,
-                    "provenance": ["user_explicit", "task_projection"],
+                    "provenance": ["agent_interpreted_user_intent", "task_projection"],
                     "payload": {"text": text},
                 },
                 bump=False,
@@ -703,9 +711,69 @@ class PSG:
         self.portable.sync_to_store()
         index = self.indexer.index(force=False).as_dict()
         result = self.router.build(task_id, max_tokens=max_tokens)
+        result["task_contract_seal"] = self._seal_contract(task_id)
         result["index_refresh"] = index
         self._persist()
         return result
+
+    def _seal_contract(self, task_id: str) -> dict[str, Any]:
+        """Freeze the mutation authority produced by initial localization.
+
+        Everything before this point is a proposal. Everything after it may widen
+        what the task READS and never what it may WRITE, which is the property the
+        contract hash exists to protect.
+        """
+        task = self.store.get_task(task_id)
+        if not task:
+            raise KeyError(f"Unknown task: {task_id}")
+        payload = task["payload"]
+        if is_sealed(payload):
+            return {
+                "contract_state": CONTRACT_STATE_SEALED,
+                "sealed_now": False,
+                "contract_hash": payload.get("contract_hash"),
+                "authorized_write": list(payload.get("authorized_write", [])),
+                "requires_scope_approval": bool(
+                    payload.get("requires_scope_approval", False)
+                ),
+            }
+        working_set = payload.get("working_set", {})
+        authorized_write = sorted(set(working_set.get("write", [])))
+        authorized_read_only = sorted(set(working_set.get("read_only", [])))
+        authorized_forbidden = sorted(set(working_set.get("forbidden", [])))
+        needs_approval, reasons = requires_scope_approval(
+            write=authorized_write,
+            read_only=authorized_read_only,
+            forbidden=authorized_forbidden,
+            risk=str(task["risk"]),
+        )
+        payload["authorized_write"] = authorized_write
+        payload["authorized_read_only"] = authorized_read_only
+        payload["authorized_forbidden"] = authorized_forbidden
+        payload["contract_state"] = CONTRACT_STATE_SEALED
+        payload["requires_scope_approval"] = needs_approval
+        payload["scope_approval_reasons"] = reasons
+        task["payload"] = payload
+        payload["contract_hash"] = contract_hash(task)
+        self.store.update_task(task_id, payload_json=payload)
+        self.store.event(
+            "task.contract_sealed",
+            {
+                "task_id": task_id,
+                "contract_hash": payload["contract_hash"],
+                "authorized_write": authorized_write,
+                "requires_scope_approval": needs_approval,
+                "scope_approval_reasons": reasons,
+            },
+        )
+        return {
+            "contract_state": CONTRACT_STATE_SEALED,
+            "sealed_now": True,
+            "contract_hash": payload["contract_hash"],
+            "authorized_write": authorized_write,
+            "requires_scope_approval": needs_approval,
+            "scope_approval_reasons": reasons,
+        }
 
     def context_expand(self, task_id: str, reason: str) -> dict[str, Any]:
         self.portable.sync_to_store()
@@ -1448,6 +1516,48 @@ class PSG:
         self.store.event("debt.proposed", {"debt_id": debt_id, "task_id": task_id})
         self._persist()
         return self.store.get_node(debt_id) or node
+
+    def task_scope_approve(self, task_id: str, reason: str) -> dict[str, Any]:
+        """Approve a broad mutation boundary. Deliberately unreachable from MCP.
+
+        The approval is bound to the contract hash it approved, so it cannot carry
+        over to a different authority than the one a person actually read.
+        """
+        task = self.store.get_task(task_id)
+        if not task:
+            raise KeyError(f"Unknown task: {task_id}")
+        payload = task["payload"]
+        if not is_sealed(payload):
+            raise ValueError(
+                "Seal the contract with context_build before approving its scope."
+            )
+        if not reason.strip():
+            raise ValueError(
+                "Approving a broad mutation boundary requires an explicit reason."
+            )
+        payload["scope_approval"] = {
+            "trust_tier": USER_APPROVED,
+            "reason": reason.strip(),
+            "approved_at": utc_now(),
+            "contract_hash": payload.get("contract_hash"),
+            "authorized_write": list(payload.get("authorized_write", [])),
+        }
+        self.store.update_task(task_id, payload_json=payload)
+        self.store.event(
+            "task.scope_approved",
+            {
+                "task_id": task_id,
+                "contract_hash": payload.get("contract_hash"),
+                "reason": reason.strip(),
+            },
+        )
+        self._persist()
+        return {
+            "task_id": task_id,
+            "scope_approved": True,
+            "contract_hash": payload.get("contract_hash"),
+            "authorized_write": list(payload.get("authorized_write", [])),
+        }
 
     def debt_approve(self, debt_id: str) -> dict[str, Any]:
         node = self.store.get_node(debt_id)

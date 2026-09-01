@@ -28,7 +28,11 @@ This document maps the reviewed completion requirements to implemented behavior 
 | Bounded convergence | Runtime derives blocker changes from Issue state; only runtime-counted review/fix budgets hard-stop loops; caller counts/churn are advisory | convergence-budget and derived-blocker tests |
 | Stable graph snapshots | Safety snapshot and graph-only restore, with no destructive Git action | snapshot restore test |
 | Complete MCP surface | Index, graph, actual/proposed validation, verification, debt, conflict, status, and ship tools | MCP schema completeness test |
-| Task Contract | Opening a task records and hashes goal, context, mutation, scope, review, completion, and risk boundaries | task-contract and contract-hash tests |
+| Task Contract | Opening a task records goal, context, mutation, scope, review, completion, and risk boundaries | task-contract projection tests |
+| Sealed write authority | A task opens as a DRAFT holding no write authority; initial localization seals the mutation boundary and the hash covers that sealed authority, not just the request | draft-blocks-changes, sealed-into-hash, and hash-sensitivity tests |
+| Authority is not context | Context expansion and re-routing widen what a task READS and never what it may WRITE | expansion and post-seal discovery tests |
+| Agent-derived breadth needs a person | A wildcard, high-risk, or sprawling boundary an agent derived from bare intent requires user approval, bound to the contract hash it approved | scope-approval and stale-approval tests |
+| Handoff does not pollute the worktree | The review pack defaults to ignored local state and never becomes a project change | handoff-to-ship regression test |
 | Review boundary | Findings carry one relation from a closed set; reviewers may classify but never redefine the task | relation-enum, unknown-relation, and no-scope-expansion tests |
 | Runtime-derived blocking | `blocks_current_task` is derived from status, severity, relation, and runtime-checked evidence sufficiency | patch-caused, acceptance, constraint, pre-existing, unrelated, and future-improvement tests |
 | Visible follow-up work | Out-of-boundary findings stay reported and never block the current task | follow-up visibility and ship-after-fix tests |
@@ -43,7 +47,7 @@ This document maps the reviewed completion requirements to implemented behavior 
 
 ## Verified release results
 
-- Automated behavior, adversarial, packaging, and Skill archive tests: **88 passing locally**; CI repeats the suite on Ubuntu, Windows, and macOS.
+- Automated behavior, adversarial, packaging, and Skill archive suite: **PASS on current CI** across Ubuntu, Windows, and macOS. A hard-coded test count goes stale every time a test is added, so the CI badge is the live answer.
 - Ruff lint and format checks: **passing**.
 - Task-Boundary benchmark: **10/10 correct**, blocking precision **1.0**, blocking recall **1.0**, false reopening rate **0.0**.
 - Mechanics regression benchmark: **12/12 SHIPPABLE**.

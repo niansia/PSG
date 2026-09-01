@@ -17,6 +17,12 @@ from psg.config import save_yaml
 from psg.runtime import PSG
 
 MODEL = "gpt-5.5"
+# END_TO_END is the headline: neither side is told where the change belongs, so PSG
+# has to localize the request itself. CONTROLLED_ROUTING hands both sides the same
+# target, isolating governance value from localization value. Telling only the ON
+# side the target would make PSG look good by giving it the answer.
+END_TO_END = "end_to_end"
+CONTROLLED_ROUTING = "controlled_routing"
 REASONING_EFFORT = "low"
 TIMEOUT_SECONDS = 240
 
@@ -196,18 +202,29 @@ def _write_base_repository(root: Path) -> str:
     return _run(root, "git", "rev-parse", "HEAD").stdout.strip()
 
 
-def _open_contract(root: Path, task: AgentTask) -> str:
+def _open_contract(root: Path, task: AgentTask, mode: str) -> str:
+    """Open the ON-condition contract with exactly the knowledge the OFF side has."""
     graph = PSG(root)
+    scope: dict[str, Any] = {}
+    if mode == CONTROLLED_ROUTING:
+        # Both conditions were told the target, so PSG may be told it too.
+        scope = {
+            "targets": [task.target],
+            "write": [task.target],
+            "read_only": ["tests/test_existing.py"],
+            "forbidden": [
+                relative for relative in BASE_MODULES if relative != task.target
+            ],
+        }
     opened = graph.task_open(
         intent=task.prompt,
         acceptance_criteria=["The requested behavior passes executable tests"],
-        targets=[task.target],
-        write=[task.target],
-        read_only=["tests/test_existing.py"],
-        forbidden=[relative for relative in BASE_MODULES if relative != task.target],
         non_goals=["Unrelated cleanup, dependency changes, and catalog modules"],
         risk="low",
+        **scope,
     )
+    # Sealing happens here: in end-to-end mode the mutation boundary is whatever
+    # PSG's own localization derives, with no benchmark oracle behind it.
     graph.context_build(opened["id"])
     return opened["id"]
 
@@ -298,16 +315,28 @@ def _sanitizer(worktree: Path, base: Path) -> Callable[[str], str]:
 
 def _psg_outcome(root: Path, contract_id: str | None) -> dict[str, Any]:
     """Read what PSG itself concluded about the task, without mutating it."""
-    empty = {"psg_task_status": None, "review_rounds": None, "fix_cycles": None}
+    empty = {
+        "psg_task_status": None,
+        "review_rounds": None,
+        "fix_cycles": None,
+        "contract_state": None,
+        "authorized_write": [],
+        "requires_scope_approval": False,
+    }
     if not contract_id:
         return empty
     task = PSG(root).store.get_task(contract_id)
     if not task:
         return empty
+    payload = task.get("payload", {})
     return {
         "psg_task_status": task["status"],
         "review_rounds": int(task["review_rounds"]),
         "fix_cycles": int(task["fix_cycles"]),
+        # In end-to-end mode this is the boundary PSG localized on its own.
+        "contract_state": payload.get("contract_state"),
+        "authorized_write": list(payload.get("authorized_write", [])),
+        "requires_scope_approval": bool(payload.get("requires_scope_approval", False)),
     }
 
 
@@ -417,7 +446,10 @@ def run_benchmark(
     timeout_seconds: int = TIMEOUT_SECONDS,
     allow_short: bool = False,
     conditions: tuple[str, ...] = ("OFF", "ON"),
+    mode: str = END_TO_END,
 ) -> dict[str, Any]:
+    if mode not in {END_TO_END, CONTROLLED_ROUTING}:
+        raise ValueError(f"Unknown benchmark mode: {mode}")
     selected = TASKS[:task_limit]
     if len(selected) < 10 and not allow_short:
         raise ValueError("The published agentic benchmark requires all 10 paired tasks")
@@ -451,11 +483,16 @@ def run_benchmark(
                 contract_id = None
                 if condition == "ON":
                     graph.set_enabled(True)
-                    contract_id = _open_contract(worktree, task)
+                    contract_id = _open_contract(worktree, task, mode)
                 else:
                     graph.set_enabled(False)
+                # Identical prompt on both sides. In controlled-routing mode both are
+                # told the target; in end-to-end mode neither is.
+                prompt = task.prompt
+                if mode == CONTROLLED_ROUTING:
+                    prompt = f"{task.prompt}\n\nTarget file: {task.target}"
                 raw, elapsed, exit_code = _run_agent(
-                    worktree, task.prompt, timeout_seconds=timeout_seconds
+                    worktree, prompt, timeout_seconds=timeout_seconds
                 )
                 sanitize = _sanitizer(worktree, base)
                 trace_file = traces / f"{task.task_id}-{condition.lower()}.jsonl"
@@ -471,6 +508,7 @@ def run_benchmark(
                     {
                         "task_id": task.task_id,
                         "condition": condition,
+                        "mode": mode,
                         "model": MODEL,
                         "reasoning_effort": REASONING_EFFORT,
                         "baseline_commit": baseline_commit,
@@ -526,12 +564,21 @@ def run_benchmark(
     off = aggregate("OFF")
     on = aggregate("ON")
     result = {
-        "benchmark": "psg-agentic-ab-v1",
+        "benchmark": f"psg-agentic-ab-v2-{mode}",
         "published_at": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
         "protocol": {
             "agent": "Codex CLI",
             "model": MODEL,
             "reasoning_effort": REASONING_EFFORT,
+            "mode": mode,
+            "mode_meaning": (
+                "end_to_end: neither condition is told where the change belongs, so PSG "
+                "must localize the request itself"
+                if mode == END_TO_END
+                else "controlled_routing: both conditions are told the same target, "
+                "isolating governance value from localization value"
+            ),
+            "target_disclosure_is_symmetric": True,
             "task_pairs": len(selected),
             "same_prompt_per_pair": True,
             "same_repository_commit_per_pair": True,
@@ -578,6 +625,15 @@ def main() -> int:
     )
     parser.add_argument("--timeout", type=int, default=TIMEOUT_SECONDS)
     parser.add_argument(
+        "--mode",
+        choices=[END_TO_END, CONTROLLED_ROUTING],
+        default=END_TO_END,
+        help=(
+            "end_to_end (headline): neither side is told the target. "
+            "controlled_routing: both sides are told the same target."
+        ),
+    )
+    parser.add_argument(
         "--smoke",
         action="store_true",
         help="Run one pair for harness validation; never use this result as published evidence",
@@ -595,6 +651,7 @@ def main() -> int:
         timeout_seconds=args.timeout,
         allow_short=args.smoke,
         conditions=conditions if args.smoke else ("OFF", "ON"),
+        mode=args.mode,
     )
     print(json.dumps(result["summary"], ensure_ascii=False, indent=2))
     return 0

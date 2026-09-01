@@ -13,6 +13,8 @@
 [![Release](https://img.shields.io/badge/release-v1.1.0-F3B557?style=flat-square)](https://github.com/niansia/PSG/releases/tag/v1.1.0)
 [![Status](https://img.shields.io/badge/status-complete%20MVP-FF9364?style=flat-square)](docs/acceptance.md)
 
+**English** · [繁體中文](README.zh-TW.md) · [简体中文](README.zh-CN.md) · [日本語](README.ja.md)
+
 </div>
 
 PSG is a Skill bundle and local runtime that gives your coding agent a durable memory of the project, a clear boundary for what it may change, and an evidence-based definition of "done." It works beside Git and your existing Skills; it does not replace your coding agent or edit source code by itself.
@@ -68,13 +70,15 @@ psg handoff      # Write a review pack for another model or a teammate
 | Mode | Hosts | What you get |
 | --- | --- | --- |
 | **Full execution** | Codex · Claude Code · Gemini CLI | The Skill plus the local runtime and MCP server. Boundaries are *enforced*: mutation policy runs against the real diff, verification is runtime-attested, and the ship gate is machine-evaluated. |
-| **Review / handoff** | ChatGPT · Claude · Gemini | Paste `PSG_REVIEW.md` from `psg handoff --output PSG_REVIEW.md`. The reviewer reads the same Task Contract and the same review boundary. |
+| **Review / handoff** | ChatGPT · Claude · Gemini | Upload the review pack `psg handoff` writes. The reviewer reads the same Task Contract and the same review boundary. |
 
 All six share one Task Contract. Only the execution hosts carry runtime enforcement — a chat reviewer follows the contract, it does not enforce it.
 
 ```powershell
-psg handoff --output PSG_REVIEW.md
+psg handoff
 ```
+
+The review pack is written to `.psg/local/handoffs/<task>.md`, which Git ignores. That matters: a review file written into the worktree becomes an untracked project change and blocks the very ship gate it exists to inform. `--output` writes elsewhere, and warns if the path is inside the worktree.
 
 `psg handoff` is strictly read-only: it never changes task status, and it never writes to the event log.
 
@@ -114,12 +118,38 @@ PSG turns those problems into five concrete safeguards:
 ## Task Boundary
 
 > **Severity is not task scope.**
+> **More context is not more authority.**
 > **Every task has a boundary. Every review stays inside it.**
 > **Review the task, not the universe.**
 
 A `blocker` is a statement about how bad something is. It is not a statement about whether that something belongs to the task you asked for. Treating the two as the same thing is how a one-line fix turns into a week.
 
-`psg task open` records a formal **Task Contract**: goal, context, mutation, scope, review, completion, and risk boundaries, hashed at creation. That hash is immutable for the life of the task, and `review_record` verifies it — so a review round can never widen the task it is reviewing.
+`psg task open` records a formal **Task Contract**: goal, context, mutation, scope, review, completion, and risk boundaries. `review_record` verifies its hash, so a review round can never widen the task it is reviewing.
+
+### More context is not more authority
+
+A task opens as a **DRAFT**. It states intent and requests scope, but holds no write authority at all — try to change a file and the gate says the contract is unsealed.
+
+Initial localization then **SEALS** it: the mutation boundary PSG derived becomes `authorized_write`, `authorized_read_only`, and `authorized_forbidden`, and *that* is what the contract hash commits to.
+
+```text
+user request → DRAFT (no write authority)
+                 ↓  localization
+              SEALED → authorized_write is hashed
+                 ↓
+              builder may now change files
+```
+
+The distinction this protects is easy to lose:
+
+| | Grows as work proceeds | Enforced as authority |
+| --- | ---: | ---: |
+| **Working set** — what to read | Yes | No |
+| **Task Contract** — what may change | No | Yes |
+
+Context expansion, re-indexing, and re-routing may all widen what a task **reads**. None of them can widen what it may **write**. A file discovered after the seal becomes context, never permission. If the work genuinely needs a file outside the boundary, that is a new task — not a quiet edit to this one.
+
+When a boundary was derived from bare intent rather than declared — a wildcard write scope, a high-risk task, or a sprawling write set — PSG marks it `requires_scope_approval` and the ship gate holds until a person runs `psg task approve-scope`. The approval is bound to the hash it approved, so it does not survive a different boundary. MCP cannot reach that command.
 
 Every finding must declare exactly one relation to the task. The set is closed:
 
@@ -166,11 +196,22 @@ on than off. `benchmarks/agentic_ab.py` answers it as directly as a controlled e
 - the **same** Codex CLI, model, and reasoning effort on both sides;
 - the same prompt, the same baseline commit, and separate clean Git worktrees;
 - identical sandbox permissions and identical MCP configuration;
-- **OFF** = PSG installed but disabled; **ON** = PSG enabled with a predeclared Task Contract;
+- **OFF** = PSG installed but disabled; **ON** = PSG enabled;
 - success decided by a **hidden test** the agent never sees, plus the existing visible suite
   to catch regressions.
 
 Task success is the primary metric. Token and wall-time numbers mean nothing without it.
+
+Both sides must know exactly as much as each other, so the benchmark runs in two explicit
+modes:
+
+| Mode | Who is told the target file | What it measures |
+| --- | --- | --- |
+| `end_to_end` **(headline)** | Neither side | Whether PSG helps on a plain request, localization included |
+| `controlled_routing` | Both sides | Governance value with localization held constant |
+
+Telling only the ON side where the change belongs would hand PSG the answer and make any
+context saving meaningless, so the harness never does it.
 
 ```powershell
 python benchmarks/agentic_ab.py --output benchmarks/results/agentic-ab-latest.json --traces benchmarks/results/agentic-ab-traces
@@ -234,7 +275,7 @@ Task ──requires──▶ Requirement
 - The policy engine checks actual Git hunks against file, symbol, decision, architecture, scope, and dependency rules.
 - The verification engine accepts only configured check names over MCP and keeps raw output local.
 - The trust layer separates Agent claims, runtime-attested evidence, and explicit user approval; a caller cannot promote its own strings into authority.
-- The Task Contract fixes the task boundary at open time and hashes it, so review classifies findings instead of redefining the task.
+- The Task Contract opens as a draft, is sealed by initial localization, and hashes the authority it sealed, so neither routing nor review can widen what may be written.
 - The convergence engine derives blocking from Issue state and relation, enforces runtime-counted budgets, and rejects claimed high-risk self-review.
 - The portable state layer synchronizes durable graph state through `.psg/state/project.yaml`; local SQLite is rebuilt as needed.
 
@@ -252,6 +293,8 @@ PSG v1 deliberately uses a small trust model:
 MCP `decision_record` and `debt_record` therefore create proposals. Frozen unlocks, waivers, accepted debt, governance-state acceptance, and high-risk independent review are intentionally not self-authorizable through ordinary MCP. The local CLI is the v1 explicit approval boundary; the Skill contract requires an Agent to present the proposal and wait for the user instead of invoking an approval command itself.
 
 The same principle governs review: an agent supplies claims and evidence, and the runtime — not the agent — decides what blocks.
+
+It also governs how a task is recorded. `task_open` normally runs through an agent relaying a request, so the resulting Task, Requirement, and Constraint nodes are marked `agent_interpreted_user_intent` — not `user_explicit`. That is an honest label for what actually happened, and it is why a boundary the agent derived rather than the user declared can require explicit approval before shipping.
 
 ## Included interfaces
 
@@ -314,5 +357,6 @@ PSG v1.1 is a complete, Python-first research MVP:
 - Snapshot restore restores PSG graph state only. It never resets Git or overwrites source files.
 - `EXTERNAL_ATTESTED` is reserved until an authenticated CI/connector adapter exists; `source="external_tool"` alone remains a claim.
 - A chat reviewer consuming a handoff pack follows the Task Contract; it cannot enforce it.
+- Widening a sealed boundary is deliberately not automated. PSG has no task-amendment engine in v1: the answer to "this needs one more file" is a new task.
 
 The next meaningful step is held-out evaluation on real repositories—not adding a UI, vector database, or more languages before the governance contract is proven.

@@ -23,6 +23,79 @@ CURRENT_TASK_RELATIONS = {
 FOLLOW_UP_RELATIONS = RELATIONS_TO_TASK - CURRENT_TASK_RELATIONS
 BLOCKING_SEVERITIES = {"blocker", "major"}
 
+# A task is DRAFT until initial localization has produced a concrete mutation
+# boundary. Only a SEALED contract carries write authority, and only a SEALED
+# contract has a meaningful hash.
+CONTRACT_STATE_DRAFT = "draft"
+CONTRACT_STATE_SEALED = "sealed"
+AUTHORITY_KEYS = ("authorized_write", "authorized_read_only", "authorized_forbidden")
+# Above this many authorized write paths, a boundary stops being "narrow" and
+# needs a person to look at it.
+BROAD_WRITE_PATH_LIMIT = 12
+GLOB_CHARACTERS = "*?["
+
+
+def is_sealed(payload: dict[str, Any]) -> bool:
+    return payload.get("contract_state") == CONTRACT_STATE_SEALED
+
+
+def authority_boundary(payload: dict[str, Any]) -> dict[str, list[str]]:
+    """Return the mutation authority actually in force.
+
+    A sealed contract answers with the authority frozen at seal time. A draft
+    answers with what was requested, which carries no write authority yet: the
+    router has not run, so nothing has been authorized.
+    """
+    if is_sealed(payload):
+        return {
+            "write": list(payload.get("authorized_write", [])),
+            "read_only": list(payload.get("authorized_read_only", [])),
+            "forbidden": list(payload.get("authorized_forbidden", [])),
+        }
+    working_set = payload.get("working_set")
+    if "contract_state" not in payload and working_set:
+        # A task opened before contract sealing existed: its routed working set was
+        # its authority, so keep honouring that rather than stranding the task.
+        return {
+            "write": list(working_set.get("write", [])),
+            "read_only": list(working_set.get("read_only", [])),
+            "forbidden": list(working_set.get("forbidden", [])),
+        }
+    return {
+        "write": list(payload.get("write", [])),
+        "read_only": list(payload.get("read_only", [])),
+        "forbidden": list(payload.get("forbidden", [])),
+    }
+
+
+def has_write_authority(payload: dict[str, Any]) -> bool:
+    """A draft contract holds no write authority; localization must seal it first."""
+    return is_sealed(payload) or (
+        "contract_state" not in payload and bool(payload.get("working_set"))
+    )
+
+
+def requires_scope_approval(
+    *, write: list[str], read_only: list[str], forbidden: list[str], risk: str
+) -> tuple[bool, list[str]]:
+    """Decide whether a person must approve this write authority before work starts.
+
+    A narrow, concrete boundary derived by conservative localization is the
+    ordinary case and seals automatically. Wildcards, high risk, and sprawling
+    write sets are the cases where an agent's interpretation of the request
+    should not silently become authority.
+    """
+    reasons: list[str] = []
+    if risk == "high":
+        reasons.append("high_risk_task")
+    if any(character in item for item in write for character in GLOB_CHARACTERS):
+        reasons.append("wildcard_write_scope")
+    if len(write) > BROAD_WRITE_PATH_LIMIT:
+        reasons.append(f"write_scope_exceeds_{BROAD_WRITE_PATH_LIMIT}_paths")
+    if write and not (read_only or forbidden) and len(write) > 1:
+        reasons.append("write_scope_without_any_protected_boundary")
+    return bool(reasons), reasons
+
 
 def default_review_boundary() -> dict[str, Any]:
     return {
@@ -59,8 +132,10 @@ def default_completion_boundary(
 def task_contract(task: dict[str, Any]) -> dict[str, Any]:
     payload = task.get("payload", {})
     working_set = payload.get("working_set", {})
+    authority = authority_boundary(payload)
     return {
         "contract_version": int(payload.get("contract_version", CONTRACT_VERSION)),
+        "contract_state": payload.get("contract_state", CONTRACT_STATE_DRAFT),
         "task_id": task["id"],
         "goal_boundary": {
             "intent": task["intent"],
@@ -78,10 +153,13 @@ def task_contract(task: dict[str, Any]) -> dict[str, Any]:
             "read": working_set.get("read", []),
             "constraints": payload.get("constraints", []),
         },
-        "mutation_boundary": {
-            "write": working_set.get("write", payload.get("write", [])),
-            "read_only": working_set.get("read_only", payload.get("read_only", [])),
-            "forbidden": working_set.get("forbidden", payload.get("forbidden", [])),
+        # Authority, not context. The router may widen what is READ; it can never
+        # widen what may be WRITTEN.
+        "mutation_boundary": authority,
+        "requested_mutation_boundary": {
+            "write": list(payload.get("write", [])),
+            "read_only": list(payload.get("read_only", [])),
+            "forbidden": list(payload.get("forbidden", [])),
         },
         "scope_boundary": {"non_goals": payload.get("non_goals", [])},
         "review_boundary": payload.get("review_boundary", default_review_boundary()),
@@ -117,9 +195,15 @@ def contract_hash(task: dict[str, Any]) -> str:
         ],
         "constraints": payload.get("constraints", []),
         "targets": payload.get("targets", []),
-        "write": payload.get("write", []),
-        "read_only": payload.get("read_only", []),
-        "forbidden": payload.get("forbidden", []),
+        "requested_write": payload.get("write", []),
+        "requested_read_only": payload.get("read_only", []),
+        "requested_forbidden": payload.get("forbidden", []),
+        # The authority the runtime will actually enforce. Hashing only the
+        # request would let localization grant write scope the hash never saw.
+        "contract_state": payload.get("contract_state", CONTRACT_STATE_DRAFT),
+        "authorized_write": payload.get("authorized_write", []),
+        "authorized_read_only": payload.get("authorized_read_only", []),
+        "authorized_forbidden": payload.get("authorized_forbidden", []),
         "non_goals": payload.get("non_goals", []),
         "review_boundary": payload.get("review_boundary", default_review_boundary()),
         "completion_boundary": payload.get(

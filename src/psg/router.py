@@ -8,6 +8,7 @@ from typing import Any
 from .indexer import Indexer
 from .policy import PolicyEngine
 from .store import Store
+from .task_contract import is_sealed
 from .util import canonical_json, normalize_path
 
 
@@ -111,6 +112,22 @@ class ContextRouter:
         ):
             write.append(path)
             rationale[path] = "explicit write scope"
+
+        if is_sealed(payload):
+            # Sealed authority wins over anything this routing pass just derived.
+            # A path the router now wants to write, but which was not authorized at
+            # seal time, becomes context to read - never new write authority.
+            authorized_write = set(payload.get("authorized_write", []))
+            authorized_read_only = set(payload.get("authorized_read_only", []))
+            authorized_forbidden = set(payload.get("authorized_forbidden", []))
+            authorized = authorized_write | authorized_read_only | authorized_forbidden
+            for path in (*write, *read_only):
+                if path not in authorized:
+                    read.append(path)
+                    rationale[path] = "context only; outside the sealed write authority"
+            write = sorted(authorized_write)
+            read_only = sorted(authorized_read_only)
+            forbidden = sorted(authorized_forbidden)
 
         confidence = self._confidence(file_nodes.values())
         if confidence < 0.60 and hops < 3 and _auto_expand:

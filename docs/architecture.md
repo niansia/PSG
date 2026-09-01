@@ -104,7 +104,11 @@ The runtime derives new blocker counts from stored Issue state rather than trust
 
 ## Task Contract and review boundary
 
-Opening a task materializes a versioned **Task Contract**: goal boundary (intent and acceptance criteria), context boundary (targets, read set, constraints), mutation boundary (`WRITE`/`READ_ONLY`/`FORBIDDEN`), scope boundary (non-goals), review boundary, completion boundary, and risk boundary. The contract is hashed at open time and the hash is stored on the task. `review_record` verifies that hash, which is the mechanical form of `NO_SCOPE_EXPANSION_BY_REVIEW`: a review round cannot redefine the task it is reviewing.
+Opening a task materializes a versioned **Task Contract**: goal boundary (intent and acceptance criteria), context boundary (targets, read set, constraints), mutation boundary (`WRITE`/`READ_ONLY`/`FORBIDDEN`), scope boundary (non-goals), review boundary, completion boundary, and risk boundary.
+
+The contract has two states. A task opens as a **draft**: it records intent and requests scope, but holds no write authority, and the policy engine rejects any change against it. Initial context routing then **seals** it, freezing the derived mutation boundary into `authorized_write`, `authorized_read_only`, and `authorized_forbidden`. Only then is the contract hashed, and the hash covers that sealed authority.
+
+The separation is deliberate. The routed working set is *context* and may grow with every expansion or reindex; the sealed boundary is *authority* and cannot. The policy engine reads only the sealed authority, so a file the router discovers after the seal becomes something to read, never something to write. Widening authority requires a new task; v1 has no task-amendment engine on purpose. A boundary the runtime derived from bare intent rather than an explicit declaration — a wildcard scope, high risk, or a sprawling write set — is marked `requires_scope_approval` and holds the ship gate until a user-owned CLI approval bound to that exact contract hash is recorded. `review_record` verifies that hash, which is the mechanical form of `NO_SCOPE_EXPANSION_BY_REVIEW`: a review round cannot redefine the task it is reviewing.
 
 Severity and task scope are separate axes. Every Issue therefore carries a `relation_to_task` drawn from a closed set:
 

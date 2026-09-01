@@ -10,6 +10,7 @@ from typing import Any
 
 from . import git
 from .store import Store
+from .task_contract import authority_boundary, has_write_authority
 from .trust import is_user_approved
 from .util import normalize_path, sha256_bytes
 
@@ -307,11 +308,28 @@ class PolicyEngine:
             else:
                 product_changes.append(change)
         changes = product_changes
-        working_set = task.get("payload", {}).get("working_set", {})
-        write = set(working_set.get("write", []))
-        read_only = set(working_set.get("read_only", []))
-        forbidden = set(working_set.get("forbidden", []))
+        # Authority comes from the sealed contract, never from the routed working
+        # set: routing runs after the hash is taken, so treating its output as
+        # authority would let localization grant write scope nothing verified.
+        task_payload = task.get("payload", {})
+        authority = authority_boundary(task_payload)
+        write = set(authority["write"])
+        read_only = set(authority["read_only"])
+        forbidden = set(authority["forbidden"])
         violations: list[dict[str, Any]] = []
+        if changes and not has_write_authority(task_payload):
+            violations.append(
+                {
+                    "kind": "unsealed_contract",
+                    "path": None,
+                    "message": (
+                        "Task contract is still a draft and holds no write authority. "
+                        "Run context_build to seal the mutation boundary before changing files."
+                    ),
+                    "expected": "sealed",
+                    "actual": task_payload.get("contract_state", "draft"),
+                }
+            )
         contract_changes: list[dict[str, Any]] = []
         scope_expansion: list[str] = []
         touched_nodes: list[str] = []

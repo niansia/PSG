@@ -2,6 +2,8 @@
 
 Read this reference only when reviewing an existing implementation, consuming a handoff pack, performing a cross-model review, or auditing the current task.
 
+Review only against the sealed Task Contract. Its mutation boundary is the authority the runtime enforces, not whatever the working set happens to list: more context never means more write authority.
+
 Review only against the current Task Contract. Reviewers may read, analyze, report, classify, and provide evidence. They may not change the task goal or acceptance criteria, widen WRITE, unlock a node, supersede a Decision, or turn follow-up work into current work.
 
 Classify every finding with one allowed `relation_to_task`:

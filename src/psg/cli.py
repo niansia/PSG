@@ -162,6 +162,12 @@ def build_parser() -> argparse.ArgumentParser:
     task_sub.add_parser("list")
     task_show = task_sub.add_parser("show")
     task_show.add_argument("id")
+    # User-owned approval of a broad mutation boundary; MCP cannot reach it.
+    task_scope = task_sub.add_parser(
+        "approve-scope", help="Approve a broad sealed mutation boundary"
+    )
+    task_scope.add_argument("task_id")
+    task_scope.add_argument("--reason", required=True)
     criterion = task_sub.add_parser("criterion")
     criterion.add_argument("task_id")
     criterion.add_argument("criterion_id")
@@ -357,8 +363,14 @@ def dispatch(args: argparse.Namespace) -> Any:
         value = graph.handoff(args.task_id)
         if args.output:
             output = args.output.expanduser().resolve()
-            atomic_write_text(output, value["markdown"])
-            value["output"] = str(output)
+        else:
+            # Default to ignored local state: a review pack written into the worktree
+            # shows up as an untracked file and blocks the very ship gate it exists
+            # to inform.
+            output = graph.paths.handoff_dir / f"{value['task_contract']['task_id']}.md"
+        atomic_write_text(output, value["markdown"])
+        value["output"] = str(output)
+        value["output_in_worktree"] = _pollutes_worktree(graph.root, output)
         return value
     if args.command == "node":
         if args.node_command == "add":
@@ -422,6 +434,8 @@ def dispatch(args: argparse.Namespace) -> Any:
             if not value:
                 raise KeyError(f"Unknown task: {args.id}")
             return value
+        if args.task_command == "approve-scope":
+            return graph.task_scope_approve(args.task_id, args.reason)
         return graph.criterion_set(
             args.task_id,
             args.criterion_id,
@@ -556,6 +570,15 @@ def main(argv: list[str] | None = None) -> int:
         return 2
 
 
+def _pollutes_worktree(root: Path, output: Path) -> bool:
+    """True when this path would appear as a project change in the ship gate."""
+    try:
+        relative = output.relative_to(root.resolve())
+    except ValueError:
+        return False
+    return not relative.as_posix().startswith((".psg/local/", ".psg/state/"))
+
+
 def _mark(value: bool) -> str:
     return "✓" if value else "○"
 
@@ -646,9 +669,22 @@ def _human_output(command: str, value: dict[str, Any]) -> str:
     if command == "update":
         return value.get("message", "PSG updated.")
     if command == "handoff":
-        if value.get("output"):
-            return f"PSG review contract written to {value['output']}"
-        return value["markdown"]
+        lines = [
+            f"Review pack: {value['output']}",
+            "",
+            "Upload it to your review model.",
+        ]
+        if value.get("output_in_worktree"):
+            lines.extend(
+                [
+                    "",
+                    (
+                        "Warning: this path is inside the Git worktree, so it will "
+                        "appear as a project change and may block the ship gate."
+                    ),
+                ]
+            )
+        return "\n".join(lines)
     if command == "uninstall":
         return "\n".join(
             [

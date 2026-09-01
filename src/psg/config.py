@@ -92,6 +92,11 @@ class ProjectPaths:
         return self.state_dir / "local"
 
     @property
+    def handoff_dir(self) -> Path:
+        """Review packs live under ignored local state so they never enter the diff."""
+        return self.local_dir / "handoffs"
+
+    @property
     def database(self) -> Path:
         return self.local_dir / "psg.db"
 

@@ -76,3 +76,38 @@ def test_runtime_wheel_ships_only_this_project() -> None:
             name for name in names if name.endswith(".py") and crlf in bundle.read(name)
         ]
         assert not carriage, f"wheel carries CRLF line endings: {carriage}"
+
+
+TRANSLATIONS = {
+    "README.md": "English",
+    "README.zh-TW.md": "繁體中文",
+    "README.zh-CN.md": "简体中文",
+    "README.ja.md": "日本語",
+}
+
+
+def test_every_readme_translation_links_to_the_others() -> None:
+    """A translation nobody can reach from the others is a translation nobody reads."""
+    for name in TRANSLATIONS:
+        path = ROOT / name
+        assert path.is_file(), f"missing translation: {name}"
+        text = path.read_text(encoding="utf-8")
+        for other, label in TRANSLATIONS.items():
+            if other == name:
+                # The current language is shown as bold text, not a link back to itself.
+                assert f"**{label}**" in text, f"{name} does not mark itself as {label}"
+            else:
+                assert f"]({other})" in text, f"{name} does not link to {other}"
+
+
+def test_readme_translations_stay_structurally_in_sync() -> None:
+    """Headings drift first when a translation is left behind."""
+    counts = {}
+    for name in TRANSLATIONS:
+        text = (ROOT / name).read_text(encoding="utf-8")
+        counts[name] = sum(1 for line in text.splitlines() if line.startswith("## "))
+    reference = counts["README.md"]
+    for name, count in counts.items():
+        assert count == reference, (
+            f"{name} has {count} top-level sections, README.md has {reference}"
+        )

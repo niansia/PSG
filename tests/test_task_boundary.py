@@ -4,8 +4,9 @@ import sqlite3
 
 import pytest
 
+from psg.cli import main
 from psg.store import SCHEMA, Store
-from psg.task_contract import MAX_FIX_CYCLES, MAX_REVIEW_ROUNDS
+from psg.task_contract import MAX_FIX_CYCLES, MAX_REVIEW_ROUNDS, contract_hash
 from psg.trust import USER_APPROVED
 
 
@@ -299,3 +300,221 @@ def test_handoff_ignores_psg_managed_state_changes(graph, task) -> None:
     changed = {item["path"] for item in pack["changed"]}
     assert "src/app.py" in changed
     assert not any(path.startswith((".psg/state/", ".psg/local/")) for path in changed)
+
+
+def open_unscoped_task(graph) -> dict:
+    """A task stated only as intent: exactly what an agent relays from a user."""
+    return graph.task_open(
+        intent="Update the feature helper in app",
+        acceptance_criteria=["Feature behavior is verified"],
+        risk="medium",
+    )
+
+
+def test_task_opens_as_a_draft_holding_no_write_authority(graph) -> None:
+    payload = graph.store.get_task(open_unscoped_task(graph)["id"])["payload"]
+    assert payload["contract_state"] == "draft"
+    assert payload["authorized_write"] == []
+    # A hash before the authority exists would protect nothing.
+    assert "contract_hash" not in payload
+
+
+def test_draft_contract_blocks_changes_until_localization_seals_it(graph) -> None:
+    opened = open_unscoped_task(graph)
+    (graph.root / "src" / "app.py").write_text(
+        "def feature(value: int) -> int:\n    return value\n", encoding="utf-8"
+    )
+    result = graph.patch_validate(opened["id"])
+    assert result["allowed"] is False
+    assert any(item["kind"] == "unsealed_contract" for item in result["violations"])
+
+
+def test_localization_derived_write_authority_is_sealed_into_the_hash(graph) -> None:
+    """The router grants write scope task_open never stated; the hash must cover it."""
+    opened = open_unscoped_task(graph)
+    task_id = opened["id"]
+    requested = graph.store.get_task(task_id)["payload"]["write"]
+    assert requested == []
+
+    seal = graph.context_build(task_id)["task_contract_seal"]
+    assert seal["sealed_now"] is True
+
+    payload = graph.store.get_task(task_id)["payload"]
+    assert payload["contract_state"] == "sealed"
+    # Localization really did manufacture authority out of a bare intent.
+    assert payload["authorized_write"]
+    assert payload["authorized_write"] != requested
+    # And that authority is what the hash commits to.
+    assert payload["contract_hash"] == contract_hash(graph.store.get_task(task_id))
+    contract = graph.task_contract(task_id)
+    assert contract["mutation_boundary"]["write"] == payload["authorized_write"]
+    assert contract["requested_mutation_boundary"]["write"] == []
+
+
+def test_contract_hash_changes_when_write_authority_changes(graph, task) -> None:
+    """Hashing only the request would let authority drift invisibly."""
+    stored = graph.store.get_task(task["id"])
+    original = stored["payload"]["contract_hash"]
+    stored["payload"]["authorized_write"] = [
+        *stored["payload"]["authorized_write"],
+        "src/backend.py",
+    ]
+    assert contract_hash(stored) != original
+
+
+def test_context_expansion_widens_reading_never_writing(graph, task) -> None:
+    """More context is not more authority."""
+    task_id = task["id"]
+    before = graph.store.get_task(task_id)["payload"]
+    authority_before = list(before["authorized_write"])
+    hash_before = before["contract_hash"]
+
+    expanded = graph.context_expand(task_id, "needs the backend contract to reason")
+
+    after = graph.store.get_task(task_id)["payload"]
+    assert after["authorized_write"] == authority_before
+    assert after["contract_hash"] == hash_before
+    assert expanded["working_set"]["write"] == authority_before
+
+
+def test_file_discovered_after_seal_never_gains_write_authority(graph) -> None:
+    """Re-routing an intent-localized task must not enlarge its write authority."""
+    task_id = open_unscoped_task(graph)["id"]
+    graph.context_build(task_id)
+    authority_before = list(
+        graph.store.get_task(task_id)["payload"]["authorized_write"]
+    )
+    hash_before = graph.store.get_task(task_id)["payload"]["contract_hash"]
+
+    # A new file the intent fallback would match and route straight into write.
+    (graph.root / "src" / "app_feature_helper.py").write_text(
+        "def feature_helper(value: int) -> int:\n    return value\n",
+        encoding="utf-8",
+    )
+    graph.index(force=True)
+    rebuilt = graph.context_build(task_id)
+
+    payload = graph.store.get_task(task_id)["payload"]
+    assert payload["authorized_write"] == authority_before
+    assert "src/app_feature_helper.py" not in payload["authorized_write"]
+    assert rebuilt["working_set"]["write"] == authority_before
+    assert payload["contract_hash"] == hash_before
+    # The new file is still reachable - as context, not as authority.
+    assert "src/app_feature_helper.py" in rebuilt["working_set"]["read"]
+
+
+def test_narrow_declared_scope_seals_without_asking_for_approval(graph, task) -> None:
+    payload = graph.store.get_task(task["id"])["payload"]
+    assert payload["authorized_write"] == ["src/app.py"]
+    assert payload["requires_scope_approval"] is False
+
+
+def test_broad_agent_derived_scope_needs_user_approval_before_ship(graph) -> None:
+    opened = open_unscoped_task(graph)
+    task_id = opened["id"]
+    graph.context_build(task_id)
+    payload = graph.store.get_task(task_id)["payload"]
+    assert payload["requires_scope_approval"] is True
+    assert payload["scope_approval_reasons"]
+
+    make_ready(graph, {"id": task_id})
+    blocked = graph.ship_evaluate(task_id)
+    assert blocked["status"] == "BLOCKED"
+    assert blocked["scope_approved"] is False
+
+    graph.task_scope_approve(task_id, reason="Reviewed the derived boundary")
+    assert graph.ship_evaluate(task_id)["status"] == "SHIPPABLE"
+
+
+def test_scope_approval_does_not_survive_a_different_authority(graph) -> None:
+    task_id = open_unscoped_task(graph)["id"]
+    graph.context_build(task_id)
+    graph.task_scope_approve(task_id, reason="Reviewed the derived boundary")
+    stored = graph.store.get_task(task_id)
+    payload = stored["payload"]
+    # Someone widens the sealed authority after the approval was given.
+    payload["authorized_write"] = [*payload["authorized_write"], "src/extra.py"]
+    payload["contract_hash"] = contract_hash(stored)
+    graph.store.update_task(task_id, payload_json=payload)
+
+    make_ready(graph, {"id": task_id})
+    assert graph.ship_evaluate(task_id)["scope_approved"] is False
+
+
+def test_legacy_task_without_contract_state_keeps_its_working_set_authority(
+    graph, task
+) -> None:
+    """A task opened before sealing existed must not be stranded without authority."""
+    task_id = task["id"]
+    payload = graph.store.get_task(task_id)["payload"]
+    for key in (
+        "contract_state",
+        "authorized_write",
+        "authorized_read_only",
+        "authorized_forbidden",
+        "requires_scope_approval",
+    ):
+        payload.pop(key, None)
+    graph.store.update_task(task_id, payload_json=payload)
+
+    (graph.root / "src" / "app.py").write_text(
+        "from src.backend import locked_api\n\n\ndef feature(value: int) -> int:\n"
+        "    return locked_api(value) + 2\n",
+        encoding="utf-8",
+    )
+    result = graph.patch_validate(task_id)
+    assert not any(item["kind"] == "unsealed_contract" for item in result["violations"])
+    assert result["allowed"] is True
+
+
+def test_handoff_defaults_to_ignored_local_state(graph, task, capsys) -> None:
+    result = main(["--root", str(graph.root), "handoff", task["id"]])
+    captured = capsys.readouterr()
+    assert result == 0
+
+    written = graph.paths.handoff_dir / f"{task['id']}.md"
+    assert written.is_file()
+    assert "Review the task, not the entire project." in written.read_text(
+        encoding="utf-8"
+    )
+    assert "Review pack:" in captured.out
+    assert "Warning" not in captured.out
+
+
+def test_default_handoff_never_changes_the_ship_gate(graph, task) -> None:
+    """The review pack must not become a project change that blocks its own ship."""
+    task_id = task["id"]
+    (graph.root / "src" / "app.py").write_text(
+        "from src.backend import locked_api\n\n\ndef feature(value: int) -> int:\n"
+        "    return locked_api(value) + 2\n",
+        encoding="utf-8",
+    )
+    make_ready(graph, {"id": task_id})
+    before = graph.ship_evaluate(task_id)
+    assert before["status"] == "SHIPPABLE"
+
+    assert main(["--root", str(graph.root), "handoff", task_id]) == 0
+
+    validated = graph.patch_validate(task_id)
+    assert validated["allowed"] is True
+    assert not any(
+        "handoff" in node or "PSG_REVIEW" in node for node in validated["touched_nodes"]
+    )
+    assert graph.ship_evaluate(task_id)["status"] == before["status"]
+
+
+def test_handoff_written_into_the_worktree_warns(graph, task, capsys) -> None:
+    result = main(
+        [
+            "--root",
+            str(graph.root),
+            "handoff",
+            task["id"],
+            "--output",
+            str(graph.root / "PSG_REVIEW.md"),
+        ]
+    )
+    captured = capsys.readouterr()
+    assert result == 0
+    assert "Warning" in captured.out
+    assert "worktree" in captured.out

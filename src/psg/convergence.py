@@ -222,6 +222,14 @@ class ConvergenceEngine:
             and item.get("trust_tier") in APPROVAL_TRUST_TIERS
         ]
         review_ok = not high_review_required or bool(independent_reviews)
+        # A boundary an agent widened on the user's behalf needs a person to have
+        # read it before the work counts as finished.
+        task_payload = task.get("payload", {})
+        scope_approval = task_payload.get("scope_approval") or {}
+        scope_approved = not task_payload.get("requires_scope_approval", False) or (
+            scope_approval.get("trust_tier") in APPROVAL_TRUST_TIERS
+            and scope_approval.get("contract_hash") == task_payload.get("contract_hash")
+        )
         shippable = not (
             failed_criteria
             or stale_criteria
@@ -235,6 +243,7 @@ class ConvergenceEngine:
             or not constraints_ok
             or not graph_synchronized
             or not review_ok
+            or not scope_approved
         )
         if shippable:
             status = "SHIPPABLE"
@@ -288,6 +297,10 @@ class ConvergenceEngine:
                 "major": sum(item["severity"] == "major" for item in follow_up),
                 "blocker": sum(item["severity"] == "blocker" for item in follow_up),
             },
+            "scope_approved": scope_approved,
+            "requires_scope_approval": bool(
+                task_payload.get("requires_scope_approval", False)
+            ),
             "constraints_ok": constraints_ok,
             "graph_synchronized": graph_synchronized,
             "independent_review_required": high_review_required,

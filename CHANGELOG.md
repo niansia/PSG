@@ -2,6 +2,52 @@
 
 All notable changes to PSG are recorded here. Versions follow [semantic versioning](https://semver.org/).
 
+## [Unreleased]
+
+### Fixed
+
+- **A sealed Task Contract now covers the write authority actually enforced.** The
+  contract hashed the scope a task *requested*, but the policy engine enforced the
+  scope the context router *derived* — and the router runs after the hash is taken.
+  A task opened with no declared scope could therefore be granted write access to
+  several files by lexical localization, with the hash none the wiser, so
+  `NO_SCOPE_EXPANSION_BY_REVIEW` protected a boundary that was not the one in force.
+
+  A task now opens as a **DRAFT** holding no write authority; initial localization
+  **SEALS** `authorized_write`, `authorized_read_only`, and `authorized_forbidden`,
+  and the hash commits to those. The policy engine reads the sealed authority, never
+  the working set. Re-routing and context expansion may widen what a task reads and
+  can no longer widen what it may write — a file discovered after the seal becomes
+  context, not permission. Tasks written before sealing existed keep honouring their
+  working set so they are not stranded.
+
+- **A boundary an agent derived now needs a person.** A wildcard write scope, a
+  high-risk task, or a sprawling write set is marked `requires_scope_approval` and
+  holds the ship gate until `psg task approve-scope` is run. The approval is bound to
+  the contract hash it approved, so it does not carry over to a different boundary.
+  MCP cannot reach the command.
+
+- **`task_open` no longer claims `user_explicit` provenance.** It normally runs
+  through an agent relaying a request, so Task, Requirement, and Constraint nodes are
+  marked `agent_interpreted_user_intent`, which is what actually happened.
+
+- **`psg handoff` no longer pollutes the worktree it is reviewing.** The review pack
+  defaulted to a path the caller chose, and `PSG_REVIEW.md` written at the repo root
+  became an untracked project change that could block the very ship gate the pack
+  exists to inform. It now defaults to ignored `.psg/local/handoffs/<task>.md`, and
+  `--output` warns when the destination is inside the worktree.
+
+### Changed
+
+- The agentic A/B benchmark had an oracle asymmetry: the ON condition was handed the
+  correct target path while the OFF condition had to find it. It now runs in two
+  explicit modes. `end_to_end` (the default, and the headline) tells neither side
+  where the change belongs, so PSG must localize the request itself;
+  `controlled_routing` tells both sides the same target, isolating governance value
+  from localization value. Results record which mode produced them.
+- `docs/acceptance.md` no longer hard-codes a test count, and no longer lists a
+  result file for a benchmark that has not been run.
+
 ## [1.1.0] — 2026-09-01
 
 The Task Boundary release. v1.0 could tell you whether the evidence was real; it could
