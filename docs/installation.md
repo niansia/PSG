@@ -7,13 +7,13 @@ PSG has two installed parts: the Python runtime (`psg` and `psg-mcp`) and the co
 ### Windows
 
 ```powershell
-python -m pip install "psg-runtime[mcp] @ git+https://github.com/niansia/PSG.git"; psg setup
+python -m pip install "psg-runtime[mcp] @ git+https://github.com/niansia/PSG.git@v1.0.0"; psg setup
 ```
 
 ### macOS / Linux
 
 ```bash
-python3 -m pip install "psg-runtime[mcp] @ git+https://github.com/niansia/PSG.git" && psg setup
+python3 -m pip install "psg-runtime[mcp] @ git+https://github.com/niansia/PSG.git@v1.0.0" && psg setup
 ```
 
 `psg setup` detects installed Codex, Claude Code, and Gemini CLI executables. For every detected host it:
