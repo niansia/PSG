@@ -42,7 +42,7 @@ def psg_version() -> str:
     try:
         return version("psg-runtime")
     except PackageNotFoundError:
-        return "1.0.1-dev"
+        return "1.1.0-dev"
 
 
 def global_home() -> Path:
@@ -116,7 +116,11 @@ def setup_skill(
     installed: list[dict[str, Any]] = []
     for name, destination in destinations:
         destination.parent.mkdir(parents=True, exist_ok=True)
-        shutil.copytree(source, destination, dirs_exist_ok=True)
+        # The destination is PSG-owned, so replace it outright: merging would leave
+        # reference files behind that a newer bundle no longer ships.
+        if destination.exists():
+            shutil.rmtree(destination)
+        shutil.copytree(source, destination)
         installed.append(
             {
                 "host": name,
@@ -414,6 +418,10 @@ def _run_command(command: list[str]) -> subprocess.CompletedProcess[str]:
         text=True,
         encoding="utf-8",
         errors="replace",
+        # Never inherit the host stdin: under an MCP stdio server that handle is the
+        # JSON-RPC pipe with a blocking read pending, and an inheriting child stalls
+        # until the next client message arrives.
+        stdin=subprocess.DEVNULL,
         capture_output=True,
         check=False,
     )

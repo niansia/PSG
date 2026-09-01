@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import fnmatch
 import os
 from pathlib import Path
 from typing import Any
@@ -15,10 +16,21 @@ from .config import (
 from .convergence import ConvergenceEngine
 from .indexer import Indexer
 from .installer import global_settings
-from .policy import POLICY_RANK, VALID_POLICIES, PolicyEngine
+from .policy import POLICY_RANK, VALID_POLICIES, PolicyEngine, parse_diff
 from .portable import PortableState
 from .router import ContextRouter
 from .store import Store
+from .task_contract import (
+    CONTRACT_VERSION,
+    MAX_FIX_CYCLES,
+    MAX_REVIEW_ROUNDS,
+    RELATIONS_TO_TASK,
+    contract_hash,
+    default_completion_boundary,
+    default_review_boundary,
+    render_handoff,
+    task_contract,
+)
 from .trust import (
     APPROVAL_TRUST_TIERS,
     CLAIMED,
@@ -497,6 +509,20 @@ class PSG:
         self.indexer.index(force=False)
         task_id = self.store.next_id("tasks", "T")
         review = self.config.get("review", {})
+        selected_review_budget = (
+            review_budget
+            if review_budget is not None
+            else int(review.get("general_round_limit", 2))
+        )
+        selected_fix_budget = (
+            fix_budget
+            if fix_budget is not None
+            else int(review.get("targeted_fix_limit", 2))
+        )
+        if not 1 <= selected_review_budget <= MAX_REVIEW_ROUNDS:
+            raise ValueError(f"review_budget must be between 1 and {MAX_REVIEW_ROUNDS}")
+        if not 1 <= selected_fix_budget <= MAX_FIX_CYCLES:
+            raise ValueError(f"fix_budget must be between 1 and {MAX_FIX_CYCLES}")
         governance_baseline = {}
         for relative in (
             ".psg/.gitignore",
@@ -515,12 +541,8 @@ class PSG:
             "context_budget": context_budget
             if context_budget is not None
             else int(self.config.get("context", {}).get("default_token_budget", 12000)),
-            "review_budget": review_budget
-            if review_budget is not None
-            else int(review.get("general_round_limit", 2)),
-            "fix_budget": fix_budget
-            if fix_budget is not None
-            else int(review.get("targeted_fix_limit", 2)),
+            "review_budget": selected_review_budget,
+            "fix_budget": selected_fix_budget,
             "baseline_git_rev": git.revision(self.root),
             "graph_rev": self.store.graph_revision(),
             "payload": {
@@ -537,6 +559,13 @@ class PSG:
                 "builder_actor": (builder_actor or "").strip(),
                 "dependency_justifications": dependency_justifications or [],
                 "governance_baseline": governance_baseline,
+                "contract_version": CONTRACT_VERSION,
+                "review_boundary": default_review_boundary(),
+                "completion_boundary": default_completion_boundary(
+                    review_budget=selected_review_budget,
+                    fix_budget=selected_fix_budget,
+                    risk=risk,
+                ),
             },
         }
         criteria = [
@@ -549,6 +578,11 @@ class PSG:
             for index, text in enumerate(acceptance_criteria, 1)
         ]
         self.store.create_task(task, criteria)
+        stored_task = self.store.get_task(task_id)
+        if stored_task:
+            stored_payload = stored_task["payload"]
+            stored_payload["contract_hash"] = contract_hash(stored_task)
+            self.store.update_task(task_id, payload_json=stored_payload)
         revision = git.revision(self.root)
         self.store.upsert_node(
             {
@@ -566,6 +600,7 @@ class PSG:
                     "intent": intent.strip(),
                     "risk": risk,
                     "builder_actor": (builder_actor or "").strip(),
+                    "contract_version": CONTRACT_VERSION,
                 },
             },
             bump=False,
@@ -904,6 +939,7 @@ class PSG:
         *,
         task_id: str,
         severity: str,
+        relation_to_task: str,
         claim: str,
         evidence: dict[str, Any] | None,
         affected_nodes: list[str] | None = None,
@@ -911,13 +947,16 @@ class PSG:
         introduced_by_patch: str | None = None,
         debt_id: str | None = None,
     ) -> dict[str, Any]:
+        task = self.store.get_task(task_id)
+        if not task:
+            raise KeyError(f"Unknown task: {task_id}")
         normalized = severity.lower()
         if normalized not in VALID_SEVERITIES:
             raise ValueError(f"Unsupported severity: {severity}")
+        relation = relation_to_task.lower().strip()
+        if relation not in RELATIONS_TO_TASK:
+            raise ValueError(f"Unsupported relation_to_task: {relation_to_task}")
         provided = evidence or {}
-        if normalized in {"blocker", "major"} and not provided:
-            provided = {"kind": "unsupported_claim", "requested_severity": normalized}
-            normalized = "speculative"
         status = "open"
         debt = self.store.get_node(debt_id) if debt_id else None
         if debt:
@@ -935,10 +974,19 @@ class PSG:
                     "kind": "accepted_debt_not_due",
                     "debt_id": debt_id,
                 }
+        evidence_sufficient = self._issue_evidence_sufficient(
+            task=task,
+            relation_to_task=relation,
+            evidence=provided,
+            affected_nodes=affected_nodes or [],
+            violates=violates,
+        )
         issue = {
             "id": self.store.next_id("issues", "I"),
             "task_id": task_id,
             "severity": normalized,
+            "relation_to_task": relation,
+            "evidence_sufficient": evidence_sufficient,
             "claim": claim,
             "evidence": provided,
             "affected_nodes": affected_nodes or [],
@@ -962,6 +1010,8 @@ class PSG:
                 "provenance": [str(provided.get("source", "review"))],
                 "payload": {
                     "severity": normalized,
+                    "relation_to_task": relation,
+                    "evidence_sufficient": evidence_sufficient,
                     "evidence": provided,
                     "violates": violates,
                     "debt_id": debt_id,
@@ -995,7 +1045,248 @@ class PSG:
                 )
         self.store.bump_graph_revision()
         self._persist()
-        return issue
+        return self.store.get_issue(issue["id"]) or issue
+
+    def _issue_evidence_sufficient(
+        self,
+        *,
+        task: dict[str, Any],
+        relation_to_task: str,
+        evidence: dict[str, Any],
+        affected_nodes: list[str],
+        violates: str | None,
+    ) -> bool:
+        if relation_to_task in {"pre_existing", "unrelated", "future_improvement"}:
+            return bool(evidence)
+        if relation_to_task == "violates_acceptance":
+            criterion_ids = {item["id"] for item in task.get("criteria", [])}
+            return bool(violates in criterion_ids and evidence)
+        if relation_to_task == "violates_project_constraint":
+            pointer = self.store.get_node(violates) if violates else None
+            valid_pointer = bool(
+                pointer
+                and (
+                    (
+                        pointer["type"] == "Constraint"
+                        and pointer.get("source", {}).get("task_id") == task["id"]
+                    )
+                    or (
+                        pointer["type"] == "Decision"
+                        and pointer.get("status") == "accepted"
+                    )
+                )
+            )
+            restricted_node = any(
+                self.store.get_node(node_id)
+                and self.policy.effective_node_policy(node_id)[0]
+                in {"frozen", "read_only", "interface_locked"}
+                for node_id in affected_nodes
+            )
+            policy_reference = bool(
+                violates
+                and violates.startswith("policy:")
+                and evidence.get("reference")
+            )
+            return bool(
+                evidence and (valid_pointer or restricted_node or policy_reference)
+            )
+        if relation_to_task == "caused_by_patch":
+            changes = parse_diff(git.final_diff(self.root))
+            changed_nodes: set[str] = set()
+            changed_paths: set[str] = set()
+            for change in changes:
+                changed_paths.update(change.scope_paths)
+                changed_nodes.add(f"file:{change.path}")
+                changed_nodes.update(
+                    node["id"] for node in self.policy.affected_symbols(change)
+                )
+            affected_change = bool(set(affected_nodes) & changed_nodes)
+            evidence_path = str(evidence.get("path", "")).replace("\\", "/")
+            diff_reference = bool(
+                evidence_path in changed_paths
+                and (evidence.get("diff_hunk") or evidence.get("runtime_error"))
+            )
+            verification_id = str(
+                evidence.get("verification_id") or evidence.get("reference") or ""
+            )
+            verification = (
+                self.store.get_verification(verification_id)
+                if verification_id
+                else None
+            )
+            failing_verification = bool(
+                verification
+                and verification["task_id"] == task["id"]
+                and verification["result"] != "pass"
+            )
+            return affected_change or diff_reference or failing_verification
+        return False
+
+    def task_contract(self, task_id: str) -> dict[str, Any]:
+        task = self.store.get_task(task_id)
+        if not task:
+            raise KeyError(f"Unknown task: {task_id}")
+        return task_contract(task)
+
+    def handoff(self, task_id: str | None = None) -> dict[str, Any]:
+        selected_id = task_id
+        if not selected_id:
+            active = [
+                task
+                for task in self.store.list_tasks()
+                if task["status"] in {"open", "blocked"}
+            ]
+            if len(active) != 1:
+                raise ValueError(
+                    "Specify TASK_ID when there is not exactly one active task."
+                )
+            selected_id = active[0]["id"]
+        task = self.store.get_task(selected_id)
+        if not task:
+            raise KeyError(f"Unknown task: {selected_id}")
+        contract = task_contract(task)
+        changes = []
+        relevant_ids = {selected_id}
+        for change in parse_diff(git.final_diff(self.root)):
+            # PSG's own portable state is rewritten by every mutation; it is
+            # bookkeeping, not a change the reviewer should read.
+            if git.is_managed_state_path(change.path):
+                continue
+            symbols = [node["id"] for node in self.policy.affected_symbols(change)]
+            relevant_ids.add(f"file:{change.path}")
+            relevant_ids.update(symbols)
+            changes.append({"path": change.path, "symbols": symbols})
+        for values in contract["mutation_boundary"].values():
+            for entry in values:
+                relevant_ids.update(self._boundary_node_ids(entry))
+        relevant_ids.update(
+            node["id"]
+            for node in self.store.list_nodes("Constraint")
+            if node.get("source", {}).get("task_id") == selected_id
+        )
+        decisions = []
+        for node in self.store.list_nodes("Decision"):
+            if node["status"] != "accepted" or not is_user_approved(node):
+                continue
+            scope = set(node.get("payload", {}).get("scope", []))
+            normalized_scope = {
+                value if self.store.get_node(value) else f"file:{value}"
+                for value in scope
+            }
+            if normalized_scope and not normalized_scope.intersection(relevant_ids):
+                continue
+            decisions.append(
+                {
+                    "id": node["id"],
+                    "title": node["title"],
+                    "scope": sorted(scope),
+                }
+            )
+        accepted_debt = []
+        for node in self.store.list_nodes("Debt"):
+            if node["status"] != "accepted" or not is_user_approved(node):
+                continue
+            affects = {
+                edge["dst"]
+                for edge in self.store.edges_for([node["id"]], both=False)
+                if edge["type"] == "affects"
+            }
+            same_task = node.get("source", {}).get("task_id") == selected_id
+            if not same_task and affects and not affects.intersection(relevant_ids):
+                continue
+            accepted_debt.append({"id": node["id"], "title": node["title"]})
+        trusted_verification = []
+        for item in self.store.latest_verifications(selected_id):
+            if evidence_trust(item["evidence"]) not in {
+                RUNTIME_ATTESTED,
+                EXTERNAL_ATTESTED,
+            }:
+                continue
+            trusted_verification.append(
+                {
+                    "id": item["id"],
+                    "name": item["name"],
+                    "kind": item["kind"],
+                    "result": item["result"],
+                    "revision": item["revision"],
+                    "reference": item["evidence"].get("reference"),
+                }
+            )
+        issues = [
+            {
+                key: item.get(key)
+                for key in (
+                    "id",
+                    "severity",
+                    "relation_to_task",
+                    "blocks_current_task",
+                    "claim",
+                    "violates",
+                    "status",
+                )
+            }
+            for item in self.store.list_issues(selected_id)
+        ]
+        working_paths = {
+            path
+            for values in task["payload"].get("working_set", {}).values()
+            if isinstance(values, list)
+            for path in values
+        }
+        graph_synchronized = all(
+            self.indexer.freshness(node) == 1.0
+            for node in self.store.find_nodes_for_paths(working_paths)
+        )
+        ship_state = self.convergence.evaluate(
+            selected_id,
+            graph_synchronized=graph_synchronized,
+            worktree_fingerprint=git.worktree_fingerprint(self.root),
+            persist=False,
+        )
+        frozen = sorted(
+            node_id
+            for node_id in relevant_ids
+            if self.store.get_node(node_id)
+            and self.policy.effective_node_policy(node_id)[0]
+            in {"frozen", "read_only", "interface_locked"}
+        )
+        pack = {
+            "task_contract": contract,
+            "contract_hash": task["payload"].get("contract_hash"),
+            "changed": changes,
+            "frozen": frozen,
+            "relevant_decisions": decisions,
+            "trusted_verification": trusted_verification,
+            "accepted_debt": accepted_debt,
+            "known_issues": issues,
+            "current_ship_state": {
+                "status": ship_state["status"],
+                "recommendation": ship_state["recommendation"],
+                "current_task_issues": ship_state["current_task_issue_summary"],
+                "follow_up_issues": ship_state["follow_up_issue_summary"],
+            },
+            "review_instruction": "Review the task, not the entire project.",
+            "state_mutated": False,
+        }
+        pack["markdown"] = render_handoff(pack)
+        return pack
+
+    def _boundary_node_ids(self, entry: str) -> set[str]:
+        """Resolve one mutation-boundary entry to the graph node ids it covers.
+
+        Entries are node ids, plain paths, or path globs, so a glob must expand
+        against indexed File nodes to stay comparable with decision scopes.
+        """
+        if self.store.get_node(entry):
+            return {entry}
+        resolved = {f"file:{entry}"}
+        if any(character in entry for character in "*?["):
+            resolved.update(
+                node["id"]
+                for node in self.store.list_nodes("File")
+                if fnmatch.fnmatch(node["id"].removeprefix("file:"), entry)
+            )
+        return resolved
 
     def issue_update(
         self,
@@ -1294,6 +1585,15 @@ class PSG:
         model_family: str | None = None,
         _trust_tier: str = CLAIMED,
     ) -> dict[str, Any]:
+        task = self.store.get_task(task_id)
+        if not task:
+            raise KeyError(f"Unknown task: {task_id}")
+        expected_contract_hash = task["payload"].get("contract_hash")
+        actual_contract_hash = contract_hash(task)
+        if expected_contract_hash and expected_contract_hash != actual_contract_hash:
+            raise PermissionError(
+                "NO_SCOPE_EXPANSION_BY_REVIEW: the Task Contract changed outside a new user task."
+            )
         result = self.convergence.review_record(
             task_id,
             new_blocking_issues,
@@ -1302,6 +1602,8 @@ class PSG:
             model_family=model_family,
             trust_tier=_trust_tier,
         )
+        result["invariant"] = "NO_SCOPE_EXPANSION_BY_REVIEW"
+        result["contract_hash"] = actual_contract_hash
         self._persist()
         return result
 

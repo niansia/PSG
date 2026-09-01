@@ -2,9 +2,14 @@ from __future__ import annotations
 
 import asyncio
 import json
+import os
 import subprocess
+import sys
+
+import pytest
 
 from psg.cli import _console_safe, main
+from psg.config import discover_root
 from psg.installer import setup_skill, uninstall_installation, update_installation
 from psg.mcp_server import mcp
 
@@ -27,11 +32,95 @@ def test_cli_status_is_human_readable_by_default(graph, capsys) -> None:
     assert "Current task" in captured.out
 
 
+def test_project_root_discovery_stops_at_the_git_worktree(graph, tmp_path) -> None:
+    # ~/.psg/config.yaml is the global home, not a project: an unbounded upward scan
+    # resolves every repository under $HOME to the home directory once setup has run.
+    outer_state = tmp_path / ".psg"
+    outer_state.mkdir(parents=True, exist_ok=True)
+    (outer_state / "config.yaml").write_text("version: 1", encoding="utf-8")
+
+    assert discover_root(graph.root / "src") == graph.root
+    assert discover_root(graph.root) == graph.root
+
+    plain = tmp_path / "plain"
+    (plain / ".git").mkdir(parents=True)
+    assert discover_root(plain) == plain.resolve()
+
+
 def test_cli_status_guides_uninitialized_project(repo, capsys) -> None:
     result = main(["--root", str(repo), "status"])
     captured = capsys.readouterr()
     assert result == 0
     assert "Run 'psg init'" in captured.out
+
+
+def test_cli_handoff_writes_markdown(graph, task, tmp_path, capsys) -> None:
+    output = tmp_path / "PSG_REVIEW.md"
+    result = main(
+        [
+            "--root",
+            str(graph.root),
+            "handoff",
+            task["id"],
+            "--output",
+            str(output),
+        ]
+    )
+    captured = capsys.readouterr()
+    assert result == 0
+    assert str(output) in captured.out
+    assert "Review the task, not the entire project." in output.read_text(
+        encoding="utf-8"
+    )
+
+
+# Every live MCP call is bounded: a stalled stdio server must fail the suite fast
+# instead of hanging it. PSG tools that shell out to Git regressed exactly this way
+# when their child processes inherited the JSON-RPC stdin handle.
+LIVE_MCP_CALL_TIMEOUT_SECONDS = 30.0
+
+
+def test_live_mcp_git_backed_tools_answer_over_stdio(graph, task) -> None:
+    mcp_module = pytest.importorskip("mcp")
+    stdio_module = pytest.importorskip("mcp.client.stdio")
+
+    async def exercise() -> None:
+        parameters = mcp_module.StdioServerParameters(
+            command=sys.executable,
+            args=["-m", "psg.mcp_server"],
+            env={**os.environ, "PSG_PROJECT_ROOT": str(graph.root)},
+        )
+        async with (
+            stdio_module.stdio_client(parameters) as streams,
+            mcp_module.ClientSession(*streams) as session,
+        ):
+            await asyncio.wait_for(session.initialize(), LIVE_MCP_CALL_TIMEOUT_SECONDS)
+            status = await asyncio.wait_for(
+                session.call_tool("project_status", {}),
+                LIVE_MCP_CALL_TIMEOUT_SECONDS,
+            )
+            assert status.structuredContent["root"] == str(graph.root)
+            context = await asyncio.wait_for(
+                session.call_tool(
+                    "context_build", {"task_id": task["id"], "max_tokens": 12000}
+                ),
+                LIVE_MCP_CALL_TIMEOUT_SECONDS,
+            )
+            assert context.isError is False
+            assert context.structuredContent["task_brief"]["id"] == task["id"]
+            handoff = await asyncio.wait_for(
+                session.call_tool("handoff_build", {"task_id": task["id"]}),
+                LIVE_MCP_CALL_TIMEOUT_SECONDS,
+            )
+            assert handoff.isError is False
+            # A second Git-backed call proves the transport is still healthy.
+            again = await asyncio.wait_for(
+                session.call_tool("project_status", {}),
+                LIVE_MCP_CALL_TIMEOUT_SECONDS,
+            )
+            assert again.isError is False
+
+    asyncio.run(exercise())
 
 
 def test_human_output_falls_back_for_legacy_windows_console() -> None:
@@ -78,6 +167,7 @@ def test_mcp_exposes_complete_tool_surface() -> None:
         "fix_record",
         "ship_evaluate",
         "snapshot_create",
+        "handoff_build",
         "debt_record",
         "debt_review",
         "conflict_record",
@@ -103,6 +193,30 @@ def test_mcp_exposes_complete_tool_surface() -> None:
     policy_properties = node_policy.inputSchema.get("properties", {})
     assert "override" not in policy_properties
     assert "decision_id" not in policy_properties
+    handoff = next(tool for tool in tools if tool.name == "handoff_build")
+    assert handoff.annotations is not None
+    assert handoff.annotations.readOnlyHint is True
+    issue = next(tool for tool in tools if tool.name == "issue_report")
+    assert "relation_to_task" in issue.inputSchema.get("required", [])
+
+
+def test_mcp_instructions_state_the_review_boundary() -> None:
+    """A host reading only the server instructions must still learn the boundary."""
+    instructions = mcp.instructions or ""
+    assert "Task Contract" in instructions
+    assert "relation_to_task" in instructions
+    for relation in (
+        "caused_by_patch",
+        "violates_acceptance",
+        "violates_project_constraint",
+        "pre_existing",
+        "unrelated",
+        "future_improvement",
+    ):
+        assert relation in instructions
+    assert "follow-up" in instructions
+    assert "handoff_build" in instructions
+    assert "Review the task, not the entire project." in instructions
 
 
 def test_mcp_resources_are_discoverable() -> None:
@@ -175,6 +289,22 @@ def test_setup_autodetects_hosts_and_registers_native_mcp(
         not (tmp_path / "user-home" / f".{name}" / "skills" / "psg").exists()
         for name in ("codex", "claude", "gemini")
     )
+
+
+def test_setup_is_idempotent_and_replaces_a_stale_bundle(tmp_path) -> None:
+    """Re-running setup must converge, not accumulate files from older bundles."""
+    destination = tmp_path / "skills"
+    first = setup_skill(skill_dir=str(destination))
+    installed = destination / "psg"
+    stale = installed / "references" / "removed-in-a-later-version.md"
+    stale.write_text("stale", encoding="utf-8")
+
+    second = setup_skill(skill_dir=str(destination))
+    assert second["installed"] == first["installed"]
+    assert not stale.exists()
+    assert (installed / "SKILL.md").is_file()
+    assert (installed / "agents" / "openai.yaml").is_file()
+    assert (installed / "references" / "review-boundary.md").is_file()
 
 
 def test_update_refreshes_runtime_then_integrations() -> None:

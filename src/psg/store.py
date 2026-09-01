@@ -5,7 +5,10 @@ from collections.abc import Iterable
 from pathlib import Path
 from typing import Any
 
+from .task_contract import blocks_current_task
 from .util import canonical_json, json_loads, utc_now
+
+SCHEMA_VERSION = 2
 
 SCHEMA = """
 PRAGMA foreign_keys = ON;
@@ -72,6 +75,8 @@ CREATE TABLE IF NOT EXISTS issues (
     claim TEXT NOT NULL,
     evidence_json TEXT NOT NULL,
     affected_json TEXT NOT NULL DEFAULT '[]',
+    relation_to_task TEXT NOT NULL DEFAULT 'unrelated',
+    evidence_sufficient INTEGER NOT NULL DEFAULT 0,
     violates TEXT,
     introduced_by_patch TEXT,
     resolved_by_patch TEXT,
@@ -134,7 +139,39 @@ class Store:
             connection.execute(
                 "INSERT OR IGNORE INTO meta(key, value) VALUES('schema_version', '1')"
             )
+            self._migrate(connection)
         self.event_log.touch(exist_ok=True)
+
+    def _migrate(self, connection: sqlite3.Connection) -> None:
+        """Bring a pre-existing database up to SCHEMA_VERSION.
+
+        Migrations are additive and idempotent, so an older runtime can still open a
+        newer database: every added column carries a default.
+        """
+        row = connection.execute(
+            "SELECT value FROM meta WHERE key='schema_version'"
+        ).fetchone()
+        current = int(row["value"]) if row else 1
+        if current >= SCHEMA_VERSION:
+            return
+        columns = {
+            str(column[1])
+            for column in connection.execute("PRAGMA table_info(issues)").fetchall()
+        }
+        # Schema 2 records where a review finding sits relative to the current task.
+        if "relation_to_task" not in columns:
+            connection.execute(
+                "ALTER TABLE issues ADD COLUMN relation_to_task TEXT NOT NULL "
+                "DEFAULT 'unrelated'"
+            )
+        if "evidence_sufficient" not in columns:
+            connection.execute(
+                "ALTER TABLE issues ADD COLUMN evidence_sufficient INTEGER NOT NULL "
+                "DEFAULT 0"
+            )
+        connection.execute(
+            "UPDATE meta SET value=? WHERE key='schema_version'", (str(SCHEMA_VERSION),)
+        )
 
     def graph_revision(self) -> int:
         with self.connect() as connection:
@@ -500,8 +537,10 @@ class Store:
         now = utc_now()
         with self.connect() as connection:
             connection.execute(
-                """INSERT INTO issues(id,task_id,severity,claim,evidence_json,affected_json,violates,
-                introduced_by_patch,resolved_by_patch,status,created_at,updated_at) VALUES(?,?,?,?,?,?,?,?,?,?,?,?)""",
+                """INSERT INTO issues(id,task_id,severity,claim,evidence_json,affected_json,
+                relation_to_task,evidence_sufficient,violates,introduced_by_patch,
+                resolved_by_patch,status,created_at,updated_at)
+                VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?)""",
                 (
                     issue["id"],
                     issue["task_id"],
@@ -509,6 +548,8 @@ class Store:
                     issue["claim"],
                     canonical_json(issue.get("evidence", {})),
                     canonical_json(issue.get("affected_nodes", [])),
+                    issue["relation_to_task"],
+                    int(issue.get("evidence_sufficient", False)),
                     issue.get("violates"),
                     issue.get("introduced_by_patch"),
                     issue.get("resolved_by_patch"),
@@ -748,10 +789,13 @@ class Store:
                 for issue in task.get("issues", []):
                     connection.execute(
                         """INSERT INTO issues(id,task_id,severity,claim,evidence_json,affected_json,
-                        violates,introduced_by_patch,resolved_by_patch,status,created_at,updated_at)
-                        VALUES(?,?,?,?,?,?,?,?,?,?,?,?) ON CONFLICT(id) DO UPDATE SET
+                        relation_to_task,evidence_sufficient,violates,introduced_by_patch,
+                        resolved_by_patch,status,created_at,updated_at)
+                        VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?) ON CONFLICT(id) DO UPDATE SET
                         severity=excluded.severity,claim=excluded.claim,evidence_json=excluded.evidence_json,
                         affected_json=excluded.affected_json,violates=excluded.violates,
+                        relation_to_task=excluded.relation_to_task,
+                        evidence_sufficient=excluded.evidence_sufficient,
                         introduced_by_patch=excluded.introduced_by_patch,
                         resolved_by_patch=excluded.resolved_by_patch,status=excluded.status,
                         updated_at=excluded.updated_at""",
@@ -762,6 +806,8 @@ class Store:
                             issue["claim"],
                             canonical_json(issue.get("evidence", {})),
                             canonical_json(issue.get("affected_nodes", [])),
+                            issue.get("relation_to_task", "unrelated"),
+                            int(issue.get("evidence_sufficient", False)),
                             issue.get("violates"),
                             issue.get("introduced_by_patch"),
                             issue.get("resolved_by_patch"),
@@ -898,6 +944,8 @@ class Store:
         value = dict(row)
         value["evidence"] = json_loads(value.pop("evidence_json"), {})
         value["affected_nodes"] = json_loads(value.pop("affected_json"), [])
+        value["evidence_sufficient"] = bool(value["evidence_sufficient"])
+        value["blocks_current_task"] = blocks_current_task(value)
         return value
 
     @staticmethod

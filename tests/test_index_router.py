@@ -82,6 +82,7 @@ def test_independent_clients_share_project_state(graph: PSG) -> None:
     reviewer.issue_report(
         task_id=opened["id"],
         severity="minor",
+        relation_to_task="unrelated",
         claim="Reviewer-side observation",
         evidence={"kind": "cross_client_test"},
     )

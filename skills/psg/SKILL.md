@@ -29,7 +29,7 @@ When `.psg/config.yaml` exists and PSG is enabled, govern ordinary repository wo
 4. Call `context_expand` only when concrete evidence shows that additional context or write scope is necessary.
 5. Use `patch_validate_proposed` only for optional preflight. After edits, call `patch_validate` with the task ID only; the runtime must read the complete current Git state itself.
 6. Call `verification_run` with configured check names only. The runtime selects the allowlisted command. Never use PSG to execute caller-supplied shell text. Do not convert a claim into attested evidence. Pass acceptance criteria only with a traceable `kind`, `source`, and `reference`; waivers require an approved user action or accepted Decision.
-7. Reviewers report evidence-backed issues without patching and identify their actor/session in `review_record`. A different actor label is still only a claim; high-risk independent review requires an approved review record.
+7. Reviewers report evidence-backed issues without patching, classify every issue by `relation_to_task`, and identify their actor/session in `review_record`. A different actor label is still only a claim; high-risk independent review requires an approved review record.
 8. Fix only unresolved BLOCKER/MAJOR findings within the remaining fix budget. Do not turn review into opportunistic refactoring.
 9. Call `ship_evaluate`. Follow only its targeted blocker recommendation. On `SHIPPABLE`, leave MINOR/OPTIONAL items deferred and stop.
 
@@ -42,6 +42,8 @@ Record decisions, constraints, accepted debt, and material project state rather 
 If PSG reports an untrusted modification to `.psg/state/project.yaml` or `.psg/config.yaml`, do not call `state accept`. Explain the change and wait for the user to review both files and explicitly accept it. A clean Git version may be imported after pull or checkout; a dirty mismatch is blocked before configured commands run.
 
 When another skill conflicts with project authority, a new dependency is proposed, or accepted debt is involved, read [references/compatibility-contract.md](references/compatibility-contract.md).
+
+When reviewing an implementation, consuming `psg handoff`, performing cross-model review, or auditing the current task, read [references/review-boundary.md](references/review-boundary.md). Do not load it for ordinary happy-path implementation.
 
 ## Missing or unhealthy runtime
 

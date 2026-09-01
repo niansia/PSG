@@ -92,6 +92,8 @@ class VerificationEngine:
                     text=True,
                     encoding="utf-8",
                     errors="replace",
+                    # Allowlisted checks must never inherit or block on host stdin.
+                    stdin=subprocess.DEVNULL,
                     stdout=subprocess.PIPE,
                     stderr=subprocess.STDOUT,
                     timeout=timeout,
@@ -153,6 +155,7 @@ def report_failed_checks(
                 report_issue(
                     task_id=result["task_id"],
                     severity="major",
+                    relation_to_task="caused_by_patch",
                     claim=f"Required verification '{result['name']}' did not pass",
                     evidence={
                         "kind": "verification_failure",

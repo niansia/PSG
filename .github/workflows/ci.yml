@@ -10,19 +10,44 @@ permissions:
 
 jobs:
   test:
-    runs-on: ubuntu-latest
-    timeout-minutes: 10
+    name: ${{ matrix.os }} · Python ${{ matrix.python-version }}
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 25
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          # Ruff runs once, on the primary target.
+          - os: ubuntu-latest
+            python-version: "3.10"
+            lint: true
+          - os: windows-latest
+            python-version: "3.10"
+          - os: macos-latest
+            python-version: "3.10"
+          - os: ubuntu-latest
+            python-version: "3.13"
     steps:
       - uses: actions/checkout@v7
+
       - uses: actions/setup-python@v7
         with:
-          python-version: "3.10"
+          python-version: ${{ matrix.python-version }}
           cache: pip
+
       - name: Install
         run: python -m pip install -e ".[mcp,dev]"
+
       - name: Lint
+        if: matrix.lint
         run: |
           python -m ruff check .
           python -m ruff format --check .
+
       - name: Test
+        # Installer and host-integration tests use fake Codex/Claude/Gemini
+        # executables; no real agent client is installed in CI.
         run: python -m pytest
+
+      - name: Build, validate, and smoke-install the release artifacts
+        run: python scripts/build_release.py --output-dir dist-ci

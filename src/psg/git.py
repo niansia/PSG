@@ -18,6 +18,10 @@ def run_git(root: Path, *args: str, check: bool = True) -> str:
         text=True,
         encoding="utf-8",
         errors="replace",
+        # Never inherit the host stdin: under an MCP stdio server that handle is the
+        # JSON-RPC pipe with a blocking read pending, and an inheriting child stalls
+        # until the next client message arrives.
+        stdin=subprocess.DEVNULL,
         capture_output=True,
         check=False,
     )
@@ -57,11 +61,12 @@ def status_porcelain(root: Path) -> str:
     return "\n".join(
         line
         for line in value.splitlines()
-        if not _managed_psg_path(normalize_path(line[3:].split(" -> ")[-1]))
+        if not is_managed_state_path(normalize_path(line[3:].split(" -> ")[-1]))
     )
 
 
-def _managed_psg_path(path: str) -> bool:
+def is_managed_state_path(path: str) -> bool:
+    """PSG's own derived/portable state is bookkeeping, never a reviewable change."""
     return path.startswith((".psg/local/", ".psg/state/"))
 
 
@@ -99,7 +104,7 @@ def worktree_fingerprint(root: Path) -> str:
     for rel in (
         normalize_path(line) for line in untracked.splitlines() if line.strip()
     ):
-        if _managed_psg_path(rel):
+        if is_managed_state_path(rel):
             continue
         path = root / rel
         if path.is_file():

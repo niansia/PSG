@@ -1,4 +1,4 @@
-# PSG v1.0 acceptance traceability
+# PSG v1.1 acceptance traceability
 
 This document maps the reviewed completion requirements to implemented behavior and automated evidence. The release is a complete Python-first MVP, not a claim of production maturity across every language or repository.
 
@@ -28,14 +28,25 @@ This document maps the reviewed completion requirements to implemented behavior 
 | Bounded convergence | Runtime derives blocker changes from Issue state; only runtime-counted review/fix budgets hard-stop loops; caller counts/churn are advisory | convergence-budget and derived-blocker tests |
 | Stable graph snapshots | Safety snapshot and graph-only restore, with no destructive Git action | snapshot restore test |
 | Complete MCP surface | Index, graph, actual/proposed validation, verification, debt, conflict, status, and ship tools | MCP schema completeness test |
-| Minimal CI | Python 3.10 install, Ruff format/lint, and Pytest on push/PR | `.github/workflows/ci.yml` |
-| Reproducible benchmark | 12 tasks; full selected-file contents plus tool payload counted; frozen mutation blocked | `benchmarks/results/latest.json` |
+| Task Contract | Opening a task records and hashes goal, context, mutation, scope, review, completion, and risk boundaries | task-contract and contract-hash tests |
+| Review boundary | Findings carry one relation from a closed set; reviewers may classify but never redefine the task | relation-enum, unknown-relation, and no-scope-expansion tests |
+| Runtime-derived blocking | `blocks_current_task` is derived from status, severity, relation, and runtime-checked evidence sufficiency | patch-caused, acceptance, constraint, pre-existing, unrelated, and future-improvement tests |
+| Visible follow-up work | Out-of-boundary findings stay reported and never block the current task | follow-up visibility and ship-after-fix tests |
+| Read-only handoff | `psg handoff` and `handoff_build` build a review pack without changing task status or the event log | handoff read-only test |
+| Hard convergence budgets | Review and fix cycles cap at 2; imported wider budgets are clamped in enforcement and projection | budget-exhaustion and imported-budget clamp tests |
+| Schema migration | A schema-1 database opens, keeps its issues, and defaults them to non-blocking follow-up | legacy-database and legacy-portable-state tests |
+| Live MCP transport | Git-backed MCP tools answer over real stdio within a bounded time | live stdio MCP regression test |
+| Cross-platform CI | Ubuntu/Windows/macOS on Python 3.10 and Ubuntu on Python 3.13 run tests, wheel build, and clean install smoke | `.github/workflows/ci.yml`, `scripts/build_release.py` |
+| Task-Boundary benchmark | 10 seeded scenarios report blocking precision, recall, and false reopening rate | `benchmarks/results/task-boundary-latest.json` |
+| Matched agentic benchmark | 10 paired tasks, one Codex CLI and model, same prompt and baseline commit, separate clean worktrees, hidden tests | `benchmarks/results/agentic-ab-latest.json` |
+| Mechanics regression benchmark | 12 tasks; full selected-file contents plus tool payload counted; frozen mutation blocked | `benchmarks/results/latest.json` |
 
 ## Verified release results
 
-- Automated behavior, adversarial, packaging, and Skill archive tests: **64 passing locally**; CI repeats the suite on Python 3.10.
+- Automated behavior, adversarial, packaging, and Skill archive tests: **86 passing locally**; CI repeats the suite on Ubuntu, Windows, and macOS.
 - Ruff lint and format checks: **passing**.
-- Synthetic sequential benchmark: **12/12 SHIPPABLE**.
+- Task-Boundary benchmark: **10/10 correct**, blocking precision **1.0**, blocking recall **1.0**, false reopening rate **0.0**.
+- Mechanics regression benchmark: **12/12 SHIPPABLE**.
 - Benchmark file-read reduction: **89.69%** versus disclosed all-files baseline.
 - Benchmark context-token reduction: **32.41%**, counting the serialized context payload and actual contents of every selected source file.
 - Unauthorized frozen mutation: **blocked**.
@@ -44,7 +55,8 @@ This document maps the reviewed completion requirements to implemented behavior 
 ## Deliberate v1 boundaries
 
 - Rich symbol extraction is Python-first; other languages receive file-level indexing.
-- The benchmark is synthetic. Generalization requires the held-out real-repository protocol in `research/evaluation-plan.md`.
+- Both benchmarks run on generated repositories. The agentic A/B is a *matched controlled* benchmark with strong internal validity about the PSG contrast and limited external validity; generalization still requires the held-out real-repository protocol in `research/evaluation-plan.md`.
+- The Codex CLI exposes no per-run dollar charge, so the agentic benchmark reports `reported_cost_usd: null` rather than inferring a price.
 - PSG governs and evaluates; the active agent performs source edits.
 - Local SQLite is a cache, not a collaboration artifact or source of truth.
 - No authenticated CI/connector adapter is included yet; `EXTERNAL_ATTESTED` is reserved and external-tool labels remain claims.

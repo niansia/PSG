@@ -17,7 +17,7 @@ from .installer import (
 )
 from .runtime import PSG
 from .trust import CLAIMED, USER_APPROVED
-from .util import pretty_json
+from .util import atomic_write_text, pretty_json
 
 
 def _json(value: str | None, default: Any) -> Any:
@@ -66,6 +66,9 @@ def build_parser() -> argparse.ArgumentParser:
     setup.add_argument("--all", dest="all_hosts", action="store_true")
 
     sub.add_parser("status", help="Show project, Agent, and runtime status")
+    handoff = sub.add_parser("handoff", help="Build a read-only review contract")
+    handoff.add_argument("task_id", nargs="?")
+    handoff.add_argument("--output", type=Path)
     on = sub.add_parser("on", help="Enable automatic PSG governance")
     on.add_argument("--global", dest="global_scope", action="store_true")
     off = sub.add_parser("off", help="Disable automatic PSG governance")
@@ -215,6 +218,17 @@ def build_parser() -> argparse.ArgumentParser:
     issue_report = issue_sub.add_parser("report")
     issue_report.add_argument("task_id")
     issue_report.add_argument("severity")
+    issue_report.add_argument(
+        "relation_to_task",
+        choices=[
+            "caused_by_patch",
+            "violates_acceptance",
+            "violates_project_constraint",
+            "pre_existing",
+            "unrelated",
+            "future_improvement",
+        ],
+    )
     issue_report.add_argument("claim")
     issue_report.add_argument("--evidence", default="{}")
     issue_report.add_argument("--affected", action="append", default=[])
@@ -339,6 +353,13 @@ def dispatch(args: argparse.Namespace) -> Any:
         value = graph.doctor()
         value["installation"] = installation_status()
         return value
+    if args.command == "handoff":
+        value = graph.handoff(args.task_id)
+        if args.output:
+            output = args.output.expanduser().resolve()
+            atomic_write_text(output, value["markdown"])
+            value["output"] = str(output)
+        return value
     if args.command == "node":
         if args.node_command == "add":
             return graph.node_create(
@@ -440,6 +461,7 @@ def dispatch(args: argparse.Namespace) -> Any:
             return graph.issue_report(
                 task_id=args.task_id,
                 severity=args.severity,
+                relation_to_task=args.relation_to_task,
                 claim=args.claim,
                 evidence=_json(args.evidence, {}),
                 affected_nodes=args.affected,
@@ -513,6 +535,7 @@ def main(argv: list[str] | None = None) -> int:
             "update",
             "uninstall",
             "doctor",
+            "handoff",
         }:
             print(pretty_json(result))
         else:
@@ -622,6 +645,10 @@ def _human_output(command: str, value: dict[str, Any]) -> str:
         return "PSG doctor: healthy." if value.get("healthy") else pretty_json(value)
     if command == "update":
         return value.get("message", "PSG updated.")
+    if command == "handoff":
+        if value.get("output"):
+            return f"PSG review contract written to {value['output']}"
+        return value["markdown"]
     if command == "uninstall":
         return "\n".join(
             [

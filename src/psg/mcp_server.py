@@ -20,7 +20,13 @@ mcp = FastMCP(
         "accepted PSG decisions. Open/resume a task, build context, and treat WRITE, "
         "READ_ONLY, FORBIDDEN, frozen, and interface-locked boundaries as hard constraints. Validate the real "
         "runtime-read final diff, run deterministic evidence, defer known debt until its trigger, and stop when the "
-        "ship gate returns SHIPPABLE."
+        "ship gate returns SHIPPABLE. "
+        "Every task carries a hashed Task Contract; review classifies findings against it and never widens it. "
+        "Each reported issue must declare one relation_to_task: caused_by_patch, violates_acceptance, "
+        "violates_project_constraint, pre_existing, unrelated, or future_improvement. Only an evidence-backed "
+        "blocker/major in the first three blocks the current task; the runtime derives that, callers cannot assert "
+        "it. Pre-existing, unrelated, and future-improvement findings stay visible as follow-up work and must not "
+        "expand the task. Use handoff_build for a read-only review pack. Review the task, not the entire project."
     ),
 )
 
@@ -228,6 +234,7 @@ def acceptance_record(
 def issue_report(
     task_id: str,
     severity: str,
+    relation_to_task: str,
     claim: str,
     evidence: dict[str, Any] | None = None,
     affected_nodes: list[str] | None = None,
@@ -238,6 +245,7 @@ def issue_report(
     return _graph().issue_report(
         task_id=task_id,
         severity=severity,
+        relation_to_task=relation_to_task,
         claim=claim,
         evidence=evidence,
         affected_nodes=affected_nodes,
@@ -332,6 +340,12 @@ def fix_record(task_id: str, introduced: int = 0, resolved: int = 0) -> dict[str
 def ship_evaluate(task_id: str) -> dict[str, Any]:
     """Evaluate acceptance, verification, issues, policy, revision sync, and review budgets."""
     return _graph().ship_evaluate(task_id)
+
+
+@mcp.tool(title="Build review handoff", annotations=READ_ONLY)
+def handoff_build(task_id: str | None = None) -> dict[str, Any]:
+    """Build a read-only minimum-sufficient Task Contract and review pack."""
+    return _graph().handoff(task_id)
 
 
 @mcp.tool(title="Create graph snapshot", annotations=STATE_WRITE)

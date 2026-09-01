@@ -4,7 +4,21 @@
 
 Evaluate whether persistent project state plus explicit mutation and convergence controls improves repository-level coding over simpler context-and-test workflows.
 
-The study must test PSG as a system, but also isolate which components create value. A positive result on the included synthetic benchmark is insufficient because its repository, tasks, and expected behavior were generated for the implementation.
+The study must test PSG as a system, but also isolate which components create value. A positive result on the included benchmarks is insufficient because their repositories, tasks, and expected behavior were generated for the implementation.
+
+## Where the shipped benchmarks sit
+
+`benchmarks/agentic_ab.py` is a first partial step toward RQ1 and RQ2 under condition 1
+(agent baseline) versus condition 5 (full PSG). It holds the agent, model, prompt, baseline
+commit, sandbox permissions, and MCP configuration constant across the pair, and decides
+success with hidden tests, so its internal validity about the PSG contrast is strong. It
+does **not** satisfy this plan: the repository is generated, the sample is ten pairs, there
+are no ablations, and there is no held-out real-world task set. It should be read as harness
+and mechanism evidence, not as an answer to any research question below.
+
+`benchmarks/task_boundary_benchmark.py` is unit-level evidence for RQ5's blocking-defect
+recall property under seeded, fully-known conditions. `benchmarks/sequential_benchmark.py`
+is a mechanics regression benchmark and is not evidence for RQ1.
 
 ## Research questions
 

@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import os
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
@@ -100,11 +101,31 @@ class ProjectPaths:
 
 
 def discover_root(start: str | Path | None = None) -> Path:
+    """Resolve the PSG project root without escaping the enclosing Git worktree.
+
+    The global PSG home (``~/.psg``) also holds a ``config.yaml``, so an unbounded
+    upward scan resolves every repository under ``$HOME`` to the home directory once
+    ``psg setup`` has run. The Git worktree is the project boundary, so stop there.
+    """
     current = Path(start or Path.cwd()).resolve()
+    global_state_dir = _global_state_dir()
     for candidate in (current, *current.parents):
-        if (candidate / ".psg" / "config.yaml").exists():
+        state_dir = candidate / ".psg"
+        if state_dir != global_state_dir and (state_dir / "config.yaml").exists():
             return candidate
+        if (candidate / ".git").exists():
+            break
     return current
+
+
+def _global_state_dir() -> Path:
+    """Mirror installer.global_home() without importing it, to keep config standalone."""
+    override = os.environ.get("PSG_HOME")
+    return (
+        Path(override).expanduser().resolve()
+        if override
+        else (Path.home() / ".psg").resolve()
+    )
 
 
 def initialize_config(root: Path, project: str | None = None) -> ProjectPaths:

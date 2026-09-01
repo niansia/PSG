@@ -1,4 +1,4 @@
-# PSG v1.0 architecture
+# PSG v1.1 architecture
 
 PSG is a non-exclusive governance layer for coding agents. Git and source files remain authoritative; the project graph adds durable intent, constraints, provenance, evidence, and convergence state.
 
@@ -94,13 +94,34 @@ The ship gate separately requires:
 1. a passing policy validation of the current runtime-derived diff;
 2. at least one trusted functional verification, not merely the policy pass;
 3. passing or properly waived acceptance criteria;
-4. no supported open blocking issues;
+4. no open issue that blocks the current task, as derived by the Task Contract;
 5. required independent review for high-risk work, with reviewer actor different from the recorded builder actor and an approved review record; and
 6. convergence within the configured review/fix budgets.
 
 Debt starts as a claimed proposal and becomes accepted only through the user-owned approval action. Accepted debt records `what`, `why`, a permitted `ceiling`, and a `revisit_trigger`. A claimed trigger cannot reopen it; reviewers do not reopen it until trigger evidence is explicitly approved.
 
-The runtime derives new blocker counts from stored Issue state rather than trusting numbers supplied to `review_record` or `fix_record`. Review and fix budgets are hard runtime-counted stops. Caller counts and churn remain advisory metrics.
+The runtime derives new blocker counts from stored Issue state rather than trusting numbers supplied to `review_record` or `fix_record`. Review and fix budgets are hard runtime-counted stops capped at 2, and imported state carrying a wider budget is clamped in both enforcement and the contract projection. Caller counts and churn remain advisory metrics.
+
+## Task Contract and review boundary
+
+Opening a task materializes a versioned **Task Contract**: goal boundary (intent and acceptance criteria), context boundary (targets, read set, constraints), mutation boundary (`WRITE`/`READ_ONLY`/`FORBIDDEN`), scope boundary (non-goals), review boundary, completion boundary, and risk boundary. The contract is hashed at open time and the hash is stored on the task. `review_record` verifies that hash, which is the mechanical form of `NO_SCOPE_EXPANSION_BY_REVIEW`: a review round cannot redefine the task it is reviewing.
+
+Severity and task scope are separate axes. Every Issue therefore carries a `relation_to_task` drawn from a closed set:
+
+| Relation | Meaning | Blocks the current task |
+| --- | --- | ---: |
+| `caused_by_patch` | Introduced by the change under review | With evidence |
+| `violates_acceptance` | Breaks a declared acceptance criterion | With evidence |
+| `violates_project_constraint` | Breaks an accepted Constraint, Decision, policy, or locked node | With evidence |
+| `pre_existing` | Already true before this task | No |
+| `unrelated` | Outside this task's boundary | No |
+| `future_improvement` | Desirable later work | No |
+
+`blocks_current_task` is **derived**, never supplied. It is true only when the issue is open, its severity is `blocker` or `major`, its relation is one of the first three, and the runtime judged its evidence sufficient. Sufficiency is checked against real graph state: an acceptance violation must name an existing acceptance-criterion ID; a project-constraint violation must identify an existing Constraint, accepted Decision, policy reference, or restricted node; a patch-caused finding needs an affected changed node, concrete diff/runtime evidence, or a failing Verification.
+
+Follow-up relations are retained and reported — the ship gate returns `current_task_issue_summary`, `follow_up_issue_summary`, and the follow-up issues themselves — so nothing is lost by classifying a finding out of scope.
+
+`handoff` projects the contract, the changed files and symbols, relevant constraints and decisions, trusted verification, accepted debt, known issues with their relations, the current ship preview, and follow-up findings into a minimum-sufficient review pack. It evaluates convergence with persistence disabled, so reading a handoff never changes task status or appends to the event log. PSG's own `.psg/state/**` and `.psg/local/**` churn is excluded from the reviewer's changed-file list.
 
 ## Skill coexistence and authority
 

@@ -16,6 +16,7 @@ Run `psg doctor` before attempting recovery when tools fail to load, the databas
 - `psg setup` auto-detects Codex, Claude Code, and Gemini CLI, installs the full Skill bundle, and registers `psg-mcp` through each host's native CLI.
 - `psg init` opts the current Git project into governance and repairs missing host integration when possible.
 - `psg status`, `psg on`, and `psg off` are the ordinary project controls. Add `--global` to `on` or `off` for the global automatic-governance switch.
+- `psg handoff [TASK_ID]` builds a read-only review contract. Add `--output PSG_REVIEW.md` for a Markdown file or global `--json` for structured output.
 - `psg update` resolves and installs the newest stable `vX.Y.Z` release tag, then refreshes the bundle and MCP registrations. `--channel dev` is an explicit opt-in to `main`; `--source` is an advanced override.
 - `psg uninstall` removes installed integrations and runtime while preserving all project `.psg/` directories.
 
@@ -31,6 +32,7 @@ Use the CLI only when the equivalent MCP tool is unavailable and shell access is
 | `guardrails_get` | `psg guardrails` |
 | `index_refresh` | `psg index` |
 | `state_sync` | `psg state sync` |
+| `handoff_build` | `psg handoff TASK_ID` |
 | `task_open` | `psg task open ...` |
 | `context_build` | `psg context build TASK_ID` |
 | `context_expand` | `psg context expand TASK_ID --reason "..."` |

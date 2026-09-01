@@ -10,12 +10,13 @@ ROOT = Path(__file__).resolve().parents[1]
 
 def test_skill_source_and_release_archive_are_complete_and_in_sync() -> None:
     source = ROOT / "skills" / "psg"
-    archive = ROOT / "artifacts" / "psg-skill-v1.0.1.zip"
+    archive = ROOT / "artifacts" / "psg-skill-v1.1.0.zip"
     required = {
         "psg/SKILL.md",
         "psg/agents/openai.yaml",
         "psg/references/compatibility-contract.md",
         "psg/references/convergence-recovery.md",
+        "psg/references/review-boundary.md",
         "psg/references/runtime-operations.md",
     }
     with zipfile.ZipFile(archive) as bundle:
@@ -28,12 +29,13 @@ def test_skill_source_and_release_archive_are_complete_and_in_sync() -> None:
 
 def test_runtime_wheel_embeds_the_complete_skill_bundle() -> None:
     source = ROOT / "skills" / "psg"
-    wheel = ROOT / "artifacts" / "psg_runtime-1.0.1-py3-none-any.whl"
+    wheel = ROOT / "artifacts" / "psg_runtime-1.1.0-py3-none-any.whl"
     relative_files = {
         Path("SKILL.md"),
         Path("agents/openai.yaml"),
         Path("references/compatibility-contract.md"),
         Path("references/convergence-recovery.md"),
+        Path("references/review-boundary.md"),
         Path("references/runtime-operations.md"),
     }
     with zipfile.ZipFile(wheel) as bundle:

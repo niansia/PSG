@@ -131,6 +131,7 @@ def run_benchmark(task_count: int = 12) -> dict[str, Any]:
                 graph.issue_report(
                     task_id=opened["id"],
                     severity="optional",
+                    relation_to_task="future_improvement",
                     claim="The feature modules could share a generated helper",
                     evidence={"kind": "architecture_preference"},
                 )

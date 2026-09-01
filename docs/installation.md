@@ -7,13 +7,13 @@ PSG has two installed parts: the Python runtime (`psg` and `psg-mcp`) and the co
 ### Windows
 
 ```powershell
-python -m pip install "psg-runtime[mcp] @ git+https://github.com/niansia/PSG.git@v1.0.1"; psg setup
+python -m pip install "psg-runtime[mcp] @ git+https://github.com/niansia/PSG.git@v1.1.0"; psg setup
 ```
 
 ### macOS / Linux
 
 ```bash
-python3 -m pip install "psg-runtime[mcp] @ git+https://github.com/niansia/PSG.git@v1.0.1" && psg setup
+python3 -m pip install "psg-runtime[mcp] @ git+https://github.com/niansia/PSG.git@v1.1.0" && psg setup
 ```
 
 `psg setup` detects installed Codex, Claude Code, and Gemini CLI executables. For every detected host it:
@@ -32,7 +32,7 @@ psg init
 
 `psg init` creates `.psg/`, performs the first incremental index, and automatically runs setup if a detected host is missing its integration.
 
-PSG v1 deliberately uses the Python package as its distribution channel. Native standalone binaries and package-manager entries such as WinGet and Homebrew are v1.1 distribution polish; they will remain wrappers around the same runtime rather than new architectural dependencies.
+PSG deliberately uses the Python package as its distribution channel. Native standalone binaries and package-manager entries such as WinGet, Scoop, Homebrew, and npm are deferred distribution polish; when they arrive they will remain wrappers around the same runtime rather than new architectural dependencies.
 
 ## Supported hosts
 
@@ -71,6 +71,21 @@ Use `psg setup --skill-dir C:\custom\skills` to copy the bundle to a custom pare
 
 If a host starts MCP outside the repository, its process must inherit the project working directory or be given `PSG_PROJECT_ROOT` as the absolute project path. Normal Codex, Claude Code, and Gemini CLI project sessions inherit the working directory and do not need a per-project MCP registration.
 
+## Review hosts
+
+Codex, Claude Code, and Gemini CLI run the full runtime and enforce the Task Contract. A
+chat model can also review against the same contract without any installation:
+
+```powershell
+psg handoff --output PSG_REVIEW.md
+```
+
+Paste that file into ChatGPT, Claude, or Gemini. It carries the Task Contract, the changed
+files and symbols, relevant constraints and decisions, trusted verification, accepted debt,
+known issues with their relation to the task, the current ship preview, and follow-up
+findings — and nothing else. The reviewer follows the boundary; only the execution hosts
+enforce it. `psg handoff` never changes task status and never writes to the event log.
+
 ## Update and removal
 
 ```text
@@ -105,7 +120,7 @@ When an Agent presents one of these proposals, review it before using the matchi
 From the bundled wheel:
 
 ```powershell
-python -m pip install ".\psg_runtime-1.0.1-py3-none-any.whl[mcp]"; psg setup
+python -m pip install ".\psg_runtime-1.1.0-py3-none-any.whl[mcp]"; psg setup
 ```
 
 From a source checkout:

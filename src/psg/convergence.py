@@ -3,6 +3,12 @@ from __future__ import annotations
 from typing import Any
 
 from .store import Store
+from .task_contract import (
+    MAX_FIX_CYCLES,
+    MAX_REVIEW_ROUNDS,
+    blocks_current_task,
+    task_contract,
+)
 from .trust import (
     APPROVAL_TRUST_TIERS,
     FUNCTIONAL_TRUST_TIERS,
@@ -29,12 +35,22 @@ class ConvergenceEngine:
         trust_tier: str = "CLAIMED",
     ) -> dict[str, Any]:
         task = self._task(task_id)
+        review_budget = min(int(task["review_budget"]), MAX_REVIEW_ROUNDS)
+        if task["review_rounds"] >= review_budget:
+            return {
+                "task_id": task_id,
+                "review_rounds_used": task["review_rounds"],
+                "review_budget": review_budget,
+                "stop_general_review": True,
+                "reason": "budget_exhausted",
+                "recorded": False,
+            }
         rounds = task["review_rounds"] + 1
         payload = task["payload"]
         blocking_ids = {
             item["id"]
             for item in self.store.list_issues(task_id, status="open")
-            if item["severity"] in BLOCKING
+            if blocks_current_task(item)
         }
         previously_seen = set(payload.get("review_seen_blocking_ids", []))
         derived_new = len(blocking_ids - previously_seen)
@@ -57,11 +73,11 @@ class ConvergenceEngine:
             no_new_blocking_rounds=no_new,
             payload_json=payload,
         )
-        stop = rounds >= task["review_budget"]
+        stop = rounds >= review_budget
         result = {
             "task_id": task_id,
             "review_rounds_used": rounds,
-            "review_budget": task["review_budget"],
+            "review_budget": review_budget,
             "no_new_blocking_rounds": no_new,
             "stop_general_review": stop,
             "reason": "budget_exhausted" if stop else None,
@@ -80,10 +96,22 @@ class ConvergenceEngine:
         self, task_id: str, introduced: int, resolved: int
     ) -> dict[str, Any]:
         task = self._task(task_id)
+        fix_budget = min(int(task["fix_budget"]), MAX_FIX_CYCLES)
+        if task["fix_cycles"] >= fix_budget:
+            return {
+                "task_id": task_id,
+                "fix_cycles_used": task["fix_cycles"],
+                "fix_budget": fix_budget,
+                "stop_targeted_fixes": True,
+                "reason": "fix_budget_exhausted",
+                "recorded": False,
+            }
         cycles = task["fix_cycles"] + 1
         payload = task["payload"]
         current_open = {
-            item["id"] for item in self.store.list_issues(task_id, status="open")
+            item["id"]
+            for item in self.store.list_issues(task_id, status="open")
+            if blocks_current_task(item)
         }
         previous_open = set(payload.get("fix_seen_open_issue_ids", current_open))
         derived_introduced = len(current_open - previous_open)
@@ -102,12 +130,12 @@ class ConvergenceEngine:
                 "role": "advisory",
             }
         )
-        stop = cycles >= task["fix_budget"]
+        stop = cycles >= fix_budget
         self.store.update_task(task_id, fix_cycles=cycles, payload_json=payload)
         result = {
             "task_id": task_id,
             "fix_cycles_used": cycles,
-            "fix_budget": task["fix_budget"],
+            "fix_budget": fix_budget,
             "churn": churn,
             "churn_trend": history,
             "stop_targeted_fixes": stop,
@@ -123,6 +151,7 @@ class ConvergenceEngine:
         *,
         graph_synchronized: bool,
         worktree_fingerprint: str,
+        persist: bool = True,
     ) -> dict[str, Any]:
         task = self._task(task_id)
         criteria = task["criteria"]
@@ -167,8 +196,12 @@ class ConvergenceEngine:
         ]
         missing_verification = not functional_verifications
         issues = self.store.list_issues(task_id, status="open")
-        blockers = [item for item in issues if item["severity"] == "blocker"]
-        majors = [item for item in issues if item["severity"] == "major"]
+        current_task_issues = [item for item in issues if blocks_current_task(item)]
+        blockers = [
+            item for item in current_task_issues if item["severity"] == "blocker"
+        ]
+        majors = [item for item in current_task_issues if item["severity"] == "major"]
+        follow_up = [item for item in issues if not blocks_current_task(item)]
         deferred = [item for item in issues if item["severity"] in NON_BLOCKING]
         policy_checks = [
             item for item in required_verifications if item["kind"] == "policy"
@@ -206,16 +239,19 @@ class ConvergenceEngine:
         if shippable:
             status = "SHIPPABLE"
             recommendation = "SHIP"
-            self.store.update_task(task_id, status="shippable")
+            if persist:
+                self.store.update_task(task_id, status="shippable")
         else:
             status = "BLOCKED"
-            budgets_exhausted = task["fix_cycles"] >= task["fix_budget"] and bool(
+            effective_fix_budget = min(int(task["fix_budget"]), MAX_FIX_CYCLES)
+            budgets_exhausted = task["fix_cycles"] >= effective_fix_budget and bool(
                 blockers or majors
             )
             recommendation = (
                 "HUMAN_DECISION_OR_RESTORE" if budgets_exhausted else "TARGETED_FIX"
             )
-            self.store.update_task(task_id, status="blocked")
+            if persist:
+                self.store.update_task(task_id, status="blocked")
         churn_history = task["payload"].get("churn_history", [])
         result = {
             "status": status,
@@ -241,6 +277,17 @@ class ConvergenceEngine:
             "unresolved_blockers": blockers,
             "unresolved_majors": majors,
             "deferred_minors": deferred,
+            "follow_up_issues": follow_up,
+            "current_task_issue_summary": {
+                "blockers": len(blockers),
+                "majors": len(majors),
+                "total": len(current_task_issues),
+            },
+            "follow_up_issue_summary": {
+                "total": len(follow_up),
+                "major": sum(item["severity"] == "major" for item in follow_up),
+                "blocker": sum(item["severity"] == "blocker" for item in follow_up),
+            },
             "constraints_ok": constraints_ok,
             "graph_synchronized": graph_synchronized,
             "independent_review_required": high_review_required,
@@ -255,16 +302,22 @@ class ConvergenceEngine:
                 if item.get("actor_id")
             ],
             "review_rounds_used": task["review_rounds"],
-            "review_budget": task["review_budget"],
+            "review_budget": min(int(task["review_budget"]), MAX_REVIEW_ROUNDS),
             "fix_cycles_used": task["fix_cycles"],
-            "fix_budget": task["fix_budget"],
+            "fix_budget": min(int(task["fix_budget"]), MAX_FIX_CYCLES),
             "churn_trend": churn_history,
             "recommendation": recommendation,
+            "task_contract": task_contract(task),
         }
-        self.store.event(
-            "ship.evaluated",
-            {"task_id": task_id, "status": status, "recommendation": recommendation},
-        )
+        if persist:
+            self.store.event(
+                "ship.evaluated",
+                {
+                    "task_id": task_id,
+                    "status": status,
+                    "recommendation": recommendation,
+                },
+            )
         return result
 
     def _task(self, task_id: str) -> dict[str, Any]:

@@ -1,0 +1,175 @@
+{
+  "benchmark": "psg-task-boundary-v1",
+  "scenario_count": 10,
+  "scenarios": [
+    {
+      "actual_block": true,
+      "affected_nodes": [
+        "file:src/cart.py"
+      ],
+      "correct": true,
+      "evidence": {
+        "kind": "diff_observation",
+        "path": "src/cart.py"
+      },
+      "evidence_sufficient": true,
+      "expected_block": true,
+      "issue_id": "I-0001",
+      "name": "patch-caused blocker",
+      "relation": "caused_by_patch",
+      "severity": "blocker",
+      "task_id": "T-0001"
+    },
+    {
+      "actual_block": true,
+      "affected_nodes": [
+        "file:src/cart.py"
+      ],
+      "correct": true,
+      "evidence": {
+        "kind": "runtime_failure",
+        "path": "src/cart.py"
+      },
+      "evidence_sufficient": true,
+      "expected_block": true,
+      "issue_id": "I-0002",
+      "name": "patch-caused major",
+      "relation": "caused_by_patch",
+      "severity": "major",
+      "task_id": "T-0002"
+    },
+    {
+      "actual_block": true,
+      "correct": true,
+      "evidence": {
+        "kind": "acceptance_review",
+        "path": "src/cart.py"
+      },
+      "evidence_sufficient": true,
+      "expected_block": true,
+      "issue_id": "I-0003",
+      "name": "acceptance major",
+      "relation": "violates_acceptance",
+      "severity": "major",
+      "task_id": "T-0003",
+      "violates": "AC1"
+    },
+    {
+      "actual_block": true,
+      "affected_nodes": [
+        "file:src/api.py"
+      ],
+      "correct": true,
+      "evidence": {
+        "kind": "constraint_review",
+        "path": "src/api.py"
+      },
+      "evidence_sufficient": true,
+      "expected_block": true,
+      "issue_id": "I-0004",
+      "name": "constraint blocker",
+      "relation": "violates_project_constraint",
+      "severity": "blocker",
+      "task_id": "T-0004",
+      "violates": "C1"
+    },
+    {
+      "actual_block": false,
+      "correct": true,
+      "evidence": {
+        "kind": "reproduction",
+        "path": "src/login.py"
+      },
+      "evidence_sufficient": true,
+      "expected_block": false,
+      "issue_id": "I-0005",
+      "name": "pre-existing major",
+      "relation": "pre_existing",
+      "severity": "major",
+      "task_id": "T-0005"
+    },
+    {
+      "actual_block": false,
+      "correct": true,
+      "evidence": {
+        "kind": "review_observation",
+        "path": "src/search.py"
+      },
+      "evidence_sufficient": true,
+      "expected_block": false,
+      "issue_id": "I-0006",
+      "name": "unrelated blocker",
+      "relation": "unrelated",
+      "severity": "blocker",
+      "task_id": "T-0006"
+    },
+    {
+      "actual_block": false,
+      "correct": true,
+      "evidence": {
+        "kind": "architecture_suggestion"
+      },
+      "evidence_sufficient": true,
+      "expected_block": false,
+      "issue_id": "I-0007",
+      "name": "future architecture major",
+      "relation": "future_improvement",
+      "severity": "major",
+      "task_id": "T-0007"
+    },
+    {
+      "actual_block": false,
+      "affected_nodes": [
+        "file:src/cart.py"
+      ],
+      "correct": true,
+      "evidence": {
+        "kind": "diff_observation",
+        "path": "src/cart.py"
+      },
+      "evidence_sufficient": true,
+      "expected_block": false,
+      "issue_id": "I-0008",
+      "name": "patch-caused minor",
+      "relation": "caused_by_patch",
+      "severity": "minor",
+      "task_id": "T-0008"
+    },
+    {
+      "actual_block": false,
+      "correct": true,
+      "evidence": {
+        "kind": "opinion"
+      },
+      "evidence_sufficient": false,
+      "expected_block": false,
+      "issue_id": "I-0009",
+      "name": "unsupported acceptance claim",
+      "relation": "violates_acceptance",
+      "severity": "major",
+      "task_id": "T-0009",
+      "violates": "UNKNOWN-AC"
+    },
+    {
+      "actual_block": false,
+      "correct": true,
+      "evidence": {
+        "kind": "opinion"
+      },
+      "evidence_sufficient": false,
+      "expected_block": false,
+      "issue_id": "I-0010",
+      "name": "unsupported patch claim",
+      "relation": "caused_by_patch",
+      "severity": "major",
+      "task_id": "T-0010"
+    }
+  ],
+  "summary": {
+    "all_passed": true,
+    "blocking_precision": 1.0,
+    "blocking_recall": 1.0,
+    "correct": 10,
+    "false_reopening_rate": 0.0
+  }
+}

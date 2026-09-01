@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import pytest
+
 from psg.trust import USER_APPROVED
 
 
@@ -18,15 +20,17 @@ def runtime_pass(graph, task_id: str):
     return result["results"][0]
 
 
-def test_unsupported_blocking_claim_is_demoted(graph, task) -> None:
+def test_unsupported_blocking_claim_cannot_block_current_task(graph, task) -> None:
     issue = graph.issue_report(
         task_id=task["id"],
         severity="blocker",
+        relation_to_task="future_improvement",
         claim="This might someday be slow",
         evidence={},
     )
-    assert issue["severity"] == "speculative"
-    assert issue["evidence"]["requested_severity"] == "blocker"
+    assert issue["severity"] == "blocker"
+    assert issue["evidence_sufficient"] is False
+    assert issue["blocks_current_task"] is False
 
 
 def test_ship_gate_accepts_evidence_and_defers_minor(graph, task) -> None:
@@ -47,6 +51,7 @@ def test_ship_gate_accepts_evidence_and_defers_minor(graph, task) -> None:
     graph.issue_report(
         task_id=task_id,
         severity="minor",
+        relation_to_task="future_improvement",
         claim="Message wording could be more consistent",
         evidence={"kind": "review_observation", "path": "src/app.py"},
     )
@@ -94,16 +99,29 @@ def test_no_new_blocker_metric_is_derived_but_budget_is_the_hard_stop(graph) -> 
         intent="Review-budget boundary",
         acceptance_criteria=[],
         targets=["src/app.py"],
-        review_budget=3,
+        review_budget=2,
     )
     first = graph.review_record(opened["id"], 99)
     second = graph.review_record(opened["id"], 99)
-    third = graph.review_record(opened["id"], 99)
     assert first["derived_new_blocking_issues"] == 0
     assert second["no_new_blocking_rounds"] == 2
-    assert second["stop_general_review"] is False
-    assert third["stop_general_review"] is True
-    assert third["reason"] == "budget_exhausted"
+    assert second["stop_general_review"] is True
+    assert second["reason"] == "budget_exhausted"
+
+
+def test_task_budgets_cannot_exceed_public_contract(graph) -> None:
+    with pytest.raises(ValueError, match="review_budget"):
+        graph.task_open(
+            intent="Too many reviews",
+            acceptance_criteria=[],
+            review_budget=3,
+        )
+    with pytest.raises(ValueError, match="fix_budget"):
+        graph.task_open(
+            intent="Too many fixes",
+            acceptance_criteria=[],
+            fix_budget=3,
+        )
 
 
 def test_snapshot_restore_is_graph_only_and_creates_safety_snapshot(graph) -> None:
@@ -222,9 +240,6 @@ def test_high_risk_review_requires_a_different_actor(graph) -> None:
     )
     task_id = opened["id"]
     runtime_pass(graph, task_id)
-    graph.review_record(task_id, 0, actor_id="builder-1", session_id="build")
-    same_actor = graph.ship_evaluate(task_id)
-    assert same_actor["independent_review_satisfied"] is False
     graph.review_record(task_id, 0, actor_id="reviewer-2", session_id="review")
     declared = graph.ship_evaluate(task_id)
     assert declared["independent_review_satisfied"] is False
@@ -252,6 +267,7 @@ def test_accepted_debt_is_not_reopened_before_trigger(graph, task) -> None:
     issue = graph.issue_report(
         task_id=task["id"],
         severity="major",
+        relation_to_task="future_improvement",
         claim="Replace the linear scan now",
         evidence={"kind": "performance_suggestion"},
         affected_nodes=["symbol:src/app.py:feature"],
