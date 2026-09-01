@@ -13,12 +13,33 @@ class ConvergenceEngine:
         self.store = store
         self.config = config
 
-    def review_record(self, task_id: str, new_blocking_issues: int) -> dict[str, Any]:
+    def review_record(
+        self,
+        task_id: str,
+        new_blocking_issues: int,
+        *,
+        actor_id: str | None = None,
+        session_id: str | None = None,
+        model_family: str | None = None,
+    ) -> dict[str, Any]:
         task = self._task(task_id)
         rounds = task["review_rounds"] + 1
         no_new = task["no_new_blocking_rounds"] + 1 if new_blocking_issues == 0 else 0
+        payload = task["payload"]
+        payload.setdefault("review_history", []).append(
+            {
+                "round": rounds,
+                "actor_id": (actor_id or "").strip(),
+                "session_id": (session_id or "").strip(),
+                "model_family": (model_family or "").strip(),
+                "new_blocking_issues": new_blocking_issues,
+            }
+        )
         self.store.update_task(
-            task_id, review_rounds=rounds, no_new_blocking_rounds=no_new
+            task_id,
+            review_rounds=rounds,
+            no_new_blocking_rounds=no_new,
+            payload_json=payload,
         )
         stop = rounds >= task["review_budget"] or no_new >= int(
             self.config.get("review", {}).get("no_new_blocker_stop_rounds", 2)
@@ -32,6 +53,9 @@ class ConvergenceEngine:
             "reason": "budget_exhausted"
             if rounds >= task["review_budget"]
             else ("no_new_blocker_rule" if stop else None),
+            "actor_id": (actor_id or "").strip(),
+            "session_id": (session_id or "").strip(),
+            "model_family": (model_family or "").strip(),
         }
         self.store.event("review.recorded", result)
         return result
@@ -86,6 +110,12 @@ class ConvergenceEngine:
         failed_criteria = [
             item for item in mandatory if item["status"] not in {"pass", "waived"}
         ]
+        stale_criteria = [
+            item
+            for item in mandatory
+            if item["status"] == "pass"
+            and item["evidence"].get("worktree_fingerprint") != worktree_fingerprint
+        ]
         verifications = self.store.latest_verifications(task_id)
         required_verifications = [item for item in verifications if item["required"]]
         failed_verifications = [
@@ -96,7 +126,20 @@ class ConvergenceEngine:
             for item in required_verifications
             if item["evidence"].get("worktree_fingerprint") != worktree_fingerprint
         ]
-        missing_verification = not required_verifications
+        trusted_sources = {"runtime_executed", "external_tool"}
+        functional_verifications = [
+            item
+            for item in required_verifications
+            if item["kind"] != "policy"
+            and item["evidence"].get("source") in trusted_sources
+        ]
+        untrusted_verifications = [
+            item
+            for item in required_verifications
+            if item["kind"] != "policy"
+            and item["evidence"].get("source") not in trusted_sources
+        ]
+        missing_verification = not functional_verifications
         issues = self.store.list_issues(task_id, status="open")
         blockers = [item for item in issues if item["severity"] == "blocker"]
         majors = [item for item in issues if item["severity"] == "major"]
@@ -110,11 +153,21 @@ class ConvergenceEngine:
         high_review_required = task["risk"] == "high" and bool(
             self.config.get("risk", {}).get("high_requires_independent_review", True)
         )
-        review_ok = not high_review_required or task["review_rounds"] >= 1
+        builder_actor = str(task["payload"].get("builder_actor", "")).strip()
+        independent_reviews = [
+            item
+            for item in task["payload"].get("review_history", [])
+            if item.get("actor_id")
+            and builder_actor
+            and item["actor_id"] != builder_actor
+        ]
+        review_ok = not high_review_required or bool(independent_reviews)
         shippable = not (
             failed_criteria
+            or stale_criteria
             or failed_verifications
             or stale_verifications
+            or untrusted_verifications
             or missing_verification
             or blockers
             or majors
@@ -146,12 +199,15 @@ class ConvergenceEngine:
                     item["id"] for item in mandatory if item["status"] == "waived"
                 ],
                 "failed_or_pending": [item["id"] for item in failed_criteria],
+                "stale": [item["id"] for item in stale_criteria],
             },
             "verification_summary": {
                 "required_total": len(required_verifications),
                 "failed": [item["id"] for item in failed_verifications],
                 "stale": [item["id"] for item in stale_verifications],
                 "missing": missing_verification,
+                "functional_trusted": [item["id"] for item in functional_verifications],
+                "untrusted": [item["id"] for item in untrusted_verifications],
             },
             "unresolved_blockers": blockers,
             "unresolved_majors": majors,
@@ -160,6 +216,10 @@ class ConvergenceEngine:
             "graph_synchronized": graph_synchronized,
             "independent_review_required": high_review_required,
             "independent_review_satisfied": review_ok,
+            "builder_actor": builder_actor or None,
+            "independent_review_actors": [
+                item["actor_id"] for item in independent_reviews
+            ],
             "review_rounds_used": task["review_rounds"],
             "review_budget": task["review_budget"],
             "fix_cycles_used": task["fix_cycles"],

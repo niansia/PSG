@@ -143,6 +143,21 @@ class Store:
             ).fetchone()
         return int(row[0] if row else 0)
 
+    def get_meta(self, key: str, default: str | None = None) -> str | None:
+        with self.connect() as connection:
+            row = connection.execute(
+                "SELECT value FROM meta WHERE key=?", (key,)
+            ).fetchone()
+        return str(row[0]) if row else default
+
+    def set_meta(self, key: str, value: str) -> None:
+        with self.connect() as connection:
+            connection.execute(
+                "INSERT INTO meta(key,value) VALUES(?,?) "
+                "ON CONFLICT(key) DO UPDATE SET value=excluded.value",
+                (key, value),
+            )
+
     def bump_graph_revision(self, connection: sqlite3.Connection | None = None) -> int:
         owns = connection is None
         connection = connection or self.connect()
@@ -331,6 +346,26 @@ class Store:
             rows = connection.execute(query, params).fetchall()
         return [dict(row) for row in rows]
 
+    def edges_with_endpoint_prefix(self, prefix: str) -> list[dict[str, Any]]:
+        with self.connect() as connection:
+            rows = connection.execute(
+                "SELECT * FROM edges WHERE src LIKE ? OR dst LIKE ? ORDER BY src,type,dst",
+                (prefix + "%", prefix + "%"),
+            ).fetchall()
+        return [dict(row) for row in rows]
+
+    def delete_incoming_edges(self, dst: str, edge_type: str) -> list[dict[str, Any]]:
+        with self.connect() as connection:
+            rows = connection.execute(
+                "SELECT * FROM edges WHERE dst=? AND type=?", (dst, edge_type)
+            ).fetchall()
+            connection.execute(
+                "DELETE FROM edges WHERE dst=? AND type=?", (dst, edge_type)
+            )
+            if rows:
+                self.bump_graph_revision(connection)
+        return [dict(row) for row in rows]
+
     def create_task(self, task: dict[str, Any], criteria: list[dict[str, Any]]) -> None:
         now = utc_now()
         with self.connect() as connection:
@@ -379,6 +414,19 @@ class Store:
         for row in rows:
             try:
                 numbers.append(int(row[0].split("-")[-1]))
+            except ValueError:
+                pass
+        return f"{prefix}-{max(numbers, default=0) + 1:04d}"
+
+    def next_node_id(self, prefix: str) -> str:
+        with self.connect() as connection:
+            rows = connection.execute(
+                "SELECT id FROM nodes WHERE id LIKE ?", (prefix + "-%",)
+            ).fetchall()
+        numbers: list[int] = []
+        for row in rows:
+            try:
+                numbers.append(int(str(row[0]).split("-")[-1]))
             except ValueError:
                 pass
         return f"{prefix}-{max(numbers, default=0) + 1:04d}"
@@ -543,6 +591,149 @@ class Store:
                 (task_id, task_id),
             ).fetchall()
         return [self._decode_verification(row) for row in rows]
+
+    def list_verifications(self, task_id: str) -> list[dict[str, Any]]:
+        with self.connect() as connection:
+            rows = connection.execute(
+                "SELECT * FROM verifications WHERE task_id=? ORDER BY created_at,id",
+                (task_id,),
+            ).fetchall()
+        return [self._decode_verification(row) for row in rows]
+
+    def export_portable(self) -> dict[str, Any]:
+        portable_nodes = [
+            node
+            for node in self.list_nodes()
+            if node["type"] not in {"File", "Symbol", "Snapshot"}
+        ]
+        portable_ids = {node["id"] for node in portable_nodes}
+        edges: list[dict[str, Any]] = []
+        if portable_ids:
+            with self.connect() as connection:
+                rows = connection.execute(
+                    "SELECT * FROM edges ORDER BY src,type,dst"
+                ).fetchall()
+            edges = [
+                dict(row)
+                for row in rows
+                if row["src"] in portable_ids or row["dst"] in portable_ids
+            ]
+        tasks: list[dict[str, Any]] = []
+        for summary in self.list_tasks():
+            task = self.get_task(summary["id"])
+            if not task:
+                continue
+            task["issues"] = self.list_issues(task["id"])
+            task["verifications"] = self.list_verifications(task["id"])
+            tasks.append(task)
+        return {
+            "version": 1,
+            "graph_revision": self.graph_revision(),
+            "nodes": portable_nodes,
+            "edges": edges,
+            "tasks": tasks,
+        }
+
+    def merge_portable(self, state: dict[str, Any]) -> None:
+        now = utc_now()
+        for node in state.get("nodes", []):
+            self.upsert_node(node, bump=False)
+        for edge in state.get("edges", []):
+            self.upsert_edge(edge, bump=False)
+        with self.connect() as connection:
+            for task in state.get("tasks", []):
+                connection.execute(
+                    """INSERT INTO tasks(id,intent,status,risk,context_budget,review_budget,fix_budget,
+                    review_rounds,fix_cycles,no_new_blocking_rounds,baseline_snapshot,baseline_git_rev,
+                    graph_rev,payload_json,created_at,updated_at)
+                    VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
+                    ON CONFLICT(id) DO UPDATE SET intent=excluded.intent,status=excluded.status,
+                    risk=excluded.risk,context_budget=excluded.context_budget,
+                    review_budget=excluded.review_budget,fix_budget=excluded.fix_budget,
+                    review_rounds=excluded.review_rounds,fix_cycles=excluded.fix_cycles,
+                    no_new_blocking_rounds=excluded.no_new_blocking_rounds,
+                    baseline_snapshot=excluded.baseline_snapshot,baseline_git_rev=excluded.baseline_git_rev,
+                    graph_rev=excluded.graph_rev,payload_json=excluded.payload_json,
+                    updated_at=excluded.updated_at""",
+                    (
+                        task["id"],
+                        task["intent"],
+                        task.get("status", "open"),
+                        task.get("risk", "medium"),
+                        int(task.get("context_budget", 12000)),
+                        int(task.get("review_budget", 2)),
+                        int(task.get("fix_budget", 2)),
+                        int(task.get("review_rounds", 0)),
+                        int(task.get("fix_cycles", 0)),
+                        int(task.get("no_new_blocking_rounds", 0)),
+                        task.get("baseline_snapshot"),
+                        task.get("baseline_git_rev", ""),
+                        int(task.get("graph_rev", 0)),
+                        canonical_json(task.get("payload", {})),
+                        task.get("created_at", now),
+                        now,
+                    ),
+                )
+                for criterion in task.get("criteria", []):
+                    connection.execute(
+                        """INSERT INTO criteria(id,task_id,text,mandatory,status,evidence_json)
+                        VALUES(?,?,?,?,?,?) ON CONFLICT(id) DO UPDATE SET text=excluded.text,
+                        mandatory=excluded.mandatory,status=excluded.status,evidence_json=excluded.evidence_json""",
+                        (
+                            criterion["id"],
+                            task["id"],
+                            criterion["text"],
+                            int(criterion.get("mandatory", True)),
+                            criterion.get("status", "pending"),
+                            canonical_json(criterion.get("evidence", {})),
+                        ),
+                    )
+                for issue in task.get("issues", []):
+                    connection.execute(
+                        """INSERT INTO issues(id,task_id,severity,claim,evidence_json,affected_json,
+                        violates,introduced_by_patch,resolved_by_patch,status,created_at,updated_at)
+                        VALUES(?,?,?,?,?,?,?,?,?,?,?,?) ON CONFLICT(id) DO UPDATE SET
+                        severity=excluded.severity,claim=excluded.claim,evidence_json=excluded.evidence_json,
+                        affected_json=excluded.affected_json,violates=excluded.violates,
+                        introduced_by_patch=excluded.introduced_by_patch,
+                        resolved_by_patch=excluded.resolved_by_patch,status=excluded.status,
+                        updated_at=excluded.updated_at""",
+                        (
+                            issue["id"],
+                            task["id"],
+                            issue["severity"],
+                            issue["claim"],
+                            canonical_json(issue.get("evidence", {})),
+                            canonical_json(issue.get("affected_nodes", [])),
+                            issue.get("violates"),
+                            issue.get("introduced_by_patch"),
+                            issue.get("resolved_by_patch"),
+                            issue.get("status", "open"),
+                            issue.get("created_at", now),
+                            now,
+                        ),
+                    )
+                for verification in task.get("verifications", []):
+                    connection.execute(
+                        """INSERT INTO verifications(id,task_id,name,kind,command,result,required,
+                        evidence_json,revision,created_at) VALUES(?,?,?,?,?,?,?,?,?,?)
+                        ON CONFLICT(id) DO UPDATE SET name=excluded.name,kind=excluded.kind,
+                        command=excluded.command,result=excluded.result,required=excluded.required,
+                        evidence_json=excluded.evidence_json,revision=excluded.revision""",
+                        (
+                            verification["id"],
+                            task["id"],
+                            verification["name"],
+                            verification.get("kind", "test"),
+                            verification.get("command"),
+                            verification["result"],
+                            int(verification.get("required", True)),
+                            canonical_json(verification.get("evidence", {})),
+                            verification.get("revision", ""),
+                            verification.get("created_at", now),
+                        ),
+                    )
+            self.bump_graph_revision(connection)
 
     def create_snapshot(self, snapshot: dict[str, Any]) -> None:
         with self.connect() as connection:

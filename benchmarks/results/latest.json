@@ -1,30 +1,30 @@
 {
-  "benchmark": "workgraph-sequential-v1",
+  "benchmark": "psg-sequential-v1",
   "repository": {
     "indexed": {
       "dependencies": 71,
       "errors": [],
-      "indexed": 38,
+      "indexed": 39,
       "removed": 0,
-      "revision": "fca909dcda0d04ef1508aaa242143a0e299a63cc",
-      "scanned": 42,
+      "revision": "461d6e7942aec4e24038b1969a052dc34a7918e5",
+      "scanned": 39,
       "symbols": 37,
       "unchanged": 0,
-      "unsupported": 0
+      "unsupported": 1
     },
     "source_files": 38
   },
   "summary": {
     "baseline_file_reads": 456,
     "baseline_token_estimate": 15948,
-    "context_token_reduction_percent": 60.28,
     "file_read_reduction_percent": 89.69,
+    "psg_file_reads": 47,
+    "psg_token_estimate": 12375,
     "review_rounds": 2,
     "review_stopped_at_budget": true,
     "tasks_shippable": 12,
-    "unauthorized_frozen_mutation_blocked": true,
-    "workgraph_file_reads": 47,
-    "workgraph_token_estimate": 6334
+    "total_context_token_reduction_percent": 22.4,
+    "unauthorized_frozen_mutation_blocked": true
   },
   "task_count": 12,
   "tasks": [
@@ -33,132 +33,360 @@
       "baseline_token_estimate": 1329,
       "context_confidence": 0.95,
       "policy_allowed": true,
+      "psg_file_reads": 3,
+      "psg_graph_context_tokens": 428,
+      "psg_selected_source_tokens": 79,
+      "psg_token_estimate": 848,
+      "ship_acceptance_summary": {
+        "failed_or_pending": [],
+        "mandatory_total": 1,
+        "passed": 1,
+        "stale": [],
+        "waived": []
+      },
       "ship_status": "SHIPPABLE",
+      "ship_verification_summary": {
+        "failed": [],
+        "functional_trusted": [
+          "V-0002"
+        ],
+        "missing": false,
+        "required_total": 2,
+        "stale": [],
+        "untrusted": []
+      },
       "target": "pkg/feature_0.py",
-      "task_id": "T-0001",
-      "workgraph_file_reads": 3,
-      "workgraph_token_estimate": 428
+      "task_id": "T-0001"
     },
     {
       "baseline_file_reads": 38,
       "baseline_token_estimate": 1329,
       "context_confidence": 0.95,
       "policy_allowed": true,
+      "psg_file_reads": 4,
+      "psg_graph_context_tokens": 536,
+      "psg_selected_source_tokens": 116,
+      "psg_token_estimate": 1038,
+      "ship_acceptance_summary": {
+        "failed_or_pending": [],
+        "mandatory_total": 1,
+        "passed": 1,
+        "stale": [],
+        "waived": []
+      },
       "ship_status": "SHIPPABLE",
+      "ship_verification_summary": {
+        "failed": [],
+        "functional_trusted": [
+          "V-0005"
+        ],
+        "missing": false,
+        "required_total": 2,
+        "stale": [],
+        "untrusted": []
+      },
       "target": "pkg/feature_1.py",
-      "task_id": "T-0002",
-      "workgraph_file_reads": 4,
-      "workgraph_token_estimate": 536
+      "task_id": "T-0002"
     },
     {
       "baseline_file_reads": 38,
       "baseline_token_estimate": 1329,
       "context_confidence": 0.95,
       "policy_allowed": true,
+      "psg_file_reads": 4,
+      "psg_graph_context_tokens": 536,
+      "psg_selected_source_tokens": 125,
+      "psg_token_estimate": 1047,
+      "ship_acceptance_summary": {
+        "failed_or_pending": [],
+        "mandatory_total": 1,
+        "passed": 1,
+        "stale": [],
+        "waived": []
+      },
       "ship_status": "SHIPPABLE",
+      "ship_verification_summary": {
+        "failed": [],
+        "functional_trusted": [
+          "V-0008"
+        ],
+        "missing": false,
+        "required_total": 2,
+        "stale": [],
+        "untrusted": []
+      },
       "target": "pkg/feature_2.py",
-      "task_id": "T-0003",
-      "workgraph_file_reads": 4,
-      "workgraph_token_estimate": 536
+      "task_id": "T-0003"
     },
     {
       "baseline_file_reads": 38,
       "baseline_token_estimate": 1329,
       "context_confidence": 0.95,
       "policy_allowed": true,
+      "psg_file_reads": 4,
+      "psg_graph_context_tokens": 536,
+      "psg_selected_source_tokens": 125,
+      "psg_token_estimate": 1047,
+      "ship_acceptance_summary": {
+        "failed_or_pending": [],
+        "mandatory_total": 1,
+        "passed": 1,
+        "stale": [],
+        "waived": []
+      },
       "ship_status": "SHIPPABLE",
+      "ship_verification_summary": {
+        "failed": [],
+        "functional_trusted": [
+          "V-0011"
+        ],
+        "missing": false,
+        "required_total": 2,
+        "stale": [],
+        "untrusted": []
+      },
       "target": "pkg/feature_3.py",
-      "task_id": "T-0004",
-      "workgraph_file_reads": 4,
-      "workgraph_token_estimate": 536
+      "task_id": "T-0004"
     },
     {
       "baseline_file_reads": 38,
       "baseline_token_estimate": 1329,
       "context_confidence": 0.95,
       "policy_allowed": true,
+      "psg_file_reads": 4,
+      "psg_graph_context_tokens": 536,
+      "psg_selected_source_tokens": 125,
+      "psg_token_estimate": 1047,
+      "ship_acceptance_summary": {
+        "failed_or_pending": [],
+        "mandatory_total": 1,
+        "passed": 1,
+        "stale": [],
+        "waived": []
+      },
       "ship_status": "SHIPPABLE",
+      "ship_verification_summary": {
+        "failed": [],
+        "functional_trusted": [
+          "V-0014"
+        ],
+        "missing": false,
+        "required_total": 2,
+        "stale": [],
+        "untrusted": []
+      },
       "target": "pkg/feature_4.py",
-      "task_id": "T-0005",
-      "workgraph_file_reads": 4,
-      "workgraph_token_estimate": 536
+      "task_id": "T-0005"
     },
     {
       "baseline_file_reads": 38,
       "baseline_token_estimate": 1329,
       "context_confidence": 0.95,
       "policy_allowed": true,
+      "psg_file_reads": 4,
+      "psg_graph_context_tokens": 536,
+      "psg_selected_source_tokens": 125,
+      "psg_token_estimate": 1047,
+      "ship_acceptance_summary": {
+        "failed_or_pending": [],
+        "mandatory_total": 1,
+        "passed": 1,
+        "stale": [],
+        "waived": []
+      },
       "ship_status": "SHIPPABLE",
+      "ship_verification_summary": {
+        "failed": [],
+        "functional_trusted": [
+          "V-0017"
+        ],
+        "missing": false,
+        "required_total": 2,
+        "stale": [],
+        "untrusted": []
+      },
       "target": "pkg/feature_5.py",
-      "task_id": "T-0006",
-      "workgraph_file_reads": 4,
-      "workgraph_token_estimate": 536
+      "task_id": "T-0006"
     },
     {
       "baseline_file_reads": 38,
       "baseline_token_estimate": 1329,
       "context_confidence": 0.95,
       "policy_allowed": true,
+      "psg_file_reads": 4,
+      "psg_graph_context_tokens": 536,
+      "psg_selected_source_tokens": 125,
+      "psg_token_estimate": 1047,
+      "ship_acceptance_summary": {
+        "failed_or_pending": [],
+        "mandatory_total": 1,
+        "passed": 1,
+        "stale": [],
+        "waived": []
+      },
       "ship_status": "SHIPPABLE",
+      "ship_verification_summary": {
+        "failed": [],
+        "functional_trusted": [
+          "V-0020"
+        ],
+        "missing": false,
+        "required_total": 2,
+        "stale": [],
+        "untrusted": []
+      },
       "target": "pkg/feature_6.py",
-      "task_id": "T-0007",
-      "workgraph_file_reads": 4,
-      "workgraph_token_estimate": 536
+      "task_id": "T-0007"
     },
     {
       "baseline_file_reads": 38,
       "baseline_token_estimate": 1329,
       "context_confidence": 0.95,
       "policy_allowed": true,
+      "psg_file_reads": 4,
+      "psg_graph_context_tokens": 536,
+      "psg_selected_source_tokens": 125,
+      "psg_token_estimate": 1047,
+      "ship_acceptance_summary": {
+        "failed_or_pending": [],
+        "mandatory_total": 1,
+        "passed": 1,
+        "stale": [],
+        "waived": []
+      },
       "ship_status": "SHIPPABLE",
+      "ship_verification_summary": {
+        "failed": [],
+        "functional_trusted": [
+          "V-0023"
+        ],
+        "missing": false,
+        "required_total": 2,
+        "stale": [],
+        "untrusted": []
+      },
       "target": "pkg/feature_7.py",
-      "task_id": "T-0008",
-      "workgraph_file_reads": 4,
-      "workgraph_token_estimate": 536
+      "task_id": "T-0008"
     },
     {
       "baseline_file_reads": 38,
       "baseline_token_estimate": 1329,
       "context_confidence": 0.95,
       "policy_allowed": true,
+      "psg_file_reads": 4,
+      "psg_graph_context_tokens": 536,
+      "psg_selected_source_tokens": 125,
+      "psg_token_estimate": 1047,
+      "ship_acceptance_summary": {
+        "failed_or_pending": [],
+        "mandatory_total": 1,
+        "passed": 1,
+        "stale": [],
+        "waived": []
+      },
       "ship_status": "SHIPPABLE",
+      "ship_verification_summary": {
+        "failed": [],
+        "functional_trusted": [
+          "V-0026"
+        ],
+        "missing": false,
+        "required_total": 2,
+        "stale": [],
+        "untrusted": []
+      },
       "target": "pkg/feature_8.py",
-      "task_id": "T-0009",
-      "workgraph_file_reads": 4,
-      "workgraph_token_estimate": 536
+      "task_id": "T-0009"
     },
     {
       "baseline_file_reads": 38,
       "baseline_token_estimate": 1329,
       "context_confidence": 0.95,
       "policy_allowed": true,
+      "psg_file_reads": 4,
+      "psg_graph_context_tokens": 537,
+      "psg_selected_source_tokens": 126,
+      "psg_token_estimate": 1050,
+      "ship_acceptance_summary": {
+        "failed_or_pending": [],
+        "mandatory_total": 1,
+        "passed": 1,
+        "stale": [],
+        "waived": []
+      },
       "ship_status": "SHIPPABLE",
+      "ship_verification_summary": {
+        "failed": [],
+        "functional_trusted": [
+          "V-0029"
+        ],
+        "missing": false,
+        "required_total": 2,
+        "stale": [],
+        "untrusted": []
+      },
       "target": "pkg/feature_9.py",
-      "task_id": "T-0010",
-      "workgraph_file_reads": 4,
-      "workgraph_token_estimate": 537
+      "task_id": "T-0010"
     },
     {
       "baseline_file_reads": 38,
       "baseline_token_estimate": 1329,
       "context_confidence": 0.95,
       "policy_allowed": true,
+      "psg_file_reads": 4,
+      "psg_graph_context_tokens": 540,
+      "psg_selected_source_tokens": 126,
+      "psg_token_estimate": 1054,
+      "ship_acceptance_summary": {
+        "failed_or_pending": [],
+        "mandatory_total": 1,
+        "passed": 1,
+        "stale": [],
+        "waived": []
+      },
       "ship_status": "SHIPPABLE",
+      "ship_verification_summary": {
+        "failed": [],
+        "functional_trusted": [
+          "V-0032"
+        ],
+        "missing": false,
+        "required_total": 2,
+        "stale": [],
+        "untrusted": []
+      },
       "target": "pkg/feature_10.py",
-      "task_id": "T-0011",
-      "workgraph_file_reads": 4,
-      "workgraph_token_estimate": 540
+      "task_id": "T-0011"
     },
     {
       "baseline_file_reads": 38,
       "baseline_token_estimate": 1329,
       "context_confidence": 0.95,
       "policy_allowed": true,
+      "psg_file_reads": 4,
+      "psg_graph_context_tokens": 541,
+      "psg_selected_source_tokens": 126,
+      "psg_token_estimate": 1056,
+      "ship_acceptance_summary": {
+        "failed_or_pending": [],
+        "mandatory_total": 1,
+        "passed": 1,
+        "stale": [],
+        "waived": []
+      },
       "ship_status": "SHIPPABLE",
+      "ship_verification_summary": {
+        "failed": [],
+        "functional_trusted": [
+          "V-0035"
+        ],
+        "missing": false,
+        "required_total": 2,
+        "stale": [],
+        "untrusted": []
+      },
       "target": "pkg/feature_11.py",
-      "task_id": "T-0012",
-      "workgraph_file_reads": 4,
-      "workgraph_token_estimate": 541
+      "task_id": "T-0012"
     }
   ]
 }

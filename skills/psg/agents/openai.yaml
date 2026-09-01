@@ -1,0 +1,7 @@
+interface:
+  display_name: "PSG"
+  short_description: "Persistent project state, boundaries, and ship gates"
+  brand_color: "#19345E"
+  default_prompt: "Use $psg to govern this repository change while I code normally."
+policy:
+  allow_implicit_invocation: true

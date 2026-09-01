@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import ast
 import fnmatch
+import re
 from collections.abc import Iterable
 from dataclasses import dataclass
 from pathlib import Path
@@ -10,6 +11,8 @@ from typing import Any
 from . import git
 from .store import Store
 from .util import sha256_bytes
+
+_DEBT_MARKER = re.compile(r"psg-debt:\s*(.+)$", re.IGNORECASE)
 
 
 @dataclass
@@ -89,9 +92,7 @@ class Indexer:
 
     def index(self, force: bool = False) -> IndexResult:
         if not git.is_repository(self.root):
-            raise git.GitError(
-                "WorkGraph requires a Git repository. Run 'git init' first."
-            )
+            raise git.GitError("PSG requires a Git repository. Run 'git init' first.")
         revision = git.revision(self.root)
         files = [
             item
@@ -183,7 +184,18 @@ class Indexer:
         tree = ast.parse(text, filename=rel)
         visitor = _PythonVisitor()
         visitor.visit(tree)
+        existing_symbols = {
+            node["id"]: node
+            for node in self.store.list_nodes("Symbol")
+            if node.get("source", {}).get("path") == rel
+        }
+        preserved_edges = [
+            edge
+            for edge in self.store.edges_with_endpoint_prefix(f"symbol:{rel}:")
+            if edge.get("provenance") not in {"python_ast", "psg-debt"}
+        ]
         self._delete_symbols(rel)
+        self.store.delete_nodes_with_prefix(f"debt:{rel}:", bump=False)
         self._index_file_metadata(
             rel,
             digest,
@@ -196,14 +208,19 @@ class Indexer:
         file_id = f"file:{rel}"
         for symbol in visitor.symbols:
             symbol_id = f"symbol:{rel}:{symbol['qualname']}"
+            previous_symbol = existing_symbols.get(symbol_id)
             self.store.upsert_node(
                 {
                     "id": symbol_id,
                     "type": "Symbol",
                     "title": symbol["qualname"],
                     "status": "active",
-                    "maturity": "accepted",
-                    "policy": "mutable",
+                    "maturity": previous_symbol["maturity"]
+                    if previous_symbol
+                    else "accepted",
+                    "policy": previous_symbol["policy"]
+                    if previous_symbol
+                    else "mutable",
                     "source": {
                         "kind": "file",
                         "path": rel,
@@ -226,6 +243,22 @@ class Indexer:
                     "revision": f"sha256:{digest}",
                 }
             )
+        edges.extend(self._debt_annotations(rel, text, visitor.symbols, digest))
+        live_symbol_ids = {
+            f"symbol:{rel}:{symbol['qualname']}" for symbol in visitor.symbols
+        }
+        edges.extend(
+            edge
+            for edge in preserved_edges
+            if (
+                not edge["src"].startswith(f"symbol:{rel}:")
+                or edge["src"] in live_symbol_ids
+            )
+            and (
+                not edge["dst"].startswith(f"symbol:{rel}:")
+                or edge["dst"] in live_symbol_ids
+            )
+        )
         for imported in visitor.imports:
             target = self._resolve_import(imported, module_map)
             if target and target != rel:
@@ -285,10 +318,98 @@ class Indexer:
 
     def _delete_file(self, rel: str) -> None:
         self._delete_symbols(rel)
+        self.store.delete_nodes_with_prefix(f"debt:{rel}:", bump=False)
         self.store.delete_nodes_with_prefix(f"file:{rel}")
 
     def _delete_symbols(self, rel: str) -> None:
         self.store.delete_nodes_with_prefix(f"symbol:{rel}:", bump=False)
+
+    def _debt_annotations(
+        self,
+        rel: str,
+        text: str,
+        symbols: list[dict[str, Any]],
+        digest: str,
+    ) -> list[dict[str, Any]]:
+        edges: list[dict[str, Any]] = []
+        for line_number, line in enumerate(text.splitlines(), 1):
+            match = _DEBT_MARKER.search(line)
+            if not match:
+                continue
+            parts = [part.strip() for part in match.group(1).split(";") if part.strip()]
+            values: dict[str, str] = {}
+            for index, part in enumerate(parts):
+                if "=" in part:
+                    key, value = part.split("=", 1)
+                    values[key.strip().lower()] = value.strip()
+                elif index == 0:
+                    values["what"] = part
+            revisit = values.get("revisit") or values.get("revisit_trigger")
+            if not all(
+                (values.get("what"), values.get("why"), values.get("ceiling"), revisit)
+            ):
+                self.store.event(
+                    "debt.annotation_rejected",
+                    {
+                        "path": rel,
+                        "line": line_number,
+                        "reason": "what, why, ceiling, and revisit are required",
+                    },
+                )
+                continue
+            debt_id = f"debt:{rel}:{line_number}"
+            self.store.upsert_node(
+                {
+                    "id": debt_id,
+                    "type": "Debt",
+                    "title": values["what"],
+                    "status": "accepted",
+                    "maturity": "accepted",
+                    "policy": "mutable",
+                    "source": {
+                        "kind": "psg_debt_annotation",
+                        "path": rel,
+                        "line": line_number,
+                    },
+                    "revision": f"sha256:{digest}",
+                    "confidence": 1.0,
+                    "provenance": ["repo_deterministic", "psg-debt"],
+                    "payload": {
+                        "what": values["what"],
+                        "why": values["why"],
+                        "ceiling": values["ceiling"],
+                        "revisit_trigger": revisit,
+                        "trigger_met": False,
+                    },
+                },
+                bump=False,
+            )
+            containing = next(
+                (
+                    symbol
+                    for symbol in symbols
+                    if int(symbol["line_start"])
+                    <= line_number
+                    <= int(symbol["line_end"])
+                ),
+                None,
+            )
+            target = (
+                f"symbol:{rel}:{containing['qualname']}"
+                if containing
+                else f"file:{rel}"
+            )
+            edges.append(
+                {
+                    "src": debt_id,
+                    "type": "affects",
+                    "dst": target,
+                    "confidence": 1.0,
+                    "provenance": "psg-debt",
+                    "revision": f"sha256:{digest}",
+                }
+            )
+        return edges
 
     def _excluded(self, rel: str) -> bool:
         patterns = self.config.get("index", {}).get("exclude", [])

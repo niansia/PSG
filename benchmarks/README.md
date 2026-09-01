@@ -1,10 +1,10 @@
 # Sequential benchmark
 
-This benchmark compares a conservative baseline that reads every source file on each task with WorkGraph's routed working set over 12 sequential changes in the same repository.
+This benchmark compares a disclosed all-source-files baseline with PSG's routed working set over 12 sequential changes in the same generated 38-file Python repository.
 
 It verifies the three MVP demo claims:
 
-1. routed context reads fewer unrelated files and estimates fewer input tokens;
+1. routed context reads fewer unrelated files and uses fewer estimated input tokens;
 2. a mutation to a frozen core contract is rejected; and
 3. all evidence-complete tasks become `SHIPPABLE`, while two no-new-blocker reviews trigger the stopping rule.
 
@@ -15,3 +15,22 @@ python benchmarks/sequential_benchmark.py --output benchmarks/results/latest.jso
 ```
 
 The baseline is intentionally simple and disclosed. It is evidence for the MVP mechanism, not a claim that every external coding agent always reads the entire repository. Future comparative evaluation should add fixed repo-map and symbol-RAG baselines.
+
+## Token accounting
+
+The baseline token estimate counts the complete contents of every source file for every task. PSG's estimate counts both:
+
+1. the full serialized `context_build` tool payload; and
+2. the complete contents of every source file selected in that payload.
+
+It does not count only file names, summaries, or graph-node labels. This deliberately conservative correction produces the current **22.4% context-token reduction** and **89.69% file-read reduction**. The raw per-task payload, selected source count, source-token count, gate result, and aggregate calculations are stored in `results/latest.json`.
+
+## What the run also exercises
+
+- initialization and first index;
+- actual runtime verification with working-tree-bound evidence;
+- acceptance criteria linked to verification records;
+- final Git diff validation;
+- all ship-gate requirements;
+- rejection of an unauthorized frozen mutation; and
+- the configured no-new-blocker review stopping rule.

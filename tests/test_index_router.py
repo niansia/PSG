@@ -1,9 +1,9 @@
 from __future__ import annotations
 
-from workgraph.runtime import WorkGraph
+from psg.runtime import PSG
 
 
-def test_incremental_python_index_and_persistence(graph: WorkGraph) -> None:
+def test_incremental_python_index_and_persistence(graph: PSG) -> None:
     app = graph.store.get_node("file:src/app.py")
     symbol = graph.store.get_node("symbol:src/app.py:feature")
     assert app and app["payload"]["language"] == "python"
@@ -18,11 +18,11 @@ def test_incremental_python_index_and_persistence(graph: WorkGraph) -> None:
     assert unchanged["indexed"] == 0
     assert unchanged["unchanged"] >= 3
 
-    reloaded = WorkGraph(graph.root)
+    reloaded = PSG(graph.root)
     assert reloaded.store.get_node("symbol:src/app.py:feature") is not None
 
 
-def test_incremental_index_only_updates_changed_file(graph: WorkGraph) -> None:
+def test_incremental_index_only_updates_changed_file(graph: PSG) -> None:
     path = graph.root / "src" / "app.py"
     path.write_text(
         path.read_text(encoding="utf-8") + "\nVALUE = 3\n", encoding="utf-8"
@@ -32,7 +32,7 @@ def test_incremental_index_only_updates_changed_file(graph: WorkGraph) -> None:
     assert result["unchanged"] >= 2
 
 
-def test_router_builds_impact_aware_working_set(graph: WorkGraph) -> None:
+def test_router_builds_impact_aware_working_set(graph: PSG) -> None:
     graph.node_policy_set("file:src/backend.py", "frozen", "Stable backend contract")
     opened = graph.task_open(
         intent="Adjust feature calculation",
@@ -50,7 +50,7 @@ def test_router_builds_impact_aware_working_set(graph: WorkGraph) -> None:
     )
 
 
-def test_context_expansion_requires_evidence(graph: WorkGraph) -> None:
+def test_context_expansion_requires_evidence(graph: PSG) -> None:
     opened = graph.task_open(
         intent="Change feature", acceptance_criteria=[], targets=["src/app.py"]
     )
@@ -67,14 +67,14 @@ def test_context_expansion_requires_evidence(graph: WorkGraph) -> None:
     assert expanded["task_brief"]["id"] == opened["id"]
 
 
-def test_independent_clients_share_project_state(graph: WorkGraph) -> None:
-    builder = WorkGraph(graph.root)
+def test_independent_clients_share_project_state(graph: PSG) -> None:
+    builder = PSG(graph.root)
     opened = builder.task_open(
         intent="Shared state task",
         acceptance_criteria=["Both clients observe the same task"],
         targets=["src/app.py"],
     )
-    reviewer = WorkGraph(graph.root)
+    reviewer = PSG(graph.root)
     assert reviewer.store.get_task(opened["id"])["intent"] == "Shared state task"
     reviewer.issue_report(
         task_id=opened["id"],
@@ -86,3 +86,64 @@ def test_independent_clients_share_project_state(graph: WorkGraph) -> None:
         builder.store.list_issues(opened["id"])[0]["claim"]
         == "Reviewer-side observation"
     )
+
+
+def test_task_tables_are_projected_into_graph(graph: PSG) -> None:
+    opened = graph.task_open(
+        intent="Add projected behavior",
+        acceptance_criteria=["The behavior is visible"],
+        constraints=["Keep the backend stable"],
+        targets=["src/app.py"],
+    )
+    task_node = graph.store.get_node(opened["id"])
+    requirement = graph.store.get_node(f"{opened['id']}-AC1")
+    constraint = graph.store.get_node(f"{opened['id']}-C1")
+    assert task_node and task_node["type"] == "Task"
+    assert requirement and requirement["type"] == "Requirement"
+    assert constraint and constraint["type"] == "Constraint"
+    edges = graph.store.edges_for([opened["id"], requirement["id"]])
+    assert any(edge["type"] == "requires" for edge in edges)
+    assert any(
+        edge["type"] == "targets" and edge["dst"] == "file:src/app.py" for edge in edges
+    )
+
+
+def test_portable_state_rehydrates_a_fresh_checkout(graph: PSG, repo, tmp_path) -> None:
+    from conftest import run
+
+    graph.decision_record(
+        decision_id="D-portable",
+        statement="Freeze the backend algorithm",
+        rationale=["It is externally verified"],
+        scope=["symbol:src/backend.py:locked_api"],
+        mutation_effect="frozen",
+    )
+    run(repo, "git", "add", ".psg")
+    run(repo, "git", "commit", "-m", "persist PSG state")
+    clone = tmp_path / "clone"
+    run(tmp_path, "git", "clone", str(repo), str(clone))
+    reloaded = PSG(clone)
+    reloaded.index()
+    assert reloaded.store.get_node("D-portable") is not None
+    policy, source = reloaded.policy.effective_node_policy(
+        "symbol:src/backend.py:locked_api"
+    )
+    assert policy == "frozen"
+    assert "D-portable" in source
+
+
+def test_structured_psg_debt_annotation_becomes_graph_node(graph: PSG, repo) -> None:
+    path = repo / "src" / "app.py"
+    path.write_text(
+        path.read_text(encoding="utf-8")
+        + "\n# psg-debt: linear scan; why=small input; ceiling=50000; revisit=records > 30000\n",
+        encoding="utf-8",
+    )
+    graph.index()
+    debts = [
+        node
+        for node in graph.store.list_nodes("Debt")
+        if node["source"].get("kind") == "psg_debt_annotation"
+    ]
+    assert len(debts) == 1
+    assert debts[0]["payload"]["revisit_trigger"] == "records > 30000"

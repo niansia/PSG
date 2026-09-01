@@ -24,6 +24,7 @@ class VerificationEngine:
         kind: str = "test",
         command: str | None = None,
         required: bool = True,
+        source: str = "llm_reported",
         evidence: dict[str, Any] | None = None,
     ) -> dict[str, Any]:
         normalized = result.lower()
@@ -31,7 +32,22 @@ class VerificationEngine:
             raise ValueError(
                 "Verification result must be pass, fail, error, or skipped"
             )
+        if source not in {
+            "runtime_executed",
+            "external_tool",
+            "llm_reported",
+            "user_asserted",
+            "reviewer",
+        }:
+            raise ValueError(f"Unsupported verification source: {source}")
         recorded_evidence = dict(evidence or {})
+        if (
+            source == "external_tool"
+            and normalized == "pass"
+            and not recorded_evidence.get("reference")
+        ):
+            raise ValueError("Passing external-tool evidence requires a reference.")
+        recorded_evidence["source"] = source
         recorded_evidence.setdefault(
             "worktree_fingerprint", git.worktree_fingerprint(self.root)
         )
@@ -95,6 +111,7 @@ class VerificationEngine:
                     kind=str(check.get("kind", "test")),
                     command=command,
                     required=required,
+                    source="runtime_executed",
                     evidence=evidence,
                 )
             )

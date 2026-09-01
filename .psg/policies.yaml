@@ -1,0 +1,5 @@
+version: 1
+rules:
+- pattern: .psg/local/**
+  policy: frozen
+  reason: PSG derived local state

@@ -1,6 +1,6 @@
 # PSG visual identity
 
-![PSG — project state graph](assets/workgraph-concept.png)
+![PSG — project state graph](assets/psg-concept.png)
 
 ## Concept
 
@@ -11,7 +11,7 @@ The mark turns **P**, **S**, and **G** into one connected object rather than tre
 - **G** closes the path into a graph that can be checked and revisited.
 - The colored nodes represent files, symbols, tasks, decisions, policies, and evidence becoming one understandable project state.
 
-The friendly rounded form is intentional. WorkGraph handles strict governance, but the product should feel like a helpful project companion rather than a security appliance.
+The friendly rounded form is intentional. PSG handles strict governance, but the product should feel like a helpful project companion rather than a security appliance.
 
 ## Palette
 

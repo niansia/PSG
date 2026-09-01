@@ -4,7 +4,7 @@
 
 Evaluate whether persistent project state plus explicit mutation and convergence controls improves repository-level coding over simpler context-and-test workflows.
 
-The study must test WorkGraph as a system, but also isolate which components create value. A positive result on the included synthetic benchmark is insufficient because its repository, tasks, and expected behavior were generated for the implementation.
+The study must test PSG as a system, but also isolate which components create value. A positive result on the included synthetic benchmark is insufficient because its repository, tasks, and expected behavior were generated for the implementation.
 
 ## Research questions
 
@@ -18,7 +18,7 @@ The study must test WorkGraph as a system, but also isolate which components cre
 
 ## Hypotheses
 
-- **H1:** WorkGraph reduces context tokens and unique file reads relative to full-repository or unguided search while remaining non-inferior on resolved rate.
+- **H1:** PSG reduces context tokens and unique file reads relative to full-repository or unguided search while remaining non-inferior on resolved rate.
 - **H2:** Diff-level policy enforcement reduces unauthorized changes relative to prompt-only scope instructions.
 - **H3:** The advantage of persistent state grows over sequences of related tasks because accepted decisions and verified state can be reused.
 - **H4:** Worktree-bound evidence produces fewer false-shippable outcomes than evidence records without revision binding.
@@ -28,11 +28,11 @@ The study must test WorkGraph as a system, but also isolate which components cre
 
 Use the same coding model, temperature, tool environment, repository checkout, timeout, and task prompt across conditions.
 
-1. **Agent baseline:** normal repository tools, Git, and tests; no WorkGraph.
+1. **Agent baseline:** normal repository tools, Git, and tests; no PSG.
 2. **Repo-map baseline:** concise symbol/dependency map with the same nominal context budget; no persistent task/evidence graph.
-3. **WorkGraph context only:** index and router enabled; policies and ship gate disabled.
-4. **WorkGraph + policy:** context routing and mutation validation; no persistent evidence freshness.
-5. **Full WorkGraph:** context, policy, evidence binding, review budget, and ship gate.
+3. **PSG context only:** index and router enabled; policies and ship gate disabled.
+4. **PSG + policy:** context routing and mutation validation; no persistent evidence freshness.
+5. **Full PSG:** context, policy, evidence binding, review budget, and ship gate.
 6. **Ablations:** remove one of dependency expansion, decision memory, evidence fingerprinting, or review budget from the full condition.
 
 The agent must not know which condition is expected to win. Randomize condition order and use separate clean worktrees.
@@ -106,7 +106,7 @@ Test explicit attempts to:
 3. Pre-register tasks, success conditions, stopping rules, and exclusions.
 4. Run at least three independent model seeds per task-condition pair where stochasticity is enabled.
 5. Cap tokens, time, context expansions, review rounds, and fix cycles equally across conditions.
-6. Record full tool traces, Git diffs, WorkGraph events, test outputs, and costs.
+6. Record full tool traces, Git diffs, PSG events, test outputs, and costs.
 7. Re-run final tests from a clean environment after the agent stops.
 8. Have an independent evaluator label scope violations and criterion satisfaction while blinded to condition.
 9. Report paired confidence intervals and per-repository results, including every failure mode.
@@ -127,12 +127,12 @@ Test explicit attempts to:
 - **Reference-patch bias:** a different correct patch may touch different files. Treat changed-file overlap as diagnostic, not ground truth correctness.
 - **Model dependence:** repeat on at least two model families and report interactions.
 - **Language bias:** v1 symbol extraction favors Python. Do not generalize to other languages until equivalent indexers are evaluated.
-- **Tooling advantage:** equalize available repository and test tools so results isolate WorkGraph controls rather than shell access.
+- **Tooling advantage:** equalize available repository and test tools so results isolate PSG controls rather than shell access.
 - **Synthetic carryover:** keep the existing 12-task benchmark as a regression test, not as headline external evidence.
 
 ## Release criteria for a stronger claim
 
-Do not describe WorkGraph as improving real-world agent performance until a held-out evaluation shows:
+Do not describe PSG as improving real-world agent performance until a held-out evaluation shows:
 
 1. resolved-rate non-inferiority to the strongest matched baseline;
 2. a statistically and practically meaningful reduction in context or file reads;

@@ -1,4 +1,0 @@
-interface:
-  display_name: "WorkGraph"
-  short_description: "Govern code changes with scoped context and ship gates"
-  default_prompt: "Use WorkGraph to scope, validate, verify, and ship this repository change."

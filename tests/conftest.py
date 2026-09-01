@@ -5,7 +5,7 @@ from pathlib import Path
 
 import pytest
 
-from workgraph.runtime import WorkGraph
+from psg.runtime import PSG
 
 
 def run(repo: Path, *args: str) -> str:
@@ -42,22 +42,22 @@ def repo(tmp_path: Path) -> Path:
         encoding="utf-8",
     )
     run(root, "git", "init", "-b", "main")
-    run(root, "git", "config", "user.email", "workgraph@example.invalid")
-    run(root, "git", "config", "user.name", "WorkGraph Test")
+    run(root, "git", "config", "user.email", "psg@example.invalid")
+    run(root, "git", "config", "user.name", "PSG Test")
     run(root, "git", "add", ".")
     run(root, "git", "commit", "-m", "baseline")
     return root
 
 
 @pytest.fixture()
-def graph(repo: Path) -> WorkGraph:
-    instance = WorkGraph.initialize(repo, project="sample")
+def graph(repo: Path) -> PSG:
+    instance = PSG.initialize(repo, project="sample")
     instance.index()
     return instance
 
 
 @pytest.fixture()
-def task(graph: WorkGraph) -> dict:
+def task(graph: PSG) -> dict:
     opened = graph.task_open(
         intent="Change the feature without changing the backend contract",
         acceptance_criteria=["Feature behavior is verified"],

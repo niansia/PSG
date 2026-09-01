@@ -6,7 +6,7 @@ import sys
 from pathlib import Path
 from typing import Any
 
-from .runtime import WorkGraph
+from .runtime import PSG
 from .util import pretty_json
 
 
@@ -30,17 +30,22 @@ def _checks(values: list[str]) -> list[dict[str, Any]]:
 
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
-        prog="workgraph", description="Graph-guided project state and ship governance"
+        prog="psg", description="Graph-guided project state and ship governance"
     )
     parser.add_argument(
         "--root", type=Path, help="Repository root (defaults to the current project)"
     )
     sub = parser.add_subparsers(dest="command", required=True)
 
-    init = sub.add_parser("init", help="Initialize WorkGraph in a Git repository")
+    init = sub.add_parser("init", help="Initialize PSG in a Git repository")
     init.add_argument("--project")
 
     sub.add_parser("status", help="Show project and task status")
+    sub.add_parser("on", help="Enable automatic PSG governance")
+    sub.add_parser("off", help="Disable automatic PSG governance")
+    sub.add_parser("guardrails", help="Show authority, dependencies, and guardrails")
+    state = sub.add_parser("state", help="Synchronize portable project state")
+    state.add_argument("action", choices=["sync"])
     index = sub.add_parser(
         "index", help="Incrementally index repository files and Python symbols"
     )
@@ -102,6 +107,8 @@ def build_parser() -> argparse.ArgumentParser:
     task_open.add_argument("--context-budget", type=int)
     task_open.add_argument("--review-budget", type=int)
     task_open.add_argument("--fix-budget", type=int)
+    task_open.add_argument("--builder-actor")
+    task_open.add_argument("--dependency-justification", action="append", default=[])
     task_sub.add_parser("list")
     task_show = task_sub.add_parser("show")
     task_show.add_argument("id")
@@ -127,7 +134,6 @@ def build_parser() -> argparse.ArgumentParser:
     )
     validate.add_argument("task_id")
     validate.add_argument("--diff-file", type=Path)
-    validate.add_argument("--staged", action="store_true")
     validate.add_argument(
         "--phase", choices=["preflight", "postflight"], default="postflight"
     )
@@ -148,6 +154,11 @@ def build_parser() -> argparse.ArgumentParser:
     record.add_argument("--command")
     record.add_argument("--evidence", default="{}")
     record.add_argument("--optional", action="store_true")
+    record.add_argument(
+        "--source",
+        choices=["external_tool", "llm_reported", "user_asserted", "reviewer"],
+        default="llm_reported",
+    )
 
     issue = sub.add_parser("issue", help="Report and update evidence-backed issues")
     issue_sub = issue.add_subparsers(dest="issue_command", required=True)
@@ -158,6 +169,7 @@ def build_parser() -> argparse.ArgumentParser:
     issue_report.add_argument("--evidence", default="{}")
     issue_report.add_argument("--affected", action="append", default=[])
     issue_report.add_argument("--violates")
+    issue_report.add_argument("--debt")
     issue_update = issue_sub.add_parser("update")
     issue_update.add_argument("id")
     issue_update.add_argument(
@@ -171,12 +183,29 @@ def build_parser() -> argparse.ArgumentParser:
     review = sub.add_parser("review", help="Record one independent review round")
     review.add_argument("task_id")
     review.add_argument("--new-blocking", type=int, default=0)
+    review.add_argument("--actor")
+    review.add_argument("--session")
+    review.add_argument("--model-family")
     fix = sub.add_parser("fix", help="Record one targeted correction cycle")
     fix.add_argument("task_id")
     fix.add_argument("--introduced", type=int, default=0)
     fix.add_argument("--resolved", type=int, default=0)
     ship = sub.add_parser("ship", help="Evaluate the evidence-based ship gate")
     ship.add_argument("task_id")
+
+    debt = sub.add_parser("debt", help="Record or evaluate accepted debt")
+    debt_sub = debt.add_subparsers(dest="debt_command", required=True)
+    debt_add = debt_sub.add_parser("record")
+    debt_add.add_argument("task_id")
+    debt_add.add_argument("what")
+    debt_add.add_argument("--why", required=True)
+    debt_add.add_argument("--ceiling", required=True)
+    debt_add.add_argument("--revisit", required=True)
+    debt_add.add_argument("--affected", action="append", default=[])
+    debt_review = debt_sub.add_parser("review")
+    debt_review.add_argument("debt_id")
+    debt_review.add_argument("--trigger-met", action="store_true")
+    debt_review.add_argument("--evidence", default="{}")
 
     snapshot = sub.add_parser(
         "snapshot", help="Create, list, or restore graph snapshots"
@@ -194,10 +223,18 @@ def build_parser() -> argparse.ArgumentParser:
 
 def dispatch(args: argparse.Namespace) -> Any:
     if args.command == "init":
-        return WorkGraph.initialize(args.root, project=args.project).status()
-    graph = WorkGraph(args.root)
+        return PSG.initialize(args.root, project=args.project).status()
+    graph = PSG(args.root)
     if args.command == "status":
         return graph.status()
+    if args.command == "on":
+        return graph.set_enabled(True)
+    if args.command == "off":
+        return graph.set_enabled(False)
+    if args.command == "guardrails":
+        return graph.guardrails_get()
+    if args.command == "state":
+        return graph.state_sync()
     if args.command == "index":
         return graph.index(force=args.force)
     if args.command == "doctor":
@@ -251,6 +288,8 @@ def dispatch(args: argparse.Namespace) -> Any:
                 context_budget=args.context_budget,
                 review_budget=args.review_budget,
                 fix_budget=args.fix_budget,
+                builder_actor=args.builder_actor,
+                dependency_justifications=args.dependency_justification,
             )
         if args.task_command == "list":
             return graph.store.list_tasks()
@@ -268,9 +307,11 @@ def dispatch(args: argparse.Namespace) -> Any:
         return graph.context_expand(args.task_id, args.reason)
     if args.command == "validate":
         content = args.diff_file.read_text(encoding="utf-8") if args.diff_file else None
-        return graph.patch_validate(
-            args.task_id, content, staged=args.staged, phase=args.phase
-        )
+        if content is not None:
+            return graph.patch_validate_proposed(
+                args.task_id, content, phase=args.phase
+            )
+        return graph.patch_validate(args.task_id, phase=args.phase)
     if args.command == "verify":
         return graph.verify(args.task_id, _checks(args.check) if args.check else None)
     if args.command == "verification":
@@ -281,6 +322,7 @@ def dispatch(args: argparse.Namespace) -> Any:
             kind=args.kind,
             command=args.command,
             required=not args.optional,
+            source=args.source,
             evidence=_json(args.evidence, {}),
         )
     if args.command == "issue":
@@ -292,16 +334,38 @@ def dispatch(args: argparse.Namespace) -> Any:
                 evidence=_json(args.evidence, {}),
                 affected_nodes=args.affected,
                 violates=args.violates,
+                debt_id=args.debt,
             )
         if args.issue_command == "update":
             return graph.issue_update(args.id, args.status, args.patch)
         return graph.store.list_issues(args.task_id, status=args.status)
     if args.command == "review":
-        return graph.review_record(args.task_id, args.new_blocking)
+        return graph.review_record(
+            args.task_id,
+            args.new_blocking,
+            actor_id=args.actor,
+            session_id=args.session,
+            model_family=args.model_family,
+        )
     if args.command == "fix":
         return graph.fix_record(args.task_id, args.introduced, args.resolved)
     if args.command == "ship":
         return graph.ship_evaluate(args.task_id)
+    if args.command == "debt":
+        if args.debt_command == "record":
+            return graph.debt_record(
+                task_id=args.task_id,
+                what=args.what,
+                why=args.why,
+                ceiling=args.ceiling,
+                revisit_trigger=args.revisit,
+                affected_nodes=args.affected,
+            )
+        return graph.debt_review(
+            args.debt_id,
+            trigger_met=args.trigger_met,
+            evidence=_json(args.evidence, {}),
+        )
     if args.command == "snapshot":
         if args.snapshot_command == "list":
             return [

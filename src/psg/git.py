@@ -51,9 +51,18 @@ def tracked_and_untracked_files(root: Path) -> list[str]:
 
 
 def status_porcelain(root: Path) -> str:
-    return run_git(
+    value = run_git(
         root, "status", "--porcelain=v1", "--untracked-files=all", check=False
     )
+    return "\n".join(
+        line
+        for line in value.splitlines()
+        if not _managed_psg_path(normalize_path(line[3:].split(" -> ")[-1]))
+    )
+
+
+def _managed_psg_path(path: str) -> bool:
+    return path.startswith((".psg/local/", ".psg/state/"))
 
 
 def worktree_fingerprint(root: Path) -> str:
@@ -61,14 +70,37 @@ def worktree_fingerprint(root: Path) -> str:
         return sha256_text("not-a-repository")
     pieces = [
         run_git(root, "rev-parse", "--verify", "HEAD", check=False),
-        run_git(root, "diff", "--no-ext-diff", "--binary", check=False),
-        run_git(root, "diff", "--no-ext-diff", "--binary", "--cached", check=False),
+        run_git(
+            root,
+            "diff",
+            "--no-ext-diff",
+            "--binary",
+            "--",
+            ".",
+            ":(exclude).psg/local/**",
+            ":(exclude).psg/state/**",
+            check=False,
+        ),
+        run_git(
+            root,
+            "diff",
+            "--no-ext-diff",
+            "--binary",
+            "--cached",
+            "--",
+            ".",
+            ":(exclude).psg/local/**",
+            ":(exclude).psg/state/**",
+            check=False,
+        ),
         status_porcelain(root),
     ]
     untracked = run_git(root, "ls-files", "--others", "--exclude-standard", check=False)
     for rel in (
         normalize_path(line) for line in untracked.splitlines() if line.strip()
     ):
+        if _managed_psg_path(rel):
+            continue
         path = root / rel
         if path.is_file():
             try:
@@ -78,13 +110,7 @@ def worktree_fingerprint(root: Path) -> str:
     return sha256_text("\n".join(pieces))
 
 
-def diff(root: Path, staged: bool = False) -> str:
-    args = ["diff", "--no-ext-diff", "--binary"]
-    if staged:
-        args.append("--cached")
-    rendered = run_git(root, *args, check=False)
-    if staged:
-        return rendered
+def _untracked_diffs(root: Path) -> list[str]:
     untracked = run_git(
         root, "ls-files", "--others", "--exclude-standard", check=False
     ).splitlines()
@@ -113,4 +139,51 @@ def diff(root: Path, staged: bool = False) -> str:
         additions.append(
             f"diff --git a/{rel} b/{rel}\nnew file mode 100644\n{body}".rstrip()
         )
-    return "\n".join(part for part in [rendered, *additions] if part)
+    return additions
+
+
+def final_diff(root: Path) -> str:
+    """Return HEAD -> current state, including staged, unstaged, and untracked files."""
+    head = run_git(root, "rev-parse", "--verify", "HEAD", check=False)
+    if head:
+        rendered = run_git(
+            root,
+            "diff",
+            "HEAD",
+            "--no-ext-diff",
+            "--binary",
+            "--find-renames",
+            check=False,
+        )
+        parts = [rendered, *_untracked_diffs(root)]
+    else:
+        staged = run_git(
+            root,
+            "diff",
+            "--cached",
+            "--no-ext-diff",
+            "--binary",
+            "--find-renames",
+            check=False,
+        )
+        unstaged = run_git(
+            root,
+            "diff",
+            "--no-ext-diff",
+            "--binary",
+            "--find-renames",
+            check=False,
+        )
+        parts = [staged, unstaged, *_untracked_diffs(root)]
+    return "\n".join(part for part in parts if part)
+
+
+def diff(root: Path, staged: bool = False) -> str:
+    """Advanced/debug diff view. Ship and actual validation use final_diff()."""
+    args = ["diff", "--no-ext-diff", "--binary"]
+    if staged:
+        args.append("--cached")
+    rendered = run_git(root, *args, check=False)
+    if staged:
+        return rendered
+    return "\n".join(part for part in [rendered, *_untracked_diffs(root)] if part)

@@ -8,8 +8,4 @@ htmlcov/
 dist/
 build/
 tmp/
-.workgraph/workgraph.db
-.workgraph/workgraph.db-*
-.workgraph/events.jsonl
-.workgraph/cache/
-.workgraph/exports/
+.psg/local/

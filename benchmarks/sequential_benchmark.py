@@ -3,11 +3,12 @@ from __future__ import annotations
 import argparse
 import json
 import subprocess
+import sys
 import tempfile
 from pathlib import Path
 from typing import Any
 
-from workgraph.runtime import WorkGraph
+from psg.runtime import PSG
 
 
 def command(root: Path, *args: str) -> str:
@@ -33,6 +34,9 @@ def create_repository(root: Path, module_count: int = 36) -> None:
         "def stable_contract(value: int) -> int:\n    return value * 10\n",
         encoding="utf-8",
     )
+    (root / ".gitignore").write_text(
+        "__pycache__/\n*.py[cod]\n.psg/local/\n", encoding="utf-8"
+    )
     for index in range(module_count):
         dependency = "from pkg.core import stable_contract\n"
         if index:
@@ -45,7 +49,7 @@ def create_repository(root: Path, module_count: int = 36) -> None:
         (package / f"feature_{index}.py").write_text(body, encoding="utf-8")
     command(root, "git", "init", "-b", "main")
     command(root, "git", "config", "user.email", "benchmark@example.invalid")
-    command(root, "git", "config", "user.name", "WorkGraph Benchmark")
+    command(root, "git", "config", "user.name", "PSG Benchmark")
     command(root, "git", "add", ".")
     command(root, "git", "commit", "-m", "benchmark baseline")
 
@@ -56,12 +60,27 @@ def source_metrics(root: Path) -> tuple[int, int]:
     return len(files), tokens
 
 
+def selected_context_tokens(
+    root: Path, context: dict[str, Any], selected_files: set[str]
+) -> int:
+    tool_payload = max(
+        1,
+        len(json.dumps(context, ensure_ascii=False, sort_keys=True)) // 4,
+    )
+    source_content = sum(
+        max(1, len(path.read_text(encoding="utf-8")) // 4)
+        for rel in selected_files
+        if (path := root / rel).is_file()
+    )
+    return tool_payload + source_content
+
+
 def run_benchmark(task_count: int = 12) -> dict[str, Any]:
-    with tempfile.TemporaryDirectory(prefix="workgraph-benchmark-") as directory:
+    with tempfile.TemporaryDirectory(prefix="psg-benchmark-") as directory:
         root = Path(directory)
         create_repository(root)
-        graph = WorkGraph.initialize(root, project="sequential-benchmark")
-        index_result = graph.index()
+        graph = PSG.initialize(root, project="sequential-benchmark")
+        index_result = graph.index(force=True)
         graph.node_policy_set("file:pkg/core.py", "frozen", "Public benchmark baseline")
         baseline_files, baseline_tokens = source_metrics(root)
         task_results: list[dict[str, Any]] = []
@@ -83,19 +102,30 @@ def run_benchmark(task_count: int = 12) -> dict[str, Any]:
             new = old.replace(f"+ {index}\n", f"+ {index + 100}\n")
             absolute.write_text(new, encoding="utf-8")
             validation = graph.patch_validate(opened["id"])
-            graph.verification_record(
-                task_id=opened["id"],
-                name=f"deterministic:feature-{index}",
-                result="pass",
-                kind="unit",
-                required=True,
-                evidence={"expected_offset": index + 100},
+            verified = graph.verify(
+                opened["id"],
+                [
+                    {
+                        "name": f"deterministic:feature-{index}",
+                        "kind": "unit",
+                        "required": True,
+                        "command": (
+                            f'"{sys.executable}" -c "from pkg.feature_{index} import '
+                            f"feature_{index}; assert feature_{index}(2) == {20 + index + 100}"
+                        ),
+                    }
+                ],
             )
+            verification = verified["results"][0]
             graph.criterion_set(
                 opened["id"],
                 f"{opened['id']}-AC1",
                 "pass",
-                {"kind": "deterministic_assertion"},
+                {
+                    "kind": "deterministic_assertion",
+                    "source": "runtime_executed",
+                    "reference": verification["id"],
+                },
             )
             if index % 3 == 0:
                 graph.issue_report(
@@ -114,17 +144,27 @@ def run_benchmark(task_count: int = 12) -> dict[str, Any]:
                 + working["read_only"]
                 + working["forbidden"]
             )
+            psg_tokens = selected_context_tokens(root, context, selected_files)
             task_results.append(
                 {
                     "task_id": opened["id"],
                     "target": path,
                     "baseline_file_reads": baseline_files,
-                    "workgraph_file_reads": len(selected_files),
+                    "psg_file_reads": len(selected_files),
                     "baseline_token_estimate": baseline_tokens,
-                    "workgraph_token_estimate": context["token_estimate"],
+                    "psg_token_estimate": psg_tokens,
+                    "psg_graph_context_tokens": context["token_estimate"],
+                    "psg_selected_source_tokens": psg_tokens
+                    - max(
+                        1,
+                        len(json.dumps(context, ensure_ascii=False, sort_keys=True))
+                        // 4,
+                    ),
                     "context_confidence": context["confidence"],
                     "policy_allowed": validation["allowed"],
                     "ship_status": shipped["status"],
+                    "ship_verification_summary": shipped["verification_summary"],
+                    "ship_acceptance_summary": shipped["acceptance_summary"],
                 }
             )
 
@@ -154,17 +194,13 @@ def run_benchmark(task_count: int = 12) -> dict[str, Any]:
         review_two = graph.review_record(review_task["id"], 0)
 
         total_baseline_reads = sum(item["baseline_file_reads"] for item in task_results)
-        total_workgraph_reads = sum(
-            item["workgraph_file_reads"] for item in task_results
-        )
+        total_psg_reads = sum(item["psg_file_reads"] for item in task_results)
         total_baseline_tokens = sum(
             item["baseline_token_estimate"] for item in task_results
         )
-        total_workgraph_tokens = sum(
-            item["workgraph_token_estimate"] for item in task_results
-        )
+        total_psg_tokens = sum(item["psg_token_estimate"] for item in task_results)
         return {
-            "benchmark": "workgraph-sequential-v1",
+            "benchmark": "psg-sequential-v1",
             "task_count": task_count,
             "repository": {"source_files": baseline_files, "indexed": index_result},
             "summary": {
@@ -172,14 +208,14 @@ def run_benchmark(task_count: int = 12) -> dict[str, Any]:
                     item["ship_status"] == "SHIPPABLE" for item in task_results
                 ),
                 "baseline_file_reads": total_baseline_reads,
-                "workgraph_file_reads": total_workgraph_reads,
+                "psg_file_reads": total_psg_reads,
                 "file_read_reduction_percent": round(
-                    100 * (1 - total_workgraph_reads / total_baseline_reads), 2
+                    100 * (1 - total_psg_reads / total_baseline_reads), 2
                 ),
                 "baseline_token_estimate": total_baseline_tokens,
-                "workgraph_token_estimate": total_workgraph_tokens,
-                "context_token_reduction_percent": round(
-                    100 * (1 - total_workgraph_tokens / total_baseline_tokens), 2
+                "psg_token_estimate": total_psg_tokens,
+                "total_context_token_reduction_percent": round(
+                    100 * (1 - total_psg_tokens / total_baseline_tokens), 2
                 ),
                 "unauthorized_frozen_mutation_blocked": not blocked["allowed"],
                 "review_stopped_at_budget": review_two["stop_general_review"]
@@ -192,7 +228,7 @@ def run_benchmark(task_count: int = 12) -> dict[str, Any]:
 
 def main() -> int:
     parser = argparse.ArgumentParser(
-        description="Run the reproducible WorkGraph sequential-task benchmark"
+        description="Run the reproducible PSG sequential-task benchmark"
     )
     parser.add_argument("--tasks", type=int, default=12)
     parser.add_argument("--output", type=Path)

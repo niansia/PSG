@@ -1,0 +1,60 @@
+version: 1
+enabled: true
+project: PSG
+source_of_truth: git
+authority:
+  order:
+  - host_mandatory_rules
+  - current_user_instruction
+  - accepted_psg_decisions_and_constraints
+  - repository_native_rules
+  - task_specific_skills
+  - general_skills_and_preferences
+  - psg_heuristics
+  - model_preference
+index:
+  exclude:
+  - .git/**
+  - .psg/**
+  - .venv/**
+  - venv/**
+  - node_modules/**
+  - dist/**
+  - build/**
+  - tmp/**
+  languages:
+  - python
+  mode: incremental
+policies:
+  default: mutable
+context:
+  default_token_budget: 12000
+review:
+  general_round_limit: 2
+  no_new_blocker_stop_rounds: 2
+  targeted_fix_limit: 2
+risk:
+  high_requires_independent_review: true
+dependencies:
+  policy: conservative
+  prefer:
+  - standard_library
+  - native_platform
+  - existing_dependencies
+  new_runtime_dependency_requires_justification: true
+guardrails:
+  mutation:
+    frozen_nodes: enforce
+    outside_write_scope: block
+    interface_changes: review
+  dependencies:
+    new_runtime_dependency: justify
+  verification:
+    stale_evidence: reject
+    functional_evidence: trusted_source_required
+  convergence:
+    accepted_debt: reopen_only_when_triggered
+  scope:
+    speculative_refactor: forbid
+verification:
+  commands: []

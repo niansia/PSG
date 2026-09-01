@@ -35,7 +35,8 @@ def sha256_text(value: str) -> str:
 
 
 def normalize_path(path: str | Path) -> str:
-    return Path(path).as_posix().lstrip("./")
+    value = Path(path).as_posix()
+    return value.removeprefix("./")
 
 
 def atomic_write_text(path: Path, value: str) -> None:

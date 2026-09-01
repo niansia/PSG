@@ -1,13 +1,13 @@
 from __future__ import annotations
 
-from workgraph.runtime import WorkGraph
+from psg.runtime import PSG
 
 
 def make_diff(path: str, old: str, new: str) -> str:
     return f"diff --git a/{path} b/{path}\n--- a/{path}\n+++ b/{path}\n@@ -1 +1 @@\n-{old}\n+{new}\n"
 
 
-def test_frozen_file_is_blocked(graph: WorkGraph) -> None:
+def test_frozen_file_is_blocked(graph: PSG) -> None:
     graph.node_policy_set("file:src/backend.py", "frozen", "Approved architecture")
     opened = graph.task_open(
         intent="Change application",
@@ -25,7 +25,7 @@ def test_frozen_file_is_blocked(graph: WorkGraph) -> None:
 
 
 def test_interface_lock_allows_internals_but_blocks_public_signature(
-    graph: WorkGraph,
+    graph: PSG,
 ) -> None:
     graph.node_policy_set(
         "file:src/backend.py", "interface_locked", "Public consumers depend on it"
@@ -54,7 +54,7 @@ def test_interface_lock_allows_internals_but_blocks_public_signature(
     assert any(item["kind"] == "interface_locked" for item in contract["violations"])
 
 
-def test_outside_write_scope_requests_expansion(task: dict, graph: WorkGraph) -> None:
+def test_outside_write_scope_requests_expansion(task: dict, graph: PSG) -> None:
     result = graph.patch_validate(
         task["id"],
         make_diff(
@@ -65,7 +65,7 @@ def test_outside_write_scope_requests_expansion(task: dict, graph: WorkGraph) ->
     assert result["required_scope_expansion"] == ["tests/test_app.py"]
 
 
-def test_stale_git_revision_is_rejected(graph: WorkGraph, repo) -> None:
+def test_stale_git_revision_is_rejected(graph: PSG, repo) -> None:
     opened = graph.task_open(
         intent="Change feature", acceptance_criteria=[], targets=["src/app.py"]
     )
@@ -80,16 +80,14 @@ def test_stale_git_revision_is_rejected(graph: WorkGraph, repo) -> None:
     assert result["violations"][0]["kind"] == "stale_working_set"
 
 
-def test_untracked_files_are_included_in_actual_diff(
-    task: dict, graph: WorkGraph
-) -> None:
+def test_untracked_files_are_included_in_actual_diff(task: dict, graph: PSG) -> None:
     (graph.root / "new_module.py").write_text("VALUE = 1\n", encoding="utf-8")
     result = graph.patch_validate(task["id"])
     assert result["allowed"] is False
     assert "new_module.py" in result["required_scope_expansion"]
 
 
-def test_unfreezing_requires_override_and_recorded_decision(graph: WorkGraph) -> None:
+def test_unfreezing_requires_override_and_recorded_decision(graph: PSG) -> None:
     graph.node_policy_set("file:src/backend.py", "frozen", "Approved architecture")
     try:
         graph.node_policy_set(
@@ -112,3 +110,184 @@ def test_unfreezing_requires_override_and_recorded_decision(graph: WorkGraph) ->
         decision_id="D-unfreeze",
     )
     assert updated["policy"] == "mutable"
+
+
+def test_staged_change_cannot_bypass_final_policy(graph: PSG, repo) -> None:
+    from conftest import run
+
+    graph.node_policy_set("file:src/backend.py", "frozen", "Stable algorithm")
+    opened = graph.task_open(
+        intent="Change only the application",
+        acceptance_criteria=[],
+        targets=["src/app.py"],
+        forbidden=["src/backend.py"],
+    )
+    graph.context_build(opened["id"])
+    (repo / "src" / "backend.py").write_text(
+        "def locked_api(value: int) -> int:\n    return value * 99\n",
+        encoding="utf-8",
+    )
+    run(repo, "git", "add", "src/backend.py")
+    result = graph.patch_validate(opened["id"])
+    assert result["diff_source"] == "runtime_final_diff"
+    assert result["allowed"] is False
+    assert any(item["path"] == "src/backend.py" for item in result["violations"])
+
+
+def test_frozen_python_symbol_blocks_only_its_hunk(graph: PSG, repo) -> None:
+    graph.node_policy_set(
+        "symbol:src/backend.py:locked_api", "frozen", "Approved algorithm"
+    )
+    opened = graph.task_open(
+        intent="Revise backend internals",
+        acceptance_criteria=[],
+        targets=["src/backend.py"],
+        write=["src/backend.py"],
+    )
+    graph.context_build(opened["id"])
+    (repo / "src" / "backend.py").write_text(
+        "def locked_api(value: int) -> int:\n    return value + value\n",
+        encoding="utf-8",
+    )
+    result = graph.patch_validate(opened["id"])
+    assert result["allowed"] is False
+    violation = next(
+        item
+        for item in result["violations"]
+        if item["kind"] == "symbol_policy_violation"
+    )
+    assert violation["symbols"][0]["id"] == "symbol:src/backend.py:locked_api"
+
+
+def test_architecture_lock_edge_blocks_symbol_change(graph: PSG, repo) -> None:
+    graph.node_create(
+        node_id="ARCH-0001",
+        node_type="Architecture",
+        title="Stable backend algorithm",
+        payload={"reason": "accepted architecture"},
+    )
+    graph.edge_create("ARCH-0001", "locks", "symbol:src/backend.py:locked_api")
+    opened = graph.task_open(
+        intent="Try to alter locked architecture",
+        acceptance_criteria=[],
+        targets=["src/backend.py"],
+        write=["src/backend.py"],
+    )
+    graph.context_build(opened["id"])
+    (repo / "src" / "backend.py").write_text(
+        "def locked_api(value: int) -> int:\n    return value * 3\n",
+        encoding="utf-8",
+    )
+    result = graph.patch_validate(opened["id"])
+    assert result["allowed"] is False
+    assert "edge:ARCH-0001:locks" in str(result["violations"])
+
+
+def test_staged_rename_keeps_source_policy(graph: PSG, repo) -> None:
+    from conftest import run
+
+    graph.node_policy_set("file:src/app.py", "frozen", "Stable file")
+    opened = graph.task_open(
+        intent="Rename another file",
+        acceptance_criteria=[],
+        targets=["src/backend.py"],
+        write=["src/backend.py", "src/renamed.py"],
+    )
+    graph.context_build(opened["id"])
+    run(repo, "git", "mv", "src/app.py", "src/renamed.py")
+    result = graph.patch_validate(opened["id"])
+    assert result["allowed"] is False
+    assert any(item["kind"] == "forbidden_or_frozen" for item in result["violations"])
+
+
+def test_new_dependency_requires_task_justification(graph: PSG, repo) -> None:
+    opened = graph.task_open(
+        intent="Add a runtime dependency",
+        acceptance_criteria=[],
+        targets=["requirements.txt"],
+        write=["requirements.txt"],
+    )
+    graph.context_build(opened["id"])
+    (repo / "requirements.txt").write_text("httpx>=0.28\n", encoding="utf-8")
+    blocked = graph.patch_validate(opened["id"])
+    assert any(
+        item["kind"] == "new_dependency_requires_justification"
+        for item in blocked["violations"]
+    )
+
+    justified = graph.task_open(
+        intent="Add the approved HTTP client",
+        acceptance_criteria=[],
+        targets=["requirements.txt"],
+        write=["requirements.txt"],
+        dependency_justifications=[
+            "The standard library lacks the required async transport API"
+        ],
+    )
+    graph.context_build(justified["id"])
+    allowed = graph.patch_validate(justified["id"])
+    assert allowed["allowed"] is True
+
+
+def test_governance_edit_is_not_hidden_as_runtime_state(graph: PSG, repo) -> None:
+    opened = graph.task_open(
+        intent="Change only application code",
+        acceptance_criteria=[],
+        targets=["src/app.py"],
+        write=["src/app.py"],
+    )
+    graph.context_build(opened["id"])
+    config = repo / ".psg" / "config.yaml"
+    config.write_text(config.read_text(encoding="utf-8") + "\n# unauthorized\n")
+    result = graph.patch_validate(opened["id"])
+    assert result["allowed"] is False
+    assert any(
+        item["kind"] == "outside_write_scope" and item["path"] == ".psg/config.yaml"
+        for item in result["violations"]
+    )
+
+
+def test_rename_into_managed_state_cannot_hide_frozen_source(graph: PSG, repo) -> None:
+    from conftest import run
+
+    graph.node_policy_set("file:src/app.py", "frozen", "Stable application entry")
+    opened = graph.task_open(
+        intent="Change a different file",
+        acceptance_criteria=[],
+        targets=["src/backend.py"],
+        write=["src/backend.py"],
+    )
+    graph.context_build(opened["id"])
+    run(repo, "git", "mv", "src/app.py", ".psg/state/hidden.py")
+    result = graph.patch_validate(opened["id"])
+    assert result["allowed"] is False
+    assert any(item["kind"] == "forbidden_or_frozen" for item in result["violations"])
+
+
+def test_non_dependency_manifest_edit_does_not_require_justification(
+    graph: PSG, repo
+) -> None:
+    from conftest import run
+
+    manifest = repo / "pyproject.toml"
+    manifest.write_text(
+        '[project]\nname = "sample"\ndescription = "before"\n'
+        'dependencies = ["PyYAML>=6"]\n',
+        encoding="utf-8",
+    )
+    run(repo, "git", "add", "pyproject.toml")
+    run(repo, "git", "commit", "-m", "add manifest")
+    opened = graph.task_open(
+        intent="Clarify package metadata",
+        acceptance_criteria=[],
+        targets=["pyproject.toml"],
+        write=["pyproject.toml"],
+    )
+    graph.context_build(opened["id"])
+    manifest.write_text(
+        '[project]\nname = "sample"\ndescription = "after"\n'
+        'dependencies = ["PyYAML>=6"]\n',
+        encoding="utf-8",
+    )
+    result = graph.patch_validate(opened["id"])
+    assert result["allowed"] is True

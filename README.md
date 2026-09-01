@@ -1,178 +1,176 @@
 <div align="center">
 
-<img src="docs/assets/workgraph-concept.png" alt="PSG — project state graph" width="100%">
+<img src="docs/assets/psg-concept.png" alt="PSG — project state graph" width="100%">
 
-# PSG / WorkGraph
+# PSG
 
-### Give coding agents a project memory, a safe working boundary, and a real finish line.
+### project state graph
+
+**Install once. Initialize once. Then code normally.**
 
 [![Python 3.10+](https://img.shields.io/badge/Python-3.10%2B-6EAEDB?style=flat-square)](https://www.python.org/)
-[![Tests](https://img.shields.io/badge/tests-21%20passing-79B9A4?style=flat-square)](tests/)
+[![Tests](https://img.shields.io/badge/tests-38%20passing-79B9A4?style=flat-square)](tests/)
 [![Release](https://img.shields.io/badge/release-v1.0.0-F3B557?style=flat-square)](artifacts/)
-[![Status](https://img.shields.io/badge/status-working%20MVP-FF9364?style=flat-square)](docs/acceptance.md)
+[![Status](https://img.shields.io/badge/status-complete%20MVP-FF9364?style=flat-square)](docs/acceptance.md)
 
 </div>
 
-## What is this?
+PSG is a Skill bundle and local runtime that gives your coding agent a durable memory of the project, a clear boundary for what it may change, and an evidence-based definition of “done.” It works beside Git and your existing Skills; it does not replace your coding agent or edit source code by itself.
 
-**PSG (Project State Graph)** is the idea: keep the important state of a software project in one persistent graph instead of making every AI session rediscover it from scratch.
+> You keep asking for changes in normal language. PSG quietly retrieves the relevant context, protects locked decisions and files, runs the checks you authorize, and prevents stale or unsupported evidence from being called complete.
 
-**WorkGraph** is the working reference implementation in this repository. It gives a coding agent only the context it needs, checks what it is allowed to change, records test and review evidence, and decides whether a task is actually ready to ship.
+## Why use it?
 
-It sits beside your existing agent and Git workflow. It does **not** generate patches, replace Git, or choose a model for you.
+PSG is for the ordinary problems that make agent-assisted coding frustrating:
 
-> In plain English: WorkGraph helps an AI coding assistant remember the project, stay in scope, prove its work, and stop when the work is done.
+- every new chat rereads the same repository;
+- important constraints disappear between sessions;
+- a small request changes unrelated files;
+- “tests passed” refers to code that has since changed;
+- repeated reviews keep reopening accepted trade-offs; or
+- nobody can explain why the work was considered finished.
 
-## Why would I use it today?
+PSG turns those problems into four concrete safeguards:
 
-WorkGraph is useful when one or more of these feel familiar:
-
-- A new chat spends time reading the same repository files again.
-- Important decisions disappear when you switch models or sessions.
-- A small request causes unrelated files to change.
-- "Review it again" produces endless low-value review loops.
-- Tests passed once, but the code changed afterward and the evidence became stale.
-- You cannot explain why an agent believed a task was complete.
-
-WorkGraph turns those fuzzy problems into four explicit controls:
-
-| Need | What WorkGraph does |
+| You need | PSG provides |
 | --- | --- |
-| **Relevant context** | Indexes files and Python symbols, follows dependencies, and builds a token-budgeted context pack. |
-| **Safe changes** | Applies `mutable`, `read_only`, `interface_locked`, or `frozen` policies to the real Git diff. |
-| **Durable evidence** | Records acceptance criteria, verification results, issues, decisions, and review rounds in local project state. |
-| **A finish line** | Returns `SHIPPABLE` only when the current worktree, evidence, criteria, scope, and review budget agree. |
+| The right context | A token-budgeted working set built from files, Python symbols, dependencies, tasks, decisions, and constraints. |
+| Safe changes | Policy checks against the final Git state, including staged, unstaged, renamed, deleted, and untracked files. |
+| Trustworthy proof | Verification and acceptance evidence tied to the exact working tree and its real source. |
+| A real finish line | `SHIPPABLE` only when scope, checks, criteria, review, current code, and risk requirements agree. |
 
-## The workflow
+## Get started
 
-```text
-TASK INTENT → MINIMUM CONTEXT → CONTROLLED CHANGE → CURRENT EVIDENCE → SHIP GATE
-                  ↑                    ↓                  │
-                  └── project graph ← decisions / issues / verification ──┘
-```
-
-1. **Open a task** with targets, constraints, non-goals, and acceptance criteria.
-2. **Build context** from the project graph instead of loading every file.
-3. **Let your coding agent work** while Git remains the source of truth.
-4. **Validate and verify** the current diff, then evaluate the ship gate.
-
-## Try it in five minutes
-
-You need Python 3.10+ and a Git repository.
+You need Python 3.10+ and a Git repository. Clone PSG once, install its runtime, and copy the complete Skill folder—not only `SKILL.md`.
 
 ```powershell
 git clone https://github.com/niansia/PSG.git
 cd PSG
-python -m pip install -e ".[mcp]"
-
-workgraph init
-workgraph index
-workgraph doctor
+python -m pip install ".[mcp]"
+Copy-Item -Recurse .\skills\psg "$env:USERPROFILE\.codex\skills\psg"
 ```
 
-Open a real task and ask for the smallest useful context pack:
+In the project where you want PSG:
 
 ```powershell
-workgraph task open "Add an empty-cart message" `
-  --target src/cart.py `
-  --write src/cart.py `
-  --ac "An empty cart shows a helpful message"
-
-workgraph context build T-0001
+cd C:\path\to\your\project
+psg init
 ```
 
-After your agent edits the code, validate the actual Git diff and run deterministic checks:
+That is the normal setup. From then on, talk to your coding agent as usual:
+
+```text
+幫我在購物車是空的時候顯示一段友善提示，完成後幫我驗證。
+```
+
+When the PSG Skill is active, it opens and tracks the task, retrieves bounded context, validates the real final diff, records trusted verification, and evaluates the ship gate. You do not have to manually operate its graph for everyday work.
+
+Useful controls:
 
 ```powershell
-workgraph validate T-0001
-workgraph verify T-0001 --check "tests=pytest -q"
-workgraph task criterion T-0001 T-0001-AC1 pass --evidence '{"source":"pytest"}'
-workgraph ship T-0001
+psg status       # See whether PSG is active and what it knows
+psg guardrails   # See current authority, dependency, and safety rules
+psg off          # Temporarily disable automatic PSG governance
+psg on           # Enable it again
 ```
 
-Every command returns structured JSON. Run `workgraph --help` to see the complete CLI.
+## What gets added to your project?
 
-## Use it as an agent Skill
+`psg init` creates a small `.psg/` folder and performs the first index:
 
-This repository includes both parts needed for agent use:
-
-- [`skills/workgraph/`](skills/workgraph/) is the reusable Skill bundle source. `SKILL.md` is the entry point; the `references/` and `agents/` folders are supporting resources.
-- [`artifacts/workgraph-skill-v1.0.0.zip`](artifacts/workgraph-skill-v1.0.0.zip) is the distributable Skill bundle.
-- `workgraph-mcp` starts the local MCP server over stdio so an agent can call WorkGraph as tools.
-
-If the MCP process is started outside the repository, set `WORKGRAPH_PROJECT_ROOT` to the target Git project. The runtime and all project state remain local.
-
-```powershell
-$env:WORKGRAPH_PROJECT_ROOT = "C:\path\to\your\repo"
-workgraph-mcp
+```text
+.psg/
+├── config.yaml          # Committable project settings and guardrails
+├── policies.yaml        # Committable mutation policies
+├── state/project.yaml   # Committable decisions, tasks, constraints, and evidence
+└── local/               # Ignored derived SQLite index and event log
 ```
 
-## What is already implemented?
+The YAML state is portable across clones and teammates. The SQLite database is a disposable local cache and is never meant to be committed. Source code and Git remain authoritative.
 
-- SQLite project-state graph and append-only JSONL audit trail
-- Incremental Git/file index and Python AST symbol extraction
-- Dependency-aware, token-budgeted context routing
-- Mutation policies and stale-revision detection
-- Validation of tracked, staged, and untracked changes
-- Worktree-bound verification and acceptance evidence
-- Evidence-backed issues and bounded review/fix cycles
-- Stable graph snapshots without destructive Git resets
-- CLI, MCP server, reusable Skill bundle, tests, and benchmark
+## It works with your other Skills
 
-See the [architecture](docs/architecture.md), [acceptance report](docs/acceptance.md), [visual identity](docs/visual-identity.md), and [runtime operations guide](skills/workgraph/references/runtime-operations.md) for the details.
+PSG is a governance layer, not an exclusive workflow. A testing Skill can still test, a design Skill can still design, and a framework Skill can still implement. PSG supplies project context and enforces the accepted boundary around their work.
 
-## Early benchmark
+Its authority order is explicit: host rules and your current instruction come first; accepted project decisions and repository rules come before task-specific or general Skill preferences. Another Skill may propose a change, but it cannot silently unlock a frozen node, widen task scope, weaken required verification, or reopen accepted debt without its recorded trigger.
 
-The included reproducible synthetic benchmark runs 12 sequential tasks against a generated 38-file Python repository.
+See the [compatibility contract](skills/psg/references/compatibility-contract.md) for the exact rules.
 
-| Result | WorkGraph v1 |
+## How it works
+
+```text
+ordinary request
+      │
+      ▼
+Task ──requires──▶ Requirement
+ │                    │
+ ├──targets────────▶ code graph ◀──constrained-by── Decision / Constraint
+ │                    │
+ └──verified-by────▶ Verification
+                           │
+                           ▼
+                    evidence-aware ship gate
+```
+
+- The indexer maps files, Python symbols, imports, calls, and structured `psg-debt` annotations.
+- The router selects a bounded working set and automatically expands it once when confidence is low.
+- The policy engine checks actual Git hunks against file, symbol, decision, architecture, scope, and dependency rules.
+- The verification engine distinguishes runtime-executed, external-tool, reviewer, user-asserted, and model-reported evidence.
+- The convergence engine prevents stale evidence, unsupported blockers, endless review loops, and high-risk self-review.
+- The portable state layer synchronizes durable graph state through `.psg/state/project.yaml`; local SQLite is rebuilt as needed.
+
+## Included interfaces
+
+- [`skills/psg/`](skills/psg/) — the complete Skill bundle: entry playbook, agent metadata, and supporting references.
+- [`artifacts/psg-skill-v1.0.0.zip`](artifacts/psg-skill-v1.0.0.zip) — the distributable Skill bundle.
+- `psg` — JSON CLI used for setup, diagnostics, and automation.
+- `psg-mcp` — local MCP server exposing the same graph, index, validation, verification, debt, conflict, and ship operations.
+
+If MCP starts outside the target repository, set `PSG_PROJECT_ROOT` to that repository before running `psg-mcp`.
+
+## Reproducible benchmark
+
+The included synthetic benchmark runs 12 sequential tasks over a generated 38-file Python repository. Its context estimate counts both the serialized PSG tool payload and the complete contents of every selected source file.
+
+| Result | PSG v1.0 |
 | --- | ---: |
-| Tasks reaching `SHIPPABLE` | 12 / 12 |
-| File reads vs. full-repository baseline | **89.69% fewer** |
-| Estimated context tokens | **60.28% fewer** |
+| Tasks reaching `SHIPPABLE` | **12 / 12** |
+| File reads versus all-files baseline | **89.69% fewer** |
+| Estimated context tokens versus all-files baseline | **22.4% fewer** |
 | Unauthorized frozen mutation | **Blocked** |
 | Review stopped at configured budget | **Yes** |
 
-These numbers validate the mechanics of this MVP; they are **not** yet evidence of performance across real-world repositories, languages, or coding agents. Reproduce them with:
+These results validate this implementation’s mechanics; they do not claim general performance across real repositories, languages, or agents. Reproduce them with:
 
 ```powershell
-python benchmarks/sequential_benchmark.py
+python benchmarks/sequential_benchmark.py --output benchmarks/results/latest.json
 ```
 
-The raw result is in [`benchmarks/results/latest.json`](benchmarks/results/latest.json). Our proposed real-world evaluation protocol and its threats to validity are documented in [`research/evaluation-plan.md`](research/evaluation-plan.md).
+See the [raw result](benchmarks/results/latest.json), [benchmark method](benchmarks/README.md), and [real-world evaluation plan](research/evaluation-plan.md).
 
-## Why a graph?
-
-Repository-level coding research repeatedly points to the same pressure: useful context is scattered, code is interdependent, prompts are limited, and correct completion requires execution evidence. RepoCoder found gains from iterative repository retrieval; CodePlan treats repository change as dependency-aware planning; SWE-agent shows that the agent-computer interface changes outcomes; and SWE-bench makes multi-file reasoning plus executable verification part of the task itself.
-
-WorkGraph combines those concerns into persistent project state rather than treating each prompt as a fresh start. This is a design synthesis, not a claim that the cited systems implement PSG. Read the annotated [research map](research/README.md), [literature notes](research/literature-notes.md), and [BibTeX references](research/references.bib).
-
-## Current boundaries
-
-WorkGraph v1 is intentionally narrow:
-
-- Rich symbol extraction is currently Python-first; other files are still indexed at file level.
-- State is local to one repository and one SQLite database.
-- The benchmark is synthetic and should not be generalized beyond its stated setup.
-- WorkGraph governs and evaluates work; it does not edit source code itself.
-- Graph snapshot restore restores WorkGraph state only. It never runs `git reset` or overwrites source files.
-
-## Repository map
+## Project map
 
 ```text
 PSG/
-├── src/workgraph/          # Runtime, graph store, router, policies, ship gate
-├── skills/workgraph/       # Skill bundle: playbook + supporting resources
-├── tests/                  # End-to-end and safety tests
-├── benchmarks/             # Reproducible sequential benchmark
-├── research/               # Research map, literature notes, evaluation plan
-├── docs/                   # Architecture, acceptance report, visual identity
-├── artifacts/              # Installable wheel and Skill zip
-└── .workgraph/             # Committable config/policy; local state is ignored
+├── src/psg/          # Runtime, store, router, policy, verification, ship gate
+├── skills/psg/       # Installable Skill bundle and supporting resources
+├── tests/            # 38 automated behavior and adversarial tests
+├── benchmarks/       # Reproducible 12-task benchmark
+├── research/         # Literature map, citations, and evaluation plan
+├── docs/             # Architecture, acceptance report, visual identity
+├── artifacts/        # Installable wheel and Skill archive
+└── .psg/             # This repository's portable PSG configuration/state
 ```
 
-## Project status
+For technical details, read the [architecture](docs/architecture.md), [acceptance traceability](docs/acceptance.md), [runtime operations](skills/psg/references/runtime-operations.md), and [research map](research/README.md).
 
-This is a complete **v1.0 MVP** and a research-oriented foundation, not a claim of production maturity. The next meaningful milestone is evaluation on held-out, real repositories with multiple agents and languages.
+## Current boundary
 
-If you are exploring persistent agent memory, safer autonomous coding, or evidence-based completion, this repository is ready to run and extend.
+PSG v1.0 is a complete, Python-first research MVP:
+
+- Python receives rich symbol extraction; other files are indexed at file level.
+- The benchmark is synthetic and deliberately reports that limitation.
+- PSG governs and evaluates work; the active coding agent still makes the edits.
+- Snapshot restore restores PSG graph state only. It never resets Git or overwrites source files.
+
+The next meaningful step is held-out evaluation on real repositories—not adding a UI, vector database, or more languages before the governance contract is proven.

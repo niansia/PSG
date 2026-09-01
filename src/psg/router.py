@@ -25,7 +25,13 @@ class ContextRouter:
         self.policy = policy
         self.config = config
 
-    def build(self, task_id: str, max_tokens: int | None = None) -> dict[str, Any]:
+    def build(
+        self,
+        task_id: str,
+        max_tokens: int | None = None,
+        *,
+        _auto_expand: bool = True,
+    ) -> dict[str, Any]:
         task = self.store.get_task(task_id)
         if not task:
             raise KeyError(f"Unknown task: {task_id}")
@@ -105,8 +111,19 @@ class ContextRouter:
             rationale[path] = "explicit write scope"
 
         confidence = self._confidence(file_nodes.values())
-        if confidence < 0.60 and hops < 3:
-            payload["expansion_hops"] = max(int(payload.get("expansion_hops", 0)), 1)
+        if confidence < 0.60 and hops < 3 and _auto_expand:
+            payload["expansion_hops"] = min(
+                int(payload.get("expansion_hops", 0)) + 1, 3
+            )
+            payload.setdefault("expansion_reasons", []).append(
+                "automatic bounded expansion after low-confidence routing"
+            )
+            self.store.update_task(task_id, payload_json=payload)
+            self.store.event(
+                "context.auto_expanded",
+                {"task_id": task_id, "initial_confidence": confidence, "hops": 1},
+            )
+            return self.build(task_id, max_tokens=max_tokens, _auto_expand=False)
         items = self._pack_context(
             selected_nodes, distance, max_tokens or task["context_budget"]
         )

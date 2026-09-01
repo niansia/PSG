@@ -15,10 +15,12 @@ At that point, report the architectural choice or external decision needed. Do n
 
 ## Snapshot recovery
 
-WorkGraph snapshots restore graph/project-state records only. They never reset, overwrite, or delete source files. A restore creates a pre-restore safety snapshot. If the snapshot Git revision differs from the current repository, require an explicit revision-mismatch override and state that code remains unchanged.
+PSG snapshots restore graph/project-state records only. They never reset, overwrite, or delete source files. A restore creates a pre-restore safety snapshot. If the snapshot Git revision differs from the current repository, require an explicit revision-mismatch override and state that code remains unchanged.
 
 Use the last stable snapshot as evidence for a human-led source recovery decision. Never translate it into a destructive Git command without a separate explicit user request.
 
 ## Non-blocking findings
 
 MINOR, OPTIONAL, and SPECULATIVE findings remain backlog/deferred items. They do not reopen a SHIPPABLE task unless new reproducible evidence establishes a requirement, contract, test, or security violation.
+
+Accepted Debt nodes also stay deferred while their revisit trigger is unmet. Use `debt_review` with new evidence to mark a trigger due; do not repeatedly rediscover the same accepted tradeoff in general review.
