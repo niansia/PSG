@@ -200,7 +200,9 @@ def write_checksums(output_dir: Path, artifacts: list[Path]) -> Path:
         digest = hashlib.sha256(path.read_bytes()).hexdigest()
         lines.append(f"{digest}  {path.name}")
     checksums = output_dir / "SHA256SUMS"
-    checksums.write_text("\n".join(lines) + "\n", encoding="utf-8")
+    # Written as bytes: write_text would emit CRLF on Windows, and sha256sum -c
+    # cannot read a CRLF checksum list.
+    checksums.write_bytes((chr(10).join(lines) + chr(10)).encode("utf-8"))
     return checksums
 
 
