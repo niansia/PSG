@@ -1,0 +1,8 @@
+# PSG release artifacts must be byte-identical on every platform: the Skill archive
+# is compared against its source files, and a Windows CRLF checkout would otherwise
+# diverge from the committed zip and the wheel that embeds the same bytes.
+* text=auto eol=lf
+
+*.png binary
+*.zip binary
+*.whl binary
