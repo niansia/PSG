@@ -10,7 +10,7 @@
 
 [![Python 3.10+](https://img.shields.io/badge/Python-3.10%2B-6EAEDB?style=flat-square)](https://www.python.org/)
 [![CI](https://github.com/niansia/PSG/actions/workflows/ci.yml/badge.svg)](https://github.com/niansia/PSG/actions/workflows/ci.yml)
-[![Release](https://img.shields.io/badge/release-v1.1.0-F3B557?style=flat-square)](https://github.com/niansia/PSG/releases/tag/v1.1.0)
+[![Release](https://img.shields.io/badge/release-v1.1.1-F3B557?style=flat-square)](https://github.com/niansia/PSG/releases/tag/v1.1.1)
 [![Status](https://img.shields.io/badge/status-complete%20MVP-FF9364?style=flat-square)](docs/acceptance.md)
 
 [English](README.md) · [繁體中文](README.zh-TW.md) · [简体中文](README.zh-CN.md) · **日本語**
@@ -28,13 +28,13 @@ PSG は Skill バンドルとローカル runtime のセットで、あなたの
 ### Windows
 
 ```powershell
-python -m pip install "psg-runtime[mcp] @ git+https://github.com/niansia/PSG.git@v1.1.0"; psg setup
+python -m pip install "psg-runtime[mcp] @ git+https://github.com/niansia/PSG.git@v1.1.1"; psg setup
 ```
 
 ### macOS / Linux
 
 ```bash
-python3 -m pip install "psg-runtime[mcp] @ git+https://github.com/niansia/PSG.git@v1.1.0" && psg setup
+python3 -m pip install "psg-runtime[mcp] @ git+https://github.com/niansia/PSG.git@v1.1.1" && psg setup
 ```
 
 そのうえで、Git プロジェクトごとに一度だけ有効化します。
@@ -291,7 +291,7 @@ PSG v1 は意図的に小さな信頼モデルを使います。
 ## 含まれるインターフェース
 
 - [`skills/psg/`](skills/psg/) — 完全な Skill バンドル：入口となる playbook、エージェントのメタデータ、補助リファレンス。
-- [`artifacts/psg-skill-v1.1.0.zip`](artifacts/psg-skill-v1.1.0.zip) — 配布可能な Skill バンドル。
+- [`artifacts/psg-skill-v1.1.1.zip`](artifacts/psg-skill-v1.1.1.zip) — 配布可能な Skill バンドル。
 - `psg` — 人に優しい製品コマンドに加え、`--json` と高度／デバッグ用 API。
 - `psg-mcp` — 同じグラフ、インデックス、検査、verification、handoff、負債、衝突、出荷の各操作を公開するローカル MCP サーバー。
 

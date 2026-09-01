@@ -2,7 +2,12 @@
 
 All notable changes to PSG are recorded here. Versions follow [semantic versioning](https://semver.org/).
 
-## [Unreleased]
+## [1.1.1] — 2026-09-01
+
+The sealing release. v1.1.0 shipped a Task Contract whose hash covered the scope a task
+*asked for* rather than the scope the runtime actually *enforced*. This closes that gap.
+
+**More context is not more authority.**
 
 ### Fixed
 
@@ -153,6 +158,7 @@ to expansion by review.
   policy engine, verification and trust tiers, convergence and ship gate, installable
   Skill bundle, and the `psg` CLI plus `psg-mcp` server.
 
+[1.1.1]: https://github.com/niansia/PSG/releases/tag/v1.1.1
 [1.1.0]: https://github.com/niansia/PSG/releases/tag/v1.1.0
 [1.0.1]: https://github.com/niansia/PSG/releases/tag/v1.0.1
 [1.0.0]: https://github.com/niansia/PSG/releases/tag/v1.0.0

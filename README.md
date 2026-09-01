@@ -10,7 +10,7 @@
 
 [![Python 3.10+](https://img.shields.io/badge/Python-3.10%2B-6EAEDB?style=flat-square)](https://www.python.org/)
 [![CI](https://github.com/niansia/PSG/actions/workflows/ci.yml/badge.svg)](https://github.com/niansia/PSG/actions/workflows/ci.yml)
-[![Release](https://img.shields.io/badge/release-v1.1.0-F3B557?style=flat-square)](https://github.com/niansia/PSG/releases/tag/v1.1.0)
+[![Release](https://img.shields.io/badge/release-v1.1.1-F3B557?style=flat-square)](https://github.com/niansia/PSG/releases/tag/v1.1.1)
 [![Status](https://img.shields.io/badge/status-complete%20MVP-FF9364?style=flat-square)](docs/acceptance.md)
 
 **English** · [繁體中文](README.zh-TW.md) · [简体中文](README.zh-CN.md) · [日本語](README.ja.md)
@@ -28,13 +28,13 @@ Install once. The command installs the runtime, the complete Skill bundle, and M
 ### Windows
 
 ```powershell
-python -m pip install "psg-runtime[mcp] @ git+https://github.com/niansia/PSG.git@v1.1.0"; psg setup
+python -m pip install "psg-runtime[mcp] @ git+https://github.com/niansia/PSG.git@v1.1.1"; psg setup
 ```
 
 ### macOS / Linux
 
 ```bash
-python3 -m pip install "psg-runtime[mcp] @ git+https://github.com/niansia/PSG.git@v1.1.0" && psg setup
+python3 -m pip install "psg-runtime[mcp] @ git+https://github.com/niansia/PSG.git@v1.1.1" && psg setup
 ```
 
 Then opt a Git project in once:
@@ -299,7 +299,7 @@ It also governs how a task is recorded. `task_open` normally runs through an age
 ## Included interfaces
 
 - [`skills/psg/`](skills/psg/) — the complete Skill bundle: entry playbook, agent metadata, and supporting references.
-- [`artifacts/psg-skill-v1.1.0.zip`](artifacts/psg-skill-v1.1.0.zip) — the distributable Skill bundle.
+- [`artifacts/psg-skill-v1.1.1.zip`](artifacts/psg-skill-v1.1.1.zip) — the distributable Skill bundle.
 - `psg` — human-friendly product commands plus `--json` and advanced/debug APIs.
 - `psg-mcp` — local MCP server exposing the same graph, index, validation, verification, handoff, debt, conflict, and ship operations.
 

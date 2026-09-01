@@ -10,7 +10,7 @@
 
 [![Python 3.10+](https://img.shields.io/badge/Python-3.10%2B-6EAEDB?style=flat-square)](https://www.python.org/)
 [![CI](https://github.com/niansia/PSG/actions/workflows/ci.yml/badge.svg)](https://github.com/niansia/PSG/actions/workflows/ci.yml)
-[![Release](https://img.shields.io/badge/release-v1.1.0-F3B557?style=flat-square)](https://github.com/niansia/PSG/releases/tag/v1.1.0)
+[![Release](https://img.shields.io/badge/release-v1.1.1-F3B557?style=flat-square)](https://github.com/niansia/PSG/releases/tag/v1.1.1)
 [![Status](https://img.shields.io/badge/status-complete%20MVP-FF9364?style=flat-square)](docs/acceptance.md)
 
 [English](README.md) · [繁體中文](README.zh-TW.md) · **简体中文** · [日本語](README.ja.md)
@@ -28,13 +28,13 @@ PSG 是一组 Skill bundle 加上本地 runtime，它给你的 coding agent 三�
 ### Windows
 
 ```powershell
-python -m pip install "psg-runtime[mcp] @ git+https://github.com/niansia/PSG.git@v1.1.0"; psg setup
+python -m pip install "psg-runtime[mcp] @ git+https://github.com/niansia/PSG.git@v1.1.1"; psg setup
 ```
 
 ### macOS / Linux
 
 ```bash
-python3 -m pip install "psg-runtime[mcp] @ git+https://github.com/niansia/PSG.git@v1.1.0" && psg setup
+python3 -m pip install "psg-runtime[mcp] @ git+https://github.com/niansia/PSG.git@v1.1.1" && psg setup
 ```
 
 然后为每个 Git 项目启用一次：
@@ -290,7 +290,7 @@ PSG v1 刻意使用一个很小的信任模型：
 ## 内含的接口
 
 - [`skills/psg/`](skills/psg/) — 完整的 Skill bundle：入口 playbook、agent 元数据与支持参考。
-- [`artifacts/psg-skill-v1.1.0.zip`](artifacts/psg-skill-v1.1.0.zip) — 可分发的 Skill bundle。
+- [`artifacts/psg-skill-v1.1.1.zip`](artifacts/psg-skill-v1.1.1.zip) — 可分发的 Skill bundle。
 - `psg` — 对人友好的产品命令，加上 `--json` 与高级／调试 API。
 - `psg-mcp` — 本地 MCP server，提供相同的图、索引、校验、verification、handoff、技术债、冲突与出货操作。
 
