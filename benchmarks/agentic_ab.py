@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import os
 import re
@@ -296,6 +297,93 @@ def _path_pattern(raw: str) -> re.Pattern[str]:
     return re.compile(separator.join(segments), re.IGNORECASE)
 
 
+def _skill_digest(directory: Path) -> str:
+    """Content hash of a Skill bundle, path and bytes, order-independent."""
+    parts: list[bytes] = []
+    for path in sorted(item for item in directory.rglob("*") if item.is_file()):
+        parts.append(path.relative_to(directory).as_posix().encode("utf-8"))
+        parts.append(path.read_bytes())
+    return hashlib.sha256(b"".join(parts)).hexdigest()
+
+
+def _run_provenance() -> dict[str, Any]:
+    """Bind the run to the exact PSG the agent will actually load.
+
+    PSG's own rule is that evidence must be bound to the thing it claims to verify.
+    A benchmark that exercises one PSG runtime while the agent reads a different,
+    globally installed Skill is evidence about neither, so refuse to start.
+    """
+    import psg
+
+    repository = Path(__file__).resolve().parents[1]
+    importable = Path(psg.__file__).resolve().parents[1]
+    expected = (repository / "src").resolve()
+    if importable != expected:
+        raise SystemExit(
+            "The importable psg package is not this checkout, so the runtime under "
+            f"test would not be the one in this repository.\n"
+            f"  importing from: {importable}\n"
+            f"  expected:       {expected}\n"
+            "Run: python -m pip install -e '.[mcp,dev]'"
+        )
+
+    source = repository / "skills" / "psg"
+    installed = Path.home() / ".codex" / "skills" / "psg"
+    if not installed.is_dir():
+        raise SystemExit(
+            f"The PSG Skill is not installed for Codex at {installed}.\n"
+            "Run: psg setup codex"
+        )
+    source_digest = _skill_digest(source)
+    installed_digest = _skill_digest(installed)
+    if source_digest != installed_digest:
+        raise SystemExit(
+            "The Codex Skill bundle does not match this checkout, so the agent would "
+            "read different instructions than the runtime enforces.\n"
+            f"  checkout  {source}: {source_digest[:16]}\n"
+            f"  installed {installed}: {installed_digest[:16]}\n"
+            "Run: psg setup codex"
+        )
+
+    psg_mcp = shutil.which("psg-mcp")
+    if not psg_mcp:
+        raise SystemExit("psg-mcp is required for the matched benchmark")
+    head = subprocess.run(
+        ["git", "rev-parse", "HEAD"],
+        cwd=repository,
+        capture_output=True,
+        text=True,
+        check=False,
+        stdin=subprocess.DEVNULL,
+    ).stdout.strip()
+    dirty = bool(
+        subprocess.run(
+            ["git", "status", "--porcelain=v1"],
+            cwd=repository,
+            capture_output=True,
+            text=True,
+            check=False,
+            stdin=subprocess.DEVNULL,
+        ).stdout.strip()
+    )
+    return {
+        "psg_version": psg.__version__,
+        "psg_commit": head,
+        "psg_worktree_dirty": dirty,
+        "skill_sha256": source_digest,
+        "skill_source": str(source),
+        "skill_installed_for_codex": str(installed),
+        "psg_runtime_path": str(importable),
+        "codex_cli": subprocess.run(
+            ["codex", "--version"],
+            capture_output=True,
+            text=True,
+            check=False,
+            stdin=subprocess.DEVNULL,
+        ).stdout.strip(),
+    }
+
+
 def _sanitizer(worktree: Path, base: Path) -> Callable[[str], str]:
     """Redact local absolute paths so raw traces are publishable."""
     replacements = [
@@ -456,6 +544,11 @@ def run_benchmark(
         raise ValueError("The published agentic benchmark requires all 10 paired tasks")
     if shutil.which("codex") is None:
         raise RuntimeError("codex CLI is required")
+    # Refuse to start unless the Skill the agent loads is the Skill in this checkout.
+    provenance = _run_provenance()
+    print("PSG under test:", flush=True)
+    for key, value in provenance.items():
+        print(f"  {key}: {value}", flush=True)
     output = output.resolve()
     traces = traces.resolve()
     traces.mkdir(parents=True, exist_ok=True)
@@ -504,6 +597,10 @@ def run_benchmark(
                 tests = _run_tests(worktree, task)
                 tests["baseline_output"] = sanitize(tests["baseline_output"])
                 tests["hidden_output"] = sanitize(tests["hidden_output"])
+                # Any edit outside the single reference target file. Editing the
+                # shared test fixture is the common case and is diagnostic, not
+                # automatically a scope violation - hence "non-target", not
+                # "out-of-scope".
                 outside = [path for path in changed if path != task.target]
                 rows.append(
                     {
@@ -523,7 +620,7 @@ def run_benchmark(
                             events, known_paths
                         ),
                         "changed_files": changed,
-                        "out_of_scope_edits": outside,
+                        "non_target_edits": outside,
                         **psg_outcome,
                         **tests,
                         # PSG declared the task done while the hidden test fails.
@@ -542,9 +639,7 @@ def run_benchmark(
             "tasks": len(values),
             "task_success": sum(item["task_success"] for item in values),
             "regressions": sum(item["regression"] for item in values),
-            "out_of_scope_edits": sum(
-                bool(item["out_of_scope_edits"]) for item in values
-            ),
+            "non_target_edits": sum(bool(item["non_target_edits"]) for item in values),
             "unique_file_reads": sum(
                 len(item["trace_inferred_unique_files_read"]) for item in values
             ),
@@ -555,6 +650,18 @@ def run_benchmark(
             "output_tokens": sum(item["usage"]["output_tokens"] for item in values),
             "wall_time_seconds": round(
                 sum(item["wall_time_seconds"] for item in values), 3
+            ),
+            # How often PSG's own localization was too broad to seal silently. This
+            # belongs in the headline, not the footnotes: it is the cost of the
+            # guardrail, paid by the operator.
+            "scope_approval_required": sum(
+                bool(item["requires_scope_approval"]) for item in values
+            ),
+            "sealed_without_manual_approval": sum(
+                1
+                for item in values
+                if item["contract_state"] == "sealed"
+                and not item["requires_scope_approval"]
             ),
             "review_rounds": sum(item["review_rounds"] or 0 for item in values),
             "fix_cycles": sum(item["fix_cycles"] or 0 for item in values),
@@ -567,6 +674,7 @@ def run_benchmark(
     result = {
         "benchmark": f"psg-agentic-ab-v2-{mode}",
         "published_at": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
+        "provenance": provenance,
         "protocol": {
             "agent": "Codex CLI",
             "model": MODEL,

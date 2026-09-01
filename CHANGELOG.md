@@ -2,7 +2,55 @@
 
 All notable changes to PSG are recorded here. Versions follow [semantic versioning](https://semver.org/).
 
-## [Unreleased]
+## [1.1.2] — 2026-09-02
+
+The enforcement release. v1.1.1 sealed the write boundary but still trusted a prompt to stop
+an agent from approving its own work, and still treated every lexical match as a candidate to
+write. Both are now enforced by the runtime.
+
+### Fixed
+
+- **`USER_APPROVED` is no longer reachable by an agent.** MCP could not mint it, but coding
+  agents run shell commands, so "do not approve your own work" was a Skill instruction rather
+  than an enforced rule: `psg task approve-scope`, `psg decision approve`, `psg debt approve`,
+  `psg state accept`, and every `--user-approved` flag executed straight through. All ten
+  paths now require a real terminal on stdin and stdout, print the authority being granted,
+  and demand the literal word `APPROVE`. A captured subprocess fails closed, and
+  `echo APPROVE | psg ...` fails with it. This is not cryptographic proof that a human pressed
+  the key — an agent given a PTY under the same OS identity is the host's trust boundary, not
+  PSG's — so `USER_APPROVED` is now defined as *interactive local operator approval under the
+  host permission boundary*, and the documentation says exactly that.
+- **A lexical match no longer grants write authority.** The intent fallback took its top eight
+  scored nodes and handed every one of their files write scope, so "might be relevant" and
+  "may be modified" were the same thing. Retrieval candidates and authority candidates are now
+  separate: symbol scores collapse onto their file, and only a single match that beats the
+  runner-up by a clear margin becomes the write target. An ambiguous match or a merely
+  incidental substring hit grants **no** write authority and asks the operator which file the
+  request means. On the ten benchmark intents this moves localization from 1–8 files (median
+  7, nine of ten needing manual approval) to exactly the one correct file in 10/10 cases with
+  no approval needed.
+- **`psg verification` was unreachable.** Its `--command` option shared argparse's `dest` with
+  the top-level subparser, overwriting the subcommand name, so the command always failed with
+  "Unsupported command: None". Found by a test that exercises every approval path.
+
+### Changed
+
+- **The agentic benchmark verifies its own provenance and aborts if it cannot.** The published
+  v1.1.1 run was measured while Codex loaded a globally installed pre-v1.1.1 Skill instead of
+  the checkout under test — the runtime enforced one set of rules while the agent was
+  instructed by another. A run now refuses to start unless the importable `psg` is this
+  checkout and the Skill installed for Codex hashes equal to `skills/psg`, and records commit,
+  runtime version, Skill SHA-256, worktree cleanliness, and CLI version in the result.
+- **That published run is marked superseded** in all four README translations rather than
+  deleted. Its numbers describe different software, and a re-run is required before PSG makes
+  any OFF-versus-ON claim.
+- `out_of_scope_edits` is renamed `non_target_edits`. Editing the shared test fixture is the
+  ordinary way an agent finishes a task; the metric is diagnostic, and the old name asserted a
+  violation the benchmark protocol had not defined in advance.
+- The benchmark's headline table now carries scope-approval counts instead of burying them in
+  the limitations, because they are the cost of the guardrail.
+
+## [1.1.1] — 2026-09-01
 
 ### Added
 
@@ -180,6 +228,7 @@ to expansion by review.
   policy engine, verification and trust tiers, convergence and ship gate, installable
   Skill bundle, and the `psg` CLI plus `psg-mcp` server.
 
+[1.1.2]: https://github.com/niansia/PSG/releases/tag/v1.1.2
 [1.1.1]: https://github.com/niansia/PSG/releases/tag/v1.1.1
 [1.1.0]: https://github.com/niansia/PSG/releases/tag/v1.1.0
 [1.0.1]: https://github.com/niansia/PSG/releases/tag/v1.0.1

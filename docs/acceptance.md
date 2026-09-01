@@ -42,7 +42,10 @@ This document maps the reviewed completion requirements to implemented behavior 
 | Live MCP transport | Git-backed MCP tools answer over real stdio within a bounded time | live stdio MCP regression test |
 | Cross-platform CI | Ubuntu/Windows/macOS on Python 3.10 and Ubuntu on Python 3.13 run tests, wheel build, and clean install smoke | `.github/workflows/ci.yml`, `scripts/build_release.py` |
 | Task-Boundary benchmark | 10 seeded scenarios report blocking precision, recall, and false reopening rate | `benchmarks/results/task-boundary-latest.json` |
-| Matched agentic benchmark | 10 paired tasks, one Codex CLI and model, same prompt and baseline commit, separate clean worktrees, hidden tests, symmetric target disclosure | `benchmarks/results/agentic-ab-latest.json` and sanitized per-run traces |
+| Matched agentic benchmark | 10 paired tasks, one Codex CLI and model, same prompt and baseline commit, separate clean worktrees, hidden tests, symmetric target disclosure | Harness verified; the published run is **superseded** and is not evidence for this version — a re-run is required |
+| Benchmark provenance | A run aborts unless the Skill the agent loads hashes equal to this checkout, and records commit, runtime version, Skill SHA-256, and CLI version | `_run_provenance()` abort path |
+| Interactive approval | Every CLI action that mints `USER_APPROVED` refuses a non-interactive caller and a piped answer | all-approval-paths and piped-answer tests |
+| Retrieval is not authority | A lexical match makes a file readable, not writable; an ambiguous or weak match grants no write authority at all | confident-match, ambiguous, and weak-match tests |
 | Mechanics regression benchmark | 12 tasks; full selected-file contents plus tool payload counted; frozen mutation blocked | `benchmarks/results/latest.json` |
 
 ## Verified release results
@@ -51,7 +54,8 @@ This document maps the reviewed completion requirements to implemented behavior 
 - Ruff lint and format checks: **passing**.
 - Task-Boundary benchmark: **10/10 correct**, blocking precision **1.0**, blocking recall **1.0**, false reopening rate **0.0**.
 - Mechanics regression benchmark: **12/12 SHIPPABLE**.
-- Matched agentic OFF/ON benchmark (`end_to_end`, 10 pairs, 20/20 runs completed): task success **10/10 ON versus 9/10 OFF**, out-of-scope edits **2 ON versus 10 OFF**, zero regressions and zero false `SHIPPABLE` on both sides — at **+79% input tokens** and **+42% wall time** for ON. The cost is reported as prominently as the benefit.
+- Matched agentic OFF/ON benchmark: **superseded, not current evidence.** The published run was measured while the agent loaded a pre-v1.1.1 global Skill, and localization has since changed, so its numbers describe different software. The data is kept and labelled rather than deleted. A re-run is required before any OFF/ON claim.
+- Localization precision on the same ten benchmark intents after the retrieval/authority split: **10/10 seal exactly the correct single target file**, **0/10 need manual scope approval** (previously 1-8 files, median 7, with 9/10 needing approval).
 - Benchmark file-read reduction: **89.69%** versus disclosed all-files baseline.
 - Benchmark context-token reduction: **32.41%**, counting the serialized context payload and actual contents of every selected source file.
 - Unauthorized frozen mutation: **blocked**.

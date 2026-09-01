@@ -11,6 +11,14 @@ from .store import Store
 from .task_contract import is_sealed
 from .util import canonical_json, normalize_path
 
+RETRIEVAL_CANDIDATE_LIMIT = 8
+# The best lexical match must beat the runner-up by this fraction to be treated as
+# the write target on its own; otherwise the choice goes to a person.
+AMBIGUITY_MARGIN = 0.20
+# One whole term shared with the intent scores 3.0. Below that a "match" is only an
+# incidental substring - "it" inside "__init__" - which is not evidence of anything.
+MINIMUM_CONFIDENT_SCORE = 3.0
+
 
 class ContextRouter:
     def __init__(
@@ -40,8 +48,22 @@ class ContextRouter:
         payload = task["payload"]
         targets = payload.get("targets", [])
         start_nodes = self._resolve_targets(targets)
-        if not start_nodes:
-            start_nodes = self._intent_fallback(task["intent"])
+        if start_nodes:
+            # Declared targets are stated intent, so they carry write candidacy.
+            derived_write = {
+                normalize_path(node["source"]["path"])
+                for node in start_nodes
+                if node.get("source", {}).get("path")
+            }
+            localization = {
+                "kind": "declared_targets",
+                "candidates": sorted(derived_write),
+            }
+        else:
+            start_nodes, derived_write, localization = self._intent_localization(
+                task["intent"]
+            )
+        payload["localization"] = localization
         hops = (
             1
             + int(payload.get("expansion_hops", 0))
@@ -74,11 +96,7 @@ class ContextRouter:
         explicit_forbidden = {
             normalize_path(item) for item in payload.get("forbidden", [])
         }
-        target_paths = {
-            normalize_path(node["source"]["path"])
-            for node in start_nodes
-            if node.get("source", {}).get("path")
-        }
+        target_paths = derived_write
         read: list[str] = []
         write: list[str] = []
         read_only: list[str] = []
@@ -219,7 +237,60 @@ class ContextRouter:
                     break
         return list({node["id"]: node for node in nodes}.values())
 
-    def _intent_fallback(self, intent: str) -> list[dict[str, Any]]:
+    def _intent_localization(
+        self, intent: str
+    ) -> tuple[list[dict[str, Any]], set[str], dict[str, Any]]:
+        """Separate what might be relevant from what may be written.
+
+        A lexical match makes a file a candidate to READ. It does not make it a
+        candidate to WRITE. Treating the whole retrieval set as write candidates is
+        how a bare intent turned into authority over eight files.
+
+        Returns the retrieval candidates, the write candidates, and a record of how
+        the decision was reached so the seal can ask a person when it was unclear.
+        """
+        scored = self._score_candidates(intent)
+        retrieval = [node for _, node in scored[:RETRIEVAL_CANDIDATE_LIMIT]]
+
+        # A symbol's score belongs to the file that contains it.
+        file_scores: dict[str, float] = {}
+        for score, node in scored:
+            path = node.get("source", {}).get("path")
+            if not path:
+                continue
+            normalized = normalize_path(path)
+            file_scores[normalized] = max(file_scores.get(normalized, 0.0), score)
+        ranked = sorted(file_scores.items(), key=lambda item: (-item[1], item[0]))
+
+        if not ranked:
+            return retrieval, set(), {"kind": "no_lexical_match", "candidates": []}
+        best_path, best_score = ranked[0]
+        if best_score < MINIMUM_CONFIDENT_SCORE:
+            return (
+                retrieval,
+                set(),
+                {
+                    "kind": "no_lexical_match",
+                    "candidates": [path for path, _ in ranked[:4]],
+                },
+            )
+        runner_up = ranked[1][1] if len(ranked) > 1 else 0.0
+        if runner_up and (best_score - runner_up) < AMBIGUITY_MARGIN * best_score:
+            # Several files look equally plausible. Guessing here would hand out
+            # authority over all of them; a person should pick instead.
+            close = [path for path, score in ranked if score >= runner_up][:4]
+            return (
+                retrieval,
+                set(),
+                {"kind": "ambiguous_localization", "candidates": close},
+            )
+        return (
+            retrieval,
+            {best_path},
+            {"kind": "single_confident_match", "candidates": [best_path]},
+        )
+
+    def _score_candidates(self, intent: str) -> list[tuple[float, dict[str, Any]]]:
         words = self._lexical_terms(intent)
         scored: list[tuple[float, dict[str, Any]]] = []
         candidates = [
@@ -247,12 +318,7 @@ class ContextRouter:
                 score += 0.5
             if score:
                 scored.append((score, node))
-        return [
-            node
-            for _, node in sorted(scored, key=lambda pair: (-pair[0], pair[1]["id"]))[
-                :8
-            ]
-        ]
+        return sorted(scored, key=lambda pair: (-pair[0], pair[1]["id"]))
 
     @staticmethod
     def _lexical_terms(value: str) -> set[str]:

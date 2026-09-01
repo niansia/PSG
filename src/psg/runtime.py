@@ -741,11 +741,13 @@ class PSG:
         authorized_write = sorted(set(working_set.get("write", [])))
         authorized_read_only = sorted(set(working_set.get("read_only", [])))
         authorized_forbidden = sorted(set(working_set.get("forbidden", [])))
+        localization = payload.get("localization", {})
         needs_approval, reasons = requires_scope_approval(
             write=authorized_write,
             read_only=authorized_read_only,
             forbidden=authorized_forbidden,
             risk=str(task["risk"]),
+            localization=localization,
         )
         payload["authorized_write"] = authorized_write
         payload["authorized_read_only"] = authorized_read_only
@@ -753,6 +755,7 @@ class PSG:
         payload["contract_state"] = CONTRACT_STATE_SEALED
         payload["requires_scope_approval"] = needs_approval
         payload["scope_approval_reasons"] = reasons
+        payload["localization"] = localization
         task["payload"] = payload
         payload["contract_hash"] = contract_hash(task)
         self.store.update_task(task_id, payload_json=payload)

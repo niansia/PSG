@@ -17,7 +17,7 @@ Run `psg doctor` before attempting recovery when tools fail to load, the databas
 - `psg init` opts the current Git project into governance and repairs missing host integration when possible.
 - `psg status`, `psg on`, and `psg off` are the ordinary project controls. Add `--global` to `on` or `off` for the global automatic-governance switch.
 - `psg handoff [TASK_ID]` builds a read-only review contract and writes it to ignored local state at `.psg/local/handoffs/<task>.md`. `--output` writes elsewhere; a path inside the Git worktree is reported as a warning because it would appear as a project change.
-- `psg task approve-scope TASK_ID --reason "..."` is the user-owned approval for a broad sealed mutation boundary. It is deliberately absent from MCP.
+- `psg task approve-scope TASK_ID --reason "..."` is the user-owned approval for a broad sealed mutation boundary. It is deliberately absent from MCP, and every command that mints USER_APPROVED refuses to run without an interactive terminal, so a captured subprocess or a piped answer cannot approve anything. Present the proposal and let the user type it.
 - `psg update` resolves and installs the newest stable `vX.Y.Z` release tag, then refreshes the bundle and MCP registrations. `--channel dev` is an explicit opt-in to `main`; `--source` is an advanced override.
 - `psg uninstall` removes installed integrations and runtime while preserving all project `.psg/` directories.
 

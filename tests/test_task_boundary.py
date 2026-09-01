@@ -329,10 +329,18 @@ def test_draft_contract_blocks_changes_until_localization_seals_it(graph) -> Non
     assert any(item["kind"] == "unsealed_contract" for item in result["violations"])
 
 
+def open_confident_task(graph) -> dict:
+    """An intent whose wording points unambiguously at one file."""
+    return graph.task_open(
+        intent="Fix the locked_api backend contract",
+        acceptance_criteria=["Feature behavior is verified"],
+        risk="medium",
+    )
+
+
 def test_localization_derived_write_authority_is_sealed_into_the_hash(graph) -> None:
     """The router grants write scope task_open never stated; the hash must cover it."""
-    opened = open_unscoped_task(graph)
-    task_id = opened["id"]
+    task_id = open_confident_task(graph)["id"]
     requested = graph.store.get_task(task_id)["payload"]["write"]
     assert requested == []
 
@@ -342,13 +350,54 @@ def test_localization_derived_write_authority_is_sealed_into_the_hash(graph) -> 
     payload = graph.store.get_task(task_id)["payload"]
     assert payload["contract_state"] == "sealed"
     # Localization really did manufacture authority out of a bare intent.
-    assert payload["authorized_write"]
+    assert payload["authorized_write"] == ["src/backend.py"]
     assert payload["authorized_write"] != requested
     # And that authority is what the hash commits to.
     assert payload["contract_hash"] == contract_hash(graph.store.get_task(task_id))
     contract = graph.task_contract(task_id)
     assert contract["mutation_boundary"]["write"] == payload["authorized_write"]
     assert contract["requested_mutation_boundary"]["write"] == []
+
+
+def test_a_retrieval_candidate_is_not_a_write_candidate(graph) -> None:
+    """Lexical relevance makes a file worth reading, never automatically writable."""
+    task_id = open_confident_task(graph)["id"]
+    built = graph.context_build(task_id)
+    payload = graph.store.get_task(task_id)["payload"]
+
+    # The router surfaced more files than it authorized.
+    reachable = set(built["working_set"]["read"]) | set(payload["authorized_write"])
+    assert len(reachable) > len(payload["authorized_write"])
+    assert payload["localization"]["kind"] == "single_confident_match"
+    assert payload["requires_scope_approval"] is False
+
+
+def test_ambiguous_localization_grants_no_write_authority(graph) -> None:
+    """When several files match equally well, guessing would authorize all of them."""
+    task_id = open_unscoped_task(graph)["id"]
+    graph.context_build(task_id)
+    payload = graph.store.get_task(task_id)["payload"]
+
+    assert payload["localization"]["kind"] == "ambiguous_localization"
+    assert len(payload["localization"]["candidates"]) > 1
+    assert payload["authorized_write"] == []
+    assert payload["requires_scope_approval"] is True
+    assert "ambiguous_localization" in payload["scope_approval_reasons"]
+
+
+def test_a_weak_lexical_match_grants_no_write_authority(graph) -> None:
+    """An incidental substring hit is not evidence about where a change belongs."""
+    opened = graph.task_open(
+        intent="Change slugify so it strips separators",
+        acceptance_criteria=["verified"],
+        risk="medium",
+    )
+    graph.context_build(opened["id"])
+    payload = graph.store.get_task(opened["id"])["payload"]
+
+    assert payload["localization"]["kind"] == "no_lexical_match"
+    assert payload["authorized_write"] == []
+    assert "no_localization_match" in payload["scope_approval_reasons"]
 
 
 def test_contract_hash_changes_when_write_authority_changes(graph, task) -> None:

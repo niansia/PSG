@@ -51,11 +51,25 @@ Other disclosed limits:
 - Raw traces are written to `results/agentic-ab-traces/` with local absolute paths redacted
   to `<WORKTREE>`, `<BENCHMARK_BASE>`, `<TMP>`, and `<USER_HOME>`.
 
-The published run is `results/agentic-ab-latest.json` with per-run traces in
-`results/agentic-ab-traces/`. It was produced in `end_to_end` mode on 2026-09-01; all 20 runs
-completed and none timed out. PSG ON reached 10/10 task success against 9/10 for OFF and cut
-out-of-scope edits from 10 to 2, while spending 79% more input tokens and 42% more wall time.
-Both directions are reported because both are the result.
+**The published run in `results/agentic-ab-latest.json` is superseded.** It was measured while
+Codex loaded a globally installed pre-v1.1.1 Skill rather than the one in the checkout under
+test, and localization has since been rewritten, so its numbers describe different software.
+The data and traces are kept and labelled rather than deleted; see the README for the full
+explanation. A re-run is required before PSG makes any OFF-versus-ON claim.
+
+Every run now begins by verifying its own provenance and aborts if it cannot:
+
+- the importable `psg` package must be this checkout;
+- the Skill installed for Codex must hash equal to `skills/psg` here — otherwise it stops and
+  tells you to run `psg setup codex`;
+- the commit, runtime version, Skill SHA-256, worktree cleanliness, and Codex CLI version are
+  recorded in the result under `provenance`.
+
+This is PSG's own rule applied to PSG: evidence must be bound to the thing it claims to verify.
+
+A **non-target edit** is any change outside the single reference target file. Editing the shared
+test fixture is the ordinary way an agent finishes a task, so the metric is diagnostic, not by
+itself a scope violation — which is why it is not named "out-of-scope".
 
 ## 2. Deterministic Task-Boundary benchmark
 

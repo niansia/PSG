@@ -425,3 +425,152 @@ def test_mcp_decision_is_proposed_and_does_not_apply_policy(graph, monkeypatch) 
     )
     assert structured["status"] == "proposed"
     assert structured["approval_required"] is True
+
+
+def _approval_commands(root: str, task_id: str) -> list[tuple[str, list[str]]]:
+    """Every CLI entry point that can mint USER_APPROVED authority."""
+    return [
+        ("state accept", ["--root", root, "state", "accept", "--reason", "r"]),
+        ("decision approve", ["--root", root, "decision", "approve", "D-0001"]),
+        (
+            "task approve-scope",
+            ["--root", root, "task", "approve-scope", task_id, "--reason", "r"],
+        ),
+        ("debt approve", ["--root", root, "debt", "approve", "DEBT-0001"]),
+        (
+            "task criterion",
+            [
+                "--root",
+                root,
+                "task",
+                "criterion",
+                task_id,
+                f"{task_id}-AC1",
+                "pass",
+                "--user-approved",
+            ],
+        ),
+        ("review record", ["--root", root, "review", task_id, "--user-approved"]),
+        (
+            "node policy set",
+            [
+                "--root",
+                root,
+                "node",
+                "policy",
+                "file:src/app.py",
+                "frozen",
+                "--reason",
+                "r",
+                "--override",
+            ],
+        ),
+        (
+            "verification record",
+            [
+                "--root",
+                root,
+                "verification",
+                task_id,
+                "unit",
+                "pass",
+                "--user-approved",
+            ],
+        ),
+        (
+            "issue update",
+            ["--root", root, "issue", "update", "I-0001", "fixed", "--user-approved"],
+        ),
+        (
+            "debt review",
+            ["--root", root, "debt", "review", "DEBT-0001", "--user-approved"],
+        ),
+    ]
+
+
+def test_every_user_approved_cli_path_refuses_a_non_interactive_caller(
+    graph, task, capsys, monkeypatch
+) -> None:
+    """A coding agent runs PSG as a captured subprocess; that must never mint authority."""
+    monkeypatch.setattr(sys.stdin, "isatty", lambda: False, raising=False)
+    monkeypatch.setattr(sys.stdout, "isatty", lambda: True, raising=False)
+    for label, argv in _approval_commands(str(graph.root), task["id"]):
+        assert main(argv) == 2, f"{label} was not refused"
+        captured = capsys.readouterr()
+        assert "interactive terminal" in captured.err, label
+
+
+def test_approval_refuses_a_piped_answer(graph, task, capsys, monkeypatch) -> None:
+    """`echo APPROVE | psg task approve-scope ...` must not work."""
+    monkeypatch.setattr(sys.stdin, "isatty", lambda: False, raising=False)
+    monkeypatch.setattr(sys.stdout, "isatty", lambda: True, raising=False)
+    monkeypatch.setattr("builtins.input", lambda *_: "APPROVE")
+
+    assert (
+        main(
+            [
+                "--root",
+                str(graph.root),
+                "task",
+                "approve-scope",
+                task["id"],
+                "--reason",
+                "r",
+            ]
+        )
+        == 2
+    )
+    assert graph.store.get_task(task["id"])["payload"].get("scope_approval") is None
+
+
+def test_approval_requires_the_exact_word(graph, task, capsys, monkeypatch) -> None:
+    monkeypatch.setattr(sys.stdin, "isatty", lambda: True, raising=False)
+    monkeypatch.setattr(sys.stdout, "isatty", lambda: True, raising=False)
+    monkeypatch.setattr("builtins.input", lambda *_: "y")
+
+    assert (
+        main(
+            [
+                "--root",
+                str(graph.root),
+                "task",
+                "approve-scope",
+                task["id"],
+                "--reason",
+                "r",
+            ]
+        )
+        == 2
+    )
+    assert graph.store.get_task(task["id"])["payload"].get("scope_approval") is None
+
+
+def test_interactive_approval_shows_the_authority_it_grants(
+    graph, task, capsys, monkeypatch
+) -> None:
+    monkeypatch.setattr(sys.stdin, "isatty", lambda: True, raising=False)
+    monkeypatch.setattr(sys.stdout, "isatty", lambda: True, raising=False)
+    monkeypatch.setattr("builtins.input", lambda *_: "APPROVE")
+
+    assert (
+        main(
+            [
+                "--root",
+                str(graph.root),
+                "task",
+                "approve-scope",
+                task["id"],
+                "--reason",
+                "r",
+            ]
+        )
+        == 0
+    )
+    captured = capsys.readouterr()
+    assert "PSG USER APPROVAL" in captured.out
+    # The operator must see the authority they are granting, not just a yes/no prompt.
+    assert "Write authority" in captured.out
+    assert "src/app.py" in captured.out
+    assert (
+        graph.store.get_task(task["id"])["payload"]["scope_approval"]["reason"] == "r"
+    )

@@ -10,7 +10,7 @@
 
 [![Python 3.10+](https://img.shields.io/badge/Python-3.10%2B-6EAEDB?style=flat-square)](https://www.python.org/)
 [![CI](https://github.com/niansia/PSG/actions/workflows/ci.yml/badge.svg)](https://github.com/niansia/PSG/actions/workflows/ci.yml)
-[![Release](https://img.shields.io/badge/release-v1.1.1-F3B557?style=flat-square)](https://github.com/niansia/PSG/releases/tag/v1.1.1)
+[![Release](https://img.shields.io/badge/release-v1.1.2-F3B557?style=flat-square)](https://github.com/niansia/PSG/releases/tag/v1.1.2)
 [![Status](https://img.shields.io/badge/status-complete%20MVP-FF9364?style=flat-square)](docs/acceptance.md)
 
 **English** · [繁體中文](README.zh-TW.md) · [简体中文](README.zh-CN.md) · [日本語](README.ja.md)
@@ -28,13 +28,13 @@ Install once. The command installs the runtime, the complete Skill bundle, and M
 ### Windows
 
 ```powershell
-python -m pip install "psg-runtime[mcp] @ git+https://github.com/niansia/PSG.git@v1.1.1"; psg setup
+python -m pip install "psg-runtime[mcp] @ git+https://github.com/niansia/PSG.git@v1.1.2"; psg setup
 ```
 
 ### macOS / Linux
 
 ```bash
-python3 -m pip install "psg-runtime[mcp] @ git+https://github.com/niansia/PSG.git@v1.1.1" && psg setup
+python3 -m pip install "psg-runtime[mcp] @ git+https://github.com/niansia/PSG.git@v1.1.2" && psg setup
 ```
 
 Then opt a Git project in once:
@@ -219,24 +219,51 @@ python benchmarks/agentic_ab.py --output benchmarks/results/agentic-ab-latest.js
 
 ### Result
 
+> **This result is superseded and does not describe v1.1.2.** It is kept because the data is
+> real and deleting inconvenient evidence is worse than labelling it. Two things invalidate it
+> as a claim about the current version:
+>
+> 1. **The agent read a different PSG than the one under test.** The traces show Codex loading
+>    the globally installed `~/.codex/skills/psg/SKILL.md`, which was still the pre-v1.1.1
+>    bundle telling it that `context_expand` could widen write scope. The runtime enforced the
+>    new rules while the agent was instructed by the old ones. The harness now refuses to start
+>    unless the installed Skill hash matches this checkout, and records the commit, runtime
+>    version, Skill SHA-256, and CLI version in every result.
+> 2. **Localization has since changed.** At the time, a bare intent produced write authority
+>    over 1–8 files (median 7) and 9 of 10 tasks needed manual scope approval. v1.1.2 separates
+>    retrieval candidates from authority candidates: on these same ten intents it now seals
+>    exactly the one correct target file in 10/10 cases, with no manual approval required. Any
+>    token or scope number measured before that change describes different software.
+>
+> A re-run is required before PSG makes any OFF-versus-ON claim again. The numbers below are
+> published as measured, and as superseded.
+
 10 pairs, `end_to_end` mode, Codex CLI with `gpt-5.5` at low reasoning effort, 2026-09-01.
 All 20 runs completed; none timed out.
 
 | | PSG OFF | PSG ON |
 | --- | ---: | ---: |
 | **Task success** | 9 / 10 | **10 / 10** |
+| Non-target edits | 10 | **2** |
 | Regressions | 0 | 0 |
-| Out-of-scope edits | 10 | **2** |
+| False `SHIPPABLE` | 0 | 0 |
+| Scope approval required | — | 9 / 10 |
+| Sealed without manual approval | — | 1 / 10 |
 | Input tokens | 1,984,624 | 3,543,483 |
 | Output tokens | 17,840 | 24,627 |
 | Wall time | 763 s | 1,084 s |
-| False `SHIPPABLE` | 0 | 0 |
 | Reported cost | not exposed by the CLI | not exposed by the CLI |
+
+A **non-target edit** is any change outside the single reference target file. Editing the
+shared test fixture is the ordinary way an agent finishes a task, so this is a diagnostic of
+where the change landed, not by itself a scope violation — which is why it is not called
+"out-of-scope". The two approval rows are in this table rather than in a footnote because they
+are the cost of the guardrail, paid by the operator.
 
 **PSG kept the agent inside the task, and spent 79% more input tokens doing it.** Both halves
 of that sentence are the result.
 
-The scope effect is the cleanest signal. Every one of OFF's ten out-of-scope edits was the
+The scope effect is the cleanest signal. Every one of OFF's ten non-target edits was the
 same file: `tests/test_existing.py`. In all ten tasks the agent rewrote the shared, pre-existing
 test suite to match its own change. PSG ON did that twice — and in both of those cases PSG had
 itself sealed that test file into the write boundary.
@@ -333,7 +360,7 @@ It also governs how a task is recorded. `task_open` normally runs through an age
 ## Included interfaces
 
 - [`skills/psg/`](skills/psg/) — the complete Skill bundle: entry playbook, agent metadata, and supporting references.
-- [`artifacts/psg-skill-v1.1.1.zip`](artifacts/psg-skill-v1.1.1.zip) — the distributable Skill bundle.
+- [`artifacts/psg-skill-v1.1.2.zip`](artifacts/psg-skill-v1.1.2.zip) — the distributable Skill bundle.
 - `psg` — human-friendly product commands plus `--json` and advanced/debug APIs.
 - `psg-mcp` — local MCP server exposing the same graph, index, validation, verification, handoff, debt, conflict, and ship operations.
 

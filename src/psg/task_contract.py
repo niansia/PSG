@@ -76,7 +76,12 @@ def has_write_authority(payload: dict[str, Any]) -> bool:
 
 
 def requires_scope_approval(
-    *, write: list[str], read_only: list[str], forbidden: list[str], risk: str
+    *,
+    write: list[str],
+    read_only: list[str],
+    forbidden: list[str],
+    risk: str,
+    localization: dict[str, Any] | None = None,
 ) -> tuple[bool, list[str]]:
     """Decide whether a person must approve this write authority before work starts.
 
@@ -86,6 +91,13 @@ def requires_scope_approval(
     should not silently become authority.
     """
     reasons: list[str] = []
+    kind = (localization or {}).get("kind")
+    if kind == "ambiguous_localization":
+        # Several files matched about equally well. Guessing would grant authority
+        # over all of them, so the choice belongs to a person.
+        reasons.append("ambiguous_localization")
+    elif kind == "no_lexical_match":
+        reasons.append("no_localization_match")
     if risk == "high":
         reasons.append("high_risk_task")
     if any(character in item for item in write for character in GLOB_CHARACTERS):

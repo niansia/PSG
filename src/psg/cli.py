@@ -209,7 +209,9 @@ def build_parser() -> argparse.ArgumentParser:
     record.add_argument("name")
     record.add_argument("result", choices=["pass", "fail", "error", "skipped"])
     record.add_argument("--kind", default="test")
-    record.add_argument("--command")
+    # dest must not be 'command': that is the top-level subparser's dest, and argparse
+    # would overwrite the subcommand name, making `psg verification` unreachable.
+    record.add_argument("--command", dest="check_command")
     record.add_argument("--evidence", default="{}")
     record.add_argument("--optional", action="store_true")
     record.add_argument(
@@ -323,6 +325,10 @@ def dispatch(args: argparse.Namespace) -> Any:
         status["setup"] = setup_result
         return status
     if args.command == "state" and args.action == "accept":
+        require_interactive_user_approval(
+            "Accept externally modified PSG governance state",
+            {"Project": str(discover_root(args.root)), "Reason": args.reason or ""},
+        )
         return PSG.accept_portable_state(args.root, reason=args.reason or "")
     if args.command == "status":
         root = discover_root(args.root)
@@ -386,6 +392,16 @@ def dispatch(args: argparse.Namespace) -> Any:
             return graph.node_get(args.ids)
         if args.node_command == "list":
             return graph.store.list_nodes(args.type)
+        if args.override:
+            require_interactive_user_approval(
+                "Override a node policy boundary",
+                {
+                    "Node": args.id,
+                    "New policy": args.policy,
+                    "Decision": args.decision or "(none)",
+                    "Reason": args.reason,
+                },
+            )
         return graph.node_policy_set(
             args.id,
             args.policy,
@@ -400,6 +416,15 @@ def dispatch(args: argparse.Namespace) -> Any:
         )
     if args.command == "decision":
         if args.decision_command == "approve":
+            node = graph.store.get_node(args.id)
+            require_interactive_user_approval(
+                "Approve a Decision and apply its mutation effect",
+                {
+                    "Decision": args.id,
+                    "Statement": (node or {}).get("title", "(unknown)"),
+                    "Scope": (node or {}).get("payload", {}).get("scope", []),
+                },
+            )
             return graph.decision_approve(args.id)
         return graph.decision_record(
             decision_id=args.id,
@@ -435,7 +460,27 @@ def dispatch(args: argparse.Namespace) -> Any:
                 raise KeyError(f"Unknown task: {args.id}")
             return value
         if args.task_command == "approve-scope":
+            task = graph.store.get_task(args.task_id)
+            payload = (task or {}).get("payload", {})
+            require_interactive_user_approval(
+                "Approve a broad sealed mutation boundary",
+                {
+                    "Task": args.task_id,
+                    "Contract": payload.get("contract_hash", "(unsealed)"),
+                    "Flagged because": payload.get("scope_approval_reasons", []),
+                    "Write authority": payload.get("authorized_write", []),
+                },
+            )
             return graph.task_scope_approve(args.task_id, args.reason)
+        if args.user_approved:
+            require_interactive_user_approval(
+                "Set an acceptance criterion on user authority",
+                {
+                    "Task": args.task_id,
+                    "Criterion": args.criterion_id,
+                    "Status": args.status,
+                },
+            )
         return graph.criterion_set(
             args.task_id,
             args.criterion_id,
@@ -459,12 +504,17 @@ def dispatch(args: argparse.Namespace) -> Any:
             return graph.verify_commands(args.task_id, _checks(args.check))
         return graph.verify(args.task_id, args.name or None)
     if args.command == "verification":
+        if args.user_approved:
+            require_interactive_user_approval(
+                "Record a verification result on user authority",
+                {"Task": args.task_id, "Check": args.name, "Result": args.result},
+            )
         return graph.verification_record(
             task_id=args.task_id,
             name=args.name,
             result=args.result,
             kind=args.kind,
-            command=args.command,
+            command=args.check_command,
             required=not args.optional,
             source=args.source,
             evidence=_json(args.evidence, {}),
@@ -483,6 +533,11 @@ def dispatch(args: argparse.Namespace) -> Any:
                 debt_id=args.debt,
             )
         if args.issue_command == "update":
+            if args.user_approved:
+                require_interactive_user_approval(
+                    "Resolve an issue on user authority",
+                    {"Issue": args.id, "New status": args.status},
+                )
             return graph.issue_update(
                 args.id,
                 args.status,
@@ -491,6 +546,15 @@ def dispatch(args: argparse.Namespace) -> Any:
             )
         return graph.store.list_issues(args.task_id, status=args.status)
     if args.command == "review":
+        if args.user_approved:
+            require_interactive_user_approval(
+                "Attest an independent review on user authority",
+                {
+                    "Task": args.task_id,
+                    "Reviewer actor": args.actor or "(unnamed)",
+                    "Model family": args.model_family or "(unnamed)",
+                },
+            )
         return graph.review_record(
             args.task_id,
             args.new_blocking,
@@ -514,7 +578,24 @@ def dispatch(args: argparse.Namespace) -> Any:
                 affected_nodes=args.affected,
             )
         if args.debt_command == "approve":
+            node = graph.store.get_node(args.debt_id)
+            require_interactive_user_approval(
+                "Accept bounded technical debt",
+                {
+                    "Debt": args.debt_id,
+                    "What": (node or {}).get("title", "(unknown)"),
+                    "Ceiling": (node or {}).get("payload", {}).get("ceiling", ""),
+                    "Revisit trigger": (node or {})
+                    .get("payload", {})
+                    .get("revisit_trigger", ""),
+                },
+            )
             return graph.debt_approve(args.debt_id)
+        if args.user_approved:
+            require_interactive_user_approval(
+                "Attest a debt revisit trigger on user authority",
+                {"Debt": args.debt_id, "Trigger met": bool(args.trigger_met)},
+            )
         return graph.debt_review(
             args.debt_id,
             trigger_met=args.trigger_met,
@@ -568,6 +649,52 @@ def main(argv: list[str] | None = None) -> int:
             file=sys.stderr,
         )
         return 2
+
+
+class ApprovalRefused(PermissionError):
+    """Raised when an action that mints USER_APPROVED was not interactively approved."""
+
+
+def require_interactive_user_approval(action: str, facts: dict[str, Any]) -> None:
+    """Gate every action that mints USER_APPROVED behind a live local operator.
+
+    Coding agents can run shell commands, so a Skill instruction not to self-approve is
+    a prompt-level rule, not an enforced one. Requiring a real terminal on both stdin
+    and stdout makes the ordinary agent path - a captured subprocess - fail closed, and
+    a piped answer such as `echo APPROVE | psg ...` fail with it.
+
+    This is emphatically not cryptographic proof that a human pressed the key. An agent
+    granted a PTY under the same OS identity can still drive a terminal; that is the
+    host's trust boundary, not PSG's. USER_APPROVED therefore means "interactive local
+    operator approval under the host permission boundary", and nothing stronger.
+    """
+    if not sys.stdin.isatty() or not sys.stdout.isatty():
+        raise ApprovalRefused(
+            f"{action} changes PSG authority and requires an interactive terminal. "
+            "PSG does not accept a piped, redirected, or captured answer. "
+            "Run this command yourself in a terminal."
+        )
+    print()
+    print("PSG USER APPROVAL")
+    print()
+    print(f"Action: {action}")
+    for key, value in facts.items():
+        if isinstance(value, (list, tuple)):
+            print(f"{key}:")
+            for item in value or ["(none)"]:
+                print(f"  {item}")
+        else:
+            print(f"{key}: {value}")
+    print()
+    print("This action changes PSG authority.")
+    try:
+        answer = input("Type APPROVE to continue: ")
+    except EOFError as exc:
+        raise ApprovalRefused(
+            f"{action} was not approved: no interactive answer."
+        ) from exc
+    if answer.strip() != "APPROVE":
+        raise ApprovalRefused(f"{action} was not approved.")
 
 
 def _pollutes_worktree(root: Path, output: Path) -> bool:

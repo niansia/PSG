@@ -10,7 +10,7 @@
 
 [![Python 3.10+](https://img.shields.io/badge/Python-3.10%2B-6EAEDB?style=flat-square)](https://www.python.org/)
 [![CI](https://github.com/niansia/PSG/actions/workflows/ci.yml/badge.svg)](https://github.com/niansia/PSG/actions/workflows/ci.yml)
-[![Release](https://img.shields.io/badge/release-v1.1.1-F3B557?style=flat-square)](https://github.com/niansia/PSG/releases/tag/v1.1.1)
+[![Release](https://img.shields.io/badge/release-v1.1.2-F3B557?style=flat-square)](https://github.com/niansia/PSG/releases/tag/v1.1.2)
 [![Status](https://img.shields.io/badge/status-complete%20MVP-FF9364?style=flat-square)](docs/acceptance.md)
 
 [English](README.md) · [繁體中文](README.zh-TW.md) · [简体中文](README.zh-CN.md) · **日本語**
@@ -28,13 +28,13 @@ PSG は Skill バンドルとローカル runtime のセットで、あなたの
 ### Windows
 
 ```powershell
-python -m pip install "psg-runtime[mcp] @ git+https://github.com/niansia/PSG.git@v1.1.1"; psg setup
+python -m pip install "psg-runtime[mcp] @ git+https://github.com/niansia/PSG.git@v1.1.2"; psg setup
 ```
 
 ### macOS / Linux
 
 ```bash
-python3 -m pip install "psg-runtime[mcp] @ git+https://github.com/niansia/PSG.git@v1.1.1" && psg setup
+python3 -m pip install "psg-runtime[mcp] @ git+https://github.com/niansia/PSG.git@v1.1.2" && psg setup
 ```
 
 そのうえで、Git プロジェクトごとに一度だけ有効化します。
@@ -215,23 +215,34 @@ python benchmarks/agentic_ab.py --output benchmarks/results/agentic-ab-latest.js
 
 ### 結果
 
+> **この結果は差し替え済みであり、v1.1.2 を説明するものではありません。** データ自体は本物であり、都合の悪い証拠を消すことはラベルを貼るより悪いので残しています。現行版に対する主張として無効になる理由が 2 つあります。
+>
+> 1. **エージェントが読んだ PSG は、テスト対象の PSG と別物でした。** トレースを見ると Codex はグローバルにインストールされた `~/.codex/skills/psg/SKILL.md` を読んでおり、それは v1.1.1 以前のバンドルで、`context_expand` が書き込み範囲を広げられると告げていました。ランタイムは新しい規則を強制し、エージェントは古い規則に従っていたことになります。ハーネスは現在、インストール済み Skill のハッシュがこのチェックアウトと一致しない限り起動を拒否し、コミット・ランタイム版・Skill の SHA-256・CLI 版を毎回の結果に記録します。
+> 2. **ローカライズはその後変更されました。** 当時は素の意図から 1〜8 ファイル（中央値 7）の書き込み権限が生まれ、10 タスク中 9 件で手動のスコープ承認が必要でした。v1.1.2 は検索候補と権限候補を分離し、同じ 10 個の意図に対して 10/10 で正しい対象ファイルだけを封印し、手動承認は不要になりました。この変更より前に測られたトークンやスコープの数値は、別のソフトウェアを説明しています。
+>
+> PSG が OFF 対 ON の主張を再び行う前に、再実行が必要です。以下の数値は測定どおりに、そして差し替え済みとして公開します。
+
 10 ペア、`end_to_end` モード、Codex CLI・`gpt-5.5`・low reasoning effort、2026-09-01。
 20 回の実行はすべて完走し、タイムアウトは 1 件もありませんでした。
 
 | | PSG オフ | PSG オン |
 | --- | ---: | ---: |
 | **タスク成功** | 9 / 10 | **10 / 10** |
+| 対象外ファイルの編集 | 10 | **2** |
 | 退行 | 0 | 0 |
-| 範囲外の編集 | 10 | **2** |
+| 誤った `SHIPPABLE` | 0 | 0 |
+| スコープ承認が必要 | — | 9 / 10 |
+| 手動承認なしで封印 | — | 1 / 10 |
 | 入力トークン | 1,984,624 | 3,543,483 |
 | 出力トークン | 17,840 | 24,627 |
 | 実行時間 | 763 秒 | 1,084 秒 |
-| 誤った `SHIPPABLE` | 0 | 0 |
 | 報告されたコスト | CLI が提供せず | CLI が提供せず |
+
+**対象外ファイルの編集**とは、単一の参照対象ファイル以外への変更すべてを指します。共有テストフィクスチャの編集はエージェントがタスクを終える通常のやり方なので、これは変更がどこに落ちたかの診断であって、それ自体がスコープ違反ではありません。「範囲外」と呼ばないのはそのためです。承認に関する 2 行を脚注ではなく本表に置いたのは、それが運用者の払うガードレールのコストだからです。
 
 **PSG はエージェントをタスクの内側にとどめ、その代わりに入力トークンを 79% 多く使いました。** この文の両方が結果です。
 
-範囲に対する効果が最も明確な信号です。OFF の 10 件の範囲外編集は、すべて同じファイル `tests/test_existing.py` でした。10 のタスクすべてで、エージェントは自分の変更に合わせて既存の共有テストスイートを書き換えています。PSG オンでそれが起きたのは 2 回だけで、しかもその 2 回は、PSG 自身がそのテストファイルを書き込み境界に封印してしまった場合でした。
+範囲に対する効果が最も明確な信号です。OFF の 10 件の対象外ファイル編集は、すべて同じファイル `tests/test_existing.py` でした。10 のタスクすべてで、エージェントは自分の変更に合わせて既存の共有テストスイートを書き換えています。PSG オンでそれが起きたのは 2 回だけで、しかもその 2 回は、PSG 自身がそのテストファイルを書き込み境界に封印してしまった場合でした。
 
 コスト差は誤差ではありません。入力トークン +79%、出力トークン +38%、実行時間 +42%。10 ペアの範囲は +14% から +198% です。
 
@@ -315,7 +326,7 @@ PSG v1 は意図的に小さな信頼モデルを使います。
 ## 含まれるインターフェース
 
 - [`skills/psg/`](skills/psg/) — 完全な Skill バンドル：入口となる playbook、エージェントのメタデータ、補助リファレンス。
-- [`artifacts/psg-skill-v1.1.1.zip`](artifacts/psg-skill-v1.1.1.zip) — 配布可能な Skill バンドル。
+- [`artifacts/psg-skill-v1.1.2.zip`](artifacts/psg-skill-v1.1.2.zip) — 配布可能な Skill バンドル。
 - `psg` — 人に優しい製品コマンドに加え、`--json` と高度／デバッグ用 API。
 - `psg-mcp` — 同じグラフ、インデックス、検査、verification、handoff、負債、衝突、出荷の各操作を公開するローカル MCP サーバー。
 

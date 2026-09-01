@@ -10,7 +10,7 @@
 
 [![Python 3.10+](https://img.shields.io/badge/Python-3.10%2B-6EAEDB?style=flat-square)](https://www.python.org/)
 [![CI](https://github.com/niansia/PSG/actions/workflows/ci.yml/badge.svg)](https://github.com/niansia/PSG/actions/workflows/ci.yml)
-[![Release](https://img.shields.io/badge/release-v1.1.1-F3B557?style=flat-square)](https://github.com/niansia/PSG/releases/tag/v1.1.1)
+[![Release](https://img.shields.io/badge/release-v1.1.2-F3B557?style=flat-square)](https://github.com/niansia/PSG/releases/tag/v1.1.2)
 [![Status](https://img.shields.io/badge/status-complete%20MVP-FF9364?style=flat-square)](docs/acceptance.md)
 
 [English](README.md) · **繁體中文** · [简体中文](README.zh-CN.md) · [日本語](README.ja.md)
@@ -28,13 +28,13 @@ PSG 是一組 Skill bundle 加上本機 runtime，它給你的 coding agent 三�
 ### Windows
 
 ```powershell
-python -m pip install "psg-runtime[mcp] @ git+https://github.com/niansia/PSG.git@v1.1.1"; psg setup
+python -m pip install "psg-runtime[mcp] @ git+https://github.com/niansia/PSG.git@v1.1.2"; psg setup
 ```
 
 ### macOS / Linux
 
 ```bash
-python3 -m pip install "psg-runtime[mcp] @ git+https://github.com/niansia/PSG.git@v1.1.1" && psg setup
+python3 -m pip install "psg-runtime[mcp] @ git+https://github.com/niansia/PSG.git@v1.1.2" && psg setup
 ```
 
 然後為每個 Git 專案啟用一次：
@@ -215,23 +215,34 @@ python benchmarks/agentic_ab.py --output benchmarks/results/agentic-ab-latest.js
 
 ### 結果
 
+> **這份結果已被取代，它不描述 v1.1.2。** 保留它是因為資料是真的，而刪掉不方便的證據比標註它更糟。有兩件事讓它不能代表目前版本：
+>
+> 1. **Agent 讀到的 PSG 與受測的 PSG 不同。** Trace 顯示 Codex 載入的是全域安裝的 `~/.codex/skills/psg/SKILL.md`，那時仍是 v1.1.1 之前的版本，告訴它 `context_expand` 可以擴大寫入範圍。Runtime 執行新規則，agent 卻被舊規則指導。現在 harness 在安裝的 Skill hash 與此 checkout 不符時會拒絕啟動，並把 commit、runtime 版本、Skill SHA-256、CLI 版本記進每一份結果。
+> 2. **定位邏輯之後改了。** 當時一個裸意圖會產生 1～8 個檔案（中位數 7）的寫入權，十個任務有九個需要人工核准範圍。v1.1.2 把檢索候選與權限候選拆開：在同樣這十個 intent 上，現在 10/10 都精確封存唯一正確的目標檔，且不需要任何人工核准。任何在該改動之前測得的 token 或範圍數字，描述的是不同的軟體。
+>
+> PSG 再次提出任何 OFF vs ON 主張之前，必須重跑。下面的數字照實公布，也照實標註為已被取代。
+
 10 組配對、`end_to_end` 模式、Codex CLI 搭配 `gpt-5.5` low reasoning effort，2026-09-01。
 20 次執行全部完成，沒有任何一次 timeout。
 
 | | PSG 關閉 | PSG 開啟 |
 | --- | ---: | ---: |
 | **任務成功** | 9 / 10 | **10 / 10** |
+| 非目標檔編輯 | 10 | **2** |
 | 退化 | 0 | 0 |
-| 範圍外編輯 | 10 | **2** |
+| 錯誤的 `SHIPPABLE` | 0 | 0 |
+| 需要範圍核准 | — | 9 / 10 |
+| 無需人工核准即封存 | — | 1 / 10 |
 | Input tokens | 1,984,624 | 3,543,483 |
 | Output tokens | 17,840 | 24,627 |
 | 執行時間 | 763 秒 | 1,084 秒 |
-| 錯誤的 `SHIPPABLE` | 0 | 0 |
 | 回報成本 | CLI 未提供 | CLI 未提供 |
+
+**非目標檔編輯**指的是單一參考目標檔以外的任何改動。修改共用測試 fixture 是 agent 完成任務的常見方式，所以這是「改動落在哪裡」的診斷指標，本身不等於範圍違規 —— 這也是它不叫「範圍外」的原因。那兩列核准指標放在主表而不是註腳，因為它們是護欄的代價，由操作者承擔。
 
 **PSG 把 agent 留在任務內，代價是多花 79% 的 input token。** 這句話的兩半都是結果。
 
-範圍效應是最乾淨的訊號。OFF 那 10 次範圍外編輯全部是同一個檔案：`tests/test_existing.py`。十個任務裡，agent 每一次都去改寫既有的共用測試套件來配合自己的改動。PSG 開啟時只發生兩次 —— 而那兩次，正是 PSG 自己把該測試檔封存進了寫入邊界。
+範圍效應是最乾淨的訊號。OFF 那 10 次非目標檔編輯全部是同一個檔案：`tests/test_existing.py`。十個任務裡，agent 每一次都去改寫既有的共用測試套件來配合自己的改動。PSG 開啟時只發生兩次 —— 而那兩次，正是 PSG 自己把該測試檔封存進了寫入邊界。
 
 成本差距不是誤差範圍：input token +79%、output token +38%、執行時間 +42%，十組之間介於 +14% 到 +198%。
 
@@ -315,7 +326,7 @@ PSG v1 刻意使用一個很小的信任模型：
 ## 內含的介面
 
 - [`skills/psg/`](skills/psg/) — 完整的 Skill bundle：入口 playbook、agent 中繼資料與支援參考。
-- [`artifacts/psg-skill-v1.1.1.zip`](artifacts/psg-skill-v1.1.1.zip) — 可散布的 Skill bundle。
+- [`artifacts/psg-skill-v1.1.2.zip`](artifacts/psg-skill-v1.1.2.zip) — 可散布的 Skill bundle。
 - `psg` — 對人友善的產品指令，加上 `--json` 與進階／除錯 API。
 - `psg-mcp` — 本機 MCP server，提供相同的圖、索引、驗證、verification、handoff、技術債、衝突與出貨操作。
 
