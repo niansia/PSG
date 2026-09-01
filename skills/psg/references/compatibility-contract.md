@@ -15,7 +15,7 @@ Resolve a conflict only inside the domain where sources overlap. Apply this orde
 7. PSG heuristics;
 8. model suggestions.
 
-PSG is not an exclusive coding mode. Security, testing, frontend, simplicity, and review skills may operate normally inside the current task and write scope. They may not widen scope, unlock a node, weaken verification, reopen accepted debt, or supersede a decision. Use `conflict_record` to defer/report a conflicting suggestion. A user override must be represented by a new Decision.
+PSG is not an exclusive coding mode. Security, testing, frontend, simplicity, and review skills may operate normally inside the current task and write scope. They may not widen scope, unlock a node, weaken verification, reopen accepted debt, or supersede a decision. Use `conflict_record` to defer/report a conflicting suggestion. A user override must be represented by a proposed Decision followed by the separate user approval action.
 
 ## Dependency discipline
 
@@ -37,10 +37,10 @@ Debt is valid only when it records:
 - its operating ceiling;
 - a concrete revisit trigger.
 
-Use `debt_record`, or a structured source annotation:
+Use `debt_record`, or a structured source annotation, to create a proposal:
 
 ```text
 psg-debt: linear scan for v1; why=small input; ceiling=50000 records; revisit=records > 30000
 ```
 
-If the trigger is not met, ordinary review must return `DO_NOT_REOPEN`. Attach new evidence with `debt_review` before promoting it into active work. A finding tied to accepted, not-due debt remains deferred/non-blocking.
+Neither an MCP call nor a source annotation accepts debt. Only the user-owned approval action promotes it to accepted debt. If the trigger is not met, ordinary review must return `DO_NOT_REOPEN`. A claimed trigger is advisory until user-approved; attach evidence with `debt_review` before promoting it into active work. A finding tied to accepted, not-due debt remains deferred/non-blocking.

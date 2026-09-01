@@ -538,6 +538,13 @@ class Store:
                 raise KeyError(f"Unknown issue: {issue_id}")
         self.event("issue.updated", {"issue_id": issue_id, "status": status})
 
+    def get_issue(self, issue_id: str) -> dict[str, Any] | None:
+        with self.connect() as connection:
+            row = connection.execute(
+                "SELECT * FROM issues WHERE id=?", (issue_id,)
+            ).fetchone()
+        return self._decode_issue(row) if row else None
+
     def list_issues(
         self, task_id: str, status: str | None = None
     ) -> list[dict[str, Any]]:
@@ -592,6 +599,13 @@ class Store:
             ).fetchall()
         return [self._decode_verification(row) for row in rows]
 
+    def get_verification(self, verification_id: str) -> dict[str, Any] | None:
+        with self.connect() as connection:
+            row = connection.execute(
+                "SELECT * FROM verifications WHERE id=?", (verification_id,)
+            ).fetchone()
+        return self._decode_verification(row) if row else None
+
     def list_verifications(self, task_id: str) -> list[dict[str, Any]]:
         with self.connect() as connection:
             rows = connection.execute(
@@ -601,11 +615,14 @@ class Store:
         return [self._decode_verification(row) for row in rows]
 
     def export_portable(self) -> dict[str, Any]:
-        portable_nodes = [
-            node
-            for node in self.list_nodes()
-            if node["type"] not in {"File", "Symbol", "Snapshot"}
-        ]
+        portable_nodes = []
+        for node in self.list_nodes():
+            if node["type"] in {"File", "Symbol", "Snapshot"}:
+                continue
+            value = dict(node)
+            if value["type"] == "Verification":
+                value["payload"] = self._compact_verification(value["payload"])
+            portable_nodes.append(value)
         portable_ids = {node["id"] for node in portable_nodes}
         edges: list[dict[str, Any]] = []
         if portable_ids:
@@ -624,7 +641,10 @@ class Store:
             if not task:
                 continue
             task["issues"] = self.list_issues(task["id"])
-            task["verifications"] = self.list_verifications(task["id"])
+            task["verifications"] = [
+                self._compact_verification(item)
+                for item in self.list_verifications(task["id"])
+            ]
             tasks.append(task)
         return {
             "version": 1,
@@ -633,6 +653,43 @@ class Store:
             "edges": edges,
             "tasks": tasks,
         }
+
+    @staticmethod
+    def _compact_verification(value: dict[str, Any]) -> dict[str, Any]:
+        compact = {
+            key: value.get(key)
+            for key in (
+                "id",
+                "task_id",
+                "name",
+                "kind",
+                "command",
+                "result",
+                "required",
+                "revision",
+                "created_at",
+            )
+            if key in value
+        }
+        evidence = dict(value.get("evidence", {}))
+        allowed = {
+            "kind",
+            "source",
+            "reported_source",
+            "trust_tier",
+            "reference",
+            "worktree_fingerprint",
+            "exit_code",
+            "duration_seconds",
+            "timeout_seconds",
+            "output_hash",
+            "check_name",
+            "phase",
+            "verification_id",
+            "result",
+        }
+        compact["evidence"] = {key: evidence[key] for key in allowed if key in evidence}
+        return compact
 
     def merge_portable(self, state: dict[str, Any]) -> None:
         now = utc_now()

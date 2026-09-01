@@ -1,5 +1,8 @@
 from __future__ import annotations
 
+import yaml
+
+from psg.portable import PortableStateTrustError
 from psg.runtime import PSG
 
 
@@ -118,6 +121,7 @@ def test_portable_state_rehydrates_a_fresh_checkout(graph: PSG, repo, tmp_path) 
         scope=["symbol:src/backend.py:locked_api"],
         mutation_effect="frozen",
     )
+    graph.decision_approve("D-portable")
     run(repo, "git", "add", ".psg")
     run(repo, "git", "commit", "-m", "persist PSG state")
     clone = tmp_path / "clone"
@@ -147,3 +151,86 @@ def test_structured_psg_debt_annotation_becomes_graph_node(graph: PSG, repo) -> 
     ]
     assert len(debts) == 1
     assert debts[0]["payload"]["revisit_trigger"] == "records > 30000"
+    assert debts[0]["status"] == "proposed"
+    assert debts[0]["payload"]["trust_tier"] == "CLAIMED"
+    portable = yaml.safe_load(graph.paths.portable_state.read_text(encoding="utf-8"))
+    assert any(node["id"] == debts[0]["id"] for node in portable["nodes"])
+
+
+def test_psg_debt_marker_inside_python_string_is_not_an_annotation(
+    graph: PSG, repo
+) -> None:
+    path = repo / "src" / "app.py"
+    path.write_text(
+        path.read_text(encoding="utf-8")
+        + '\nEXAMPLE = "psg-debt: fake; why=fixture; ceiling=1; revisit=never"\n',
+        encoding="utf-8",
+    )
+    graph.index()
+    assert not any(node["title"] == "fake" for node in graph.store.list_nodes("Debt"))
+
+
+def test_router_uses_task_edges_and_symbol_lexical_fallback(graph: PSG) -> None:
+    opened = graph.task_open(
+        intent="Revise locked_api behavior",
+        acceptance_criteria=["Locked API behavior is verified"],
+        constraints=["Keep the public signature stable"],
+        targets=[],
+    )
+    context = graph.context_build(opened["id"])
+    ids = {item["id"] for item in context["context_items"]}
+    assert "symbol:src/backend.py:locked_api" in ids
+    assert opened["id"] in ids
+    assert f"{opened['id']}-AC1" in ids
+    assert f"{opened['id']}-C1" in ids
+    assert "src/backend.py" in context["working_set"]["write"]
+
+
+def test_dirty_portable_state_is_rejected_until_explicit_acceptance(
+    graph: PSG, repo
+) -> None:
+    opened = graph.task_open(
+        intent="Portable tamper boundary",
+        acceptance_criteria=[],
+        targets=["src/app.py"],
+        write=["src/app.py"],
+    )
+    graph.context_build(opened["id"])
+    state = yaml.safe_load(graph.paths.portable_state.read_text(encoding="utf-8"))
+    task = next(item for item in state["tasks"] if item["id"] == opened["id"])
+    task["payload"]["working_set"]["write"].append("src/backend.py")
+    graph.paths.portable_state.write_text(
+        yaml.safe_dump(state, sort_keys=False), encoding="utf-8"
+    )
+    try:
+        PSG(repo)
+    except PortableStateTrustError as exc:
+        assert "not imported" in str(exc)
+    else:
+        raise AssertionError("Dirty portable state must not auto-import")
+
+    accepted = PSG.accept_portable_state(repo, reason="Reviewed test state change")
+    assert accepted["accepted"] is True
+    reloaded = PSG(repo)
+    assert (
+        "src/backend.py"
+        in reloaded.store.get_task(opened["id"])["payload"]["working_set"]["write"]
+    )
+
+
+def test_dirty_config_cannot_replace_verification_allowlist(graph: PSG, repo) -> None:
+    config = yaml.safe_load(graph.paths.config.read_text(encoding="utf-8"))
+    config["verification"]["commands"]["agent-command"] = {
+        "command": "python -c \"raise SystemExit('must-not-run')\"",
+        "kind": "test",
+        "required": True,
+    }
+    graph.paths.config.write_text(
+        yaml.safe_dump(config, sort_keys=False), encoding="utf-8"
+    )
+    try:
+        PSG(repo)
+    except PortableStateTrustError as exc:
+        assert "verification commands were not trusted" in str(exc)
+    else:
+        raise AssertionError("Dirty config must not become a trusted command allowlist")

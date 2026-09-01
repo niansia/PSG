@@ -102,7 +102,7 @@ def run_benchmark(task_count: int = 12) -> dict[str, Any]:
             new = old.replace(f"+ {index}\n", f"+ {index + 100}\n")
             absolute.write_text(new, encoding="utf-8")
             validation = graph.patch_validate(opened["id"])
-            verified = graph.verify(
+            verified = graph.verify_commands(
                 opened["id"],
                 [
                     {

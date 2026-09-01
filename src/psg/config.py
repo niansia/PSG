@@ -42,7 +42,6 @@ DEFAULT_CONFIG: dict[str, Any] = {
     "context": {"default_token_budget": 12000},
     "review": {
         "general_round_limit": 2,
-        "no_new_blocker_stop_rounds": 2,
         "targeted_fix_limit": 2,
     },
     "risk": {"high_requires_independent_review": True},
@@ -52,21 +51,7 @@ DEFAULT_CONFIG: dict[str, Any] = {
         "prefer": ["standard_library", "native_platform", "existing_dependencies"],
         "new_runtime_dependency_requires_justification": True,
     },
-    "guardrails": {
-        "mutation": {
-            "frozen_nodes": "enforce",
-            "outside_write_scope": "block",
-            "interface_changes": "review",
-        },
-        "dependencies": {"new_runtime_dependency": "justify"},
-        "verification": {
-            "stale_evidence": "reject",
-            "functional_evidence": "trusted_source_required",
-        },
-        "convergence": {"accepted_debt": "reopen_only_when_triggered"},
-        "scope": {"speculative_refactor": "forbid"},
-    },
-    "verification": {"commands": []},
+    "verification": {"commands": {}},
 }
 
 DEFAULT_POLICIES: dict[str, Any] = {

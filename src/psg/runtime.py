@@ -14,10 +14,20 @@ from .config import (
 )
 from .convergence import ConvergenceEngine
 from .indexer import Indexer
-from .policy import VALID_POLICIES, PolicyEngine
+from .installer import global_settings
+from .policy import POLICY_RANK, VALID_POLICIES, PolicyEngine
 from .portable import PortableState
 from .router import ContextRouter
 from .store import Store
+from .trust import (
+    APPROVAL_TRUST_TIERS,
+    CLAIMED,
+    EXTERNAL_ATTESTED,
+    RUNTIME_ATTESTED,
+    USER_APPROVED,
+    evidence_trust,
+    is_user_approved,
+)
 from .util import sha256_bytes
 from .verification import VerificationEngine, report_failed_checks
 
@@ -100,6 +110,20 @@ class PSG:
         instance._persist()
         return instance
 
+    @classmethod
+    def accept_portable_state(
+        cls, root: str | Path | None, *, reason: str
+    ) -> dict[str, Any]:
+        selected = discover_root(Path(root or Path.cwd()))
+        paths = ProjectPaths(selected)
+        if not paths.config.exists():
+            raise FileNotFoundError(
+                f"PSG is not initialized in {selected}. Run 'psg init'."
+            )
+        store = Store(paths.database, paths.events)
+        store.initialize()
+        return PortableState(paths.portable_state, store).accept_current(reason)
+
     def _persist(self) -> dict[str, Any]:
         return self.portable.export_from_store()
 
@@ -110,12 +134,17 @@ class PSG:
     def status(self) -> dict[str, Any]:
         tasks = self.store.list_tasks()
         active = [task for task in tasks if task["status"] in {"open", "blocked"}]
+        project_enabled = bool(self.config.get("enabled", True))
+        global_enabled = bool(global_settings().get("enabled", True))
         return {
-            "enabled": bool(self.config.get("enabled", True)),
+            "enabled": project_enabled and global_enabled,
+            "project_enabled": project_enabled,
+            "global_enabled": global_enabled,
             "project": self.config.get("project", self.root.name),
             "root": str(self.root),
             "git_revision": git.revision(self.root),
             "git_branch": git.branch(self.root),
+            "git_clean": not bool(git.status_porcelain(self.root)),
             "graph_revision": self.store.graph_revision(),
             "active_tasks": [
                 {"id": task["id"], "intent": task["intent"], "status": task["status"]}
@@ -124,14 +153,19 @@ class PSG:
             "node_count": len(self.store.list_nodes()),
             "snapshot_count": len(self.store.list_snapshots()),
             "portable_state": str(self.paths.portable_state),
-            "guardrails": self.config.get("guardrails", {}),
+            "guardrails": self.guardrails_get()["effective"],
         }
 
     def set_enabled(self, enabled: bool) -> dict[str, Any]:
         self.config["enabled"] = bool(enabled)
         save_yaml(self.paths.config, self.config)
         self.store.event("project.enabled" if enabled else "project.disabled", {})
-        return {"enabled": bool(enabled), "project": self.config.get("project")}
+        self._persist()
+        return {
+            "scope": "project",
+            "enabled": bool(enabled),
+            "project": self.config.get("project"),
+        }
 
     def doctor(self) -> dict[str, Any]:
         problems: list[str] = []
@@ -158,11 +192,15 @@ class PSG:
             "git_revision": git.revision(self.root),
             "graph_revision": self.store.graph_revision(),
             "portable_state": str(self.paths.portable_state),
+            "project_enabled": bool(self.config.get("enabled", True)),
+            "global_enabled": bool(global_settings().get("enabled", True)),
         }
 
     def index(self, force: bool = False) -> dict[str, Any]:
         self.portable.sync_to_store()
-        return self.indexer.index(force=force).as_dict()
+        result = self.indexer.index(force=force).as_dict()
+        self._persist()
+        return result
 
     def node_create(
         self,
@@ -174,23 +212,36 @@ class PSG:
         policy: str = "mutable",
         maturity: str = "accepted",
         provenance: list[str] | None = None,
+        _trust_tier: str = CLAIMED,
     ) -> dict[str, Any]:
         if node_type not in VALID_NODE_TYPES:
             raise ValueError(f"Unsupported node type: {node_type}")
         if policy not in VALID_POLICIES:
             raise ValueError(f"Unsupported policy: {policy}")
+        if self.store.get_node(node_id):
+            raise PermissionError(
+                f"Node already exists and cannot be overwritten through node_create: {node_id}"
+            )
+        protected = node_type in {"Decision", "Debt"}
+        claimed_protected = protected and _trust_tier == CLAIMED
+        recorded_payload = dict(payload)
+        recorded_payload["trust_tier"] = _trust_tier
         node = {
             "id": node_id,
             "type": node_type,
             "title": title,
-            "status": "active",
-            "maturity": maturity,
+            "status": "proposed" if claimed_protected else "active",
+            "maturity": "proposed" if claimed_protected else maturity,
             "policy": policy,
-            "source": {"kind": "user_explicit"},
+            "source": {
+                "kind": "user_approved"
+                if _trust_tier == USER_APPROVED
+                else "agent_claim"
+            },
             "revision": git.revision(self.root),
             "confidence": 1.0,
-            "provenance": provenance or ["user_explicit"],
-            "payload": payload,
+            "provenance": provenance or [_trust_tier.lower()],
+            "payload": recorded_payload,
         }
         self.store.upsert_node(node)
         self.store.event("node.created", {"node_id": node_id, "node_type": node_type})
@@ -210,7 +261,7 @@ class PSG:
         edge_type: str,
         dst: str,
         confidence: float = 1.0,
-        provenance: str = "user_explicit",
+        provenance: str = "claimed",
     ) -> dict[str, Any]:
         if edge_type not in VALID_EDGE_TYPES:
             raise ValueError(f"Unsupported edge type: {edge_type}")
@@ -224,6 +275,19 @@ class PSG:
             "provenance": provenance,
             "revision": git.revision(self.root),
         }
+        existing = next(
+            (
+                item
+                for item in self.store.edges_for([src], both=False)
+                if item["type"] == edge_type and item["dst"] == dst
+            ),
+            None,
+        )
+        if existing and existing.get("provenance") in {
+            "user_approved",
+            "external_attested",
+        }:
+            raise PermissionError("A claimed edge cannot replace an attested edge.")
         self.store.upsert_edge(edge)
         self.store.event("edge.created", edge)
         self._persist()
@@ -263,14 +327,25 @@ class PSG:
                 "alternatives_rejected": alternatives_rejected or [],
                 "scope": scope or [],
                 "mutation_effect": normalized_effect,
+                "applied_effects": [],
+                "approval_required": True,
             },
-            maturity="accepted",
-            provenance=["user_explicit", "documented_decision"],
+            maturity="proposed",
+            provenance=["claimed", "proposed_decision"],
         )
-        applied: list[dict[str, str]] = []
+        decision["applied_effects"] = []
+        decision["approval_required"] = True
+        return decision
+
+    def decision_approve(self, decision_id: str) -> dict[str, Any]:
+        decision = self.store.get_node(decision_id)
+        if not decision or decision["type"] != "Decision":
+            raise KeyError(f"Unknown decision: {decision_id}")
+        scope = list(decision["payload"].get("scope", []))
+        resolved_scope: list[tuple[str, dict[str, Any]]] = []
         if scope:
             self.indexer.index(force=False)
-            for value in scope or []:
+            for value in scope:
                 normalized = str(value).replace("\\", "/")
                 target_id = (
                     normalized
@@ -282,6 +357,18 @@ class PSG:
                     raise KeyError(
                         f"Decision scope does not resolve to a graph node: {value}"
                     )
+                resolved_scope.append((target_id, target))
+        decision["status"] = "accepted"
+        decision["maturity"] = "accepted"
+        decision["source"] = {"kind": "user_approved"}
+        decision["confidence"] = 1.0
+        decision["provenance"] = ["user_approved", "documented_decision"]
+        decision["payload"]["trust_tier"] = USER_APPROVED
+        self.store.upsert_node(decision)
+        applied: list[dict[str, str]] = []
+        normalized_effect = decision["payload"].get("mutation_effect")
+        if resolved_scope:
+            for target_id, target in resolved_scope:
                 if normalized_effect == "mutable":
                     self.node_policy_set(
                         target_id,
@@ -289,6 +376,7 @@ class PSG:
                         f"Superseded by {decision_id}",
                         override=True,
                         decision_id=decision_id,
+                        _trust_tier=USER_APPROVED,
                     )
                 elif normalized_effect:
                     self.store.set_policy(
@@ -306,15 +394,19 @@ class PSG:
                     "type": edge_type,
                     "dst": target_id,
                     "confidence": 1.0,
-                    "provenance": "documented_decision",
+                    "provenance": "user_approved",
                     "revision": git.revision(self.root),
                 }
                 self.store.upsert_edge(edge)
                 applied.append(
                     {"target": target_id, "policy": normalized_effect or "unchanged"}
                 )
+        decision["payload"]["applied_effects"] = applied
+        decision["payload"]["approval_required"] = False
+        self.store.upsert_node(decision)
         self._persist()
         decision["applied_effects"] = applied
+        decision["approval_required"] = False
         return decision
 
     def node_policy_set(
@@ -324,6 +416,7 @@ class PSG:
         reason: str,
         override: bool = False,
         decision_id: str | None = None,
+        _trust_tier: str = CLAIMED,
     ) -> dict[str, Any]:
         if policy not in VALID_POLICIES:
             raise ValueError(f"Unsupported policy: {policy}")
@@ -331,22 +424,37 @@ class PSG:
         if not node:
             raise KeyError(f"Unknown node: {node_id}")
         effective_policy, _ = self.policy.effective_node_policy(node_id)
-        if effective_policy == "frozen" and policy != "frozen":
+        weakening = POLICY_RANK[policy] < POLICY_RANK[effective_policy]
+        if weakening:
             decision = self.store.get_node(decision_id) if decision_id else None
-            if not override or not decision or decision["type"] != "Decision":
+            if (
+                not override
+                or _trust_tier not in APPROVAL_TRUST_TIERS
+                or not decision
+                or decision["type"] != "Decision"
+                or not is_user_approved(decision)
+            ):
                 raise PermissionError(
-                    "Unfreezing requires an explicit override and an existing Decision node."
+                    "Weakening a node policy requires an explicit CLI user approval "
+                    "and an accepted USER_APPROVED Decision."
                 )
-            removed = self.store.delete_incoming_edges(node_id, "locks")
+            removed = [
+                *self.store.delete_incoming_edges(node_id, "locks"),
+                *self.store.delete_incoming_edges(node_id, "constrained-by"),
+            ]
             for edge in removed:
-                if edge["src"] != decision_id and self.store.get_node(edge["src"]):
+                source_node = self.store.get_node(edge["src"])
+                effect = (source_node or {}).get("payload", {}).get("mutation_effect")
+                if not effect:
+                    self.store.upsert_edge(edge)
+                elif edge["src"] != decision_id and source_node:
                     self.store.upsert_edge(
                         {
                             "src": decision_id,
                             "type": "supersedes",
                             "dst": edge["src"],
                             "confidence": 1.0,
-                            "provenance": "explicit_override",
+                            "provenance": "user_approved",
                             "revision": git.revision(self.root),
                         }
                     )
@@ -359,6 +467,7 @@ class PSG:
                 "policy": policy,
                 "reason": reason,
                 "decision_id": decision_id,
+                "trust_tier": _trust_tier,
             },
         )
         self._persist()
@@ -549,20 +658,26 @@ class PSG:
     def context_build(
         self, task_id: str, max_tokens: int | None = None
     ) -> dict[str, Any]:
-        if not self.config.get("enabled", True):
+        if not self.config.get("enabled", True) or not global_settings().get(
+            "enabled", True
+        ):
             raise RuntimeError(
-                "PSG is disabled for this project. Run 'psg on' to enable it."
+                "PSG governance is disabled. Run 'psg on' for this project or "
+                "'psg on --global' for the global switch."
             )
         self.portable.sync_to_store()
         index = self.indexer.index(force=False).as_dict()
         result = self.router.build(task_id, max_tokens=max_tokens)
         result["index_refresh"] = index
+        self._persist()
         return result
 
     def context_expand(self, task_id: str, reason: str) -> dict[str, Any]:
         self.portable.sync_to_store()
         self.indexer.index(force=False)
-        return self.router.expand(task_id, reason)
+        result = self.router.expand(task_id, reason)
+        self._persist()
+        return result
 
     def patch_validate(
         self,
@@ -583,6 +698,7 @@ class PSG:
             kind="policy",
             required=True,
             source="runtime_executed",
+            trust_tier=RUNTIME_ATTESTED,
             evidence={
                 "violations": result["violations"],
                 "touched_nodes": result["touched_nodes"],
@@ -600,31 +716,75 @@ class PSG:
             raise ValueError("Proposed diff validation requires a unified diff.")
         return self.patch_validate(task_id, diff_text, phase=phase)
 
-    def verification_record(self, **kwargs: Any) -> dict[str, Any]:
-        kwargs.setdefault("source", "llm_reported")
-        if kwargs["source"] == "runtime_executed":
-            raise PermissionError(
-                "runtime_executed evidence can only be produced by PSG verification_run."
-            )
+    def verification_record(
+        self, *, _trust_tier: str = CLAIMED, **kwargs: Any
+    ) -> dict[str, Any]:
+        reported_source = str(kwargs.pop("source", "llm_reported"))
+        evidence = dict(kwargs.pop("evidence", {}) or {})
+        if _trust_tier == CLAIMED:
+            evidence["reported_source"] = reported_source
+            kwargs["source"] = "agent_claim"
+        elif _trust_tier == USER_APPROVED:
+            kwargs["source"] = "user_asserted"
+        else:
+            raise PermissionError("Unsupported verification approval channel.")
+        kwargs["trust_tier"] = _trust_tier
+        kwargs["evidence"] = evidence
         result = self.verifier.record(**kwargs)
         self._project_verification(result)
         self._persist()
         return result
 
     def verify(
-        self, task_id: str, checks: list[dict[str, Any]] | None = None
+        self, task_id: str, check_names: list[str] | None = None
     ) -> dict[str, Any]:
-        selected = (
-            checks
-            if checks is not None
-            else list(self.config.get("verification", {}).get("commands", []))
-        )
+        configured = self._configured_checks()
+        selected_names = check_names if check_names is not None else list(configured)
+        unknown = sorted(set(selected_names) - set(configured))
+        if unknown:
+            raise PermissionError(
+                "MCP verification may run only configured check names. Unknown: "
+                + ", ".join(unknown)
+            )
+        selected = [configured[name] for name in selected_names]
+        return self._run_checks(task_id, selected)
+
+    def verify_commands(
+        self, task_id: str, checks: list[dict[str, Any]]
+    ) -> dict[str, Any]:
+        """Advanced CLI boundary: execute explicit commands authorized by the shell user."""
+        return self._run_checks(task_id, checks)
+
+    def _run_checks(
+        self, task_id: str, selected: list[dict[str, Any]]
+    ) -> dict[str, Any]:
         results = self.verifier.run(task_id, selected)
         for result in results:
             self._project_verification(result)
         issues = report_failed_checks(results, self.issue_report)
         self._persist()
         return {"task_id": task_id, "results": results, "issues_created": issues}
+
+    def _configured_checks(self) -> dict[str, dict[str, Any]]:
+        raw = self.config.get("verification", {}).get("commands", {})
+        if isinstance(raw, list):
+            return {str(item["name"]): dict(item) for item in raw}
+        if not isinstance(raw, dict):
+            raise TypeError("verification.commands must be a mapping of check names")
+        configured: dict[str, dict[str, Any]] = {}
+        for name, value in raw.items():
+            if isinstance(value, str):
+                configured[str(name)] = {
+                    "name": str(name),
+                    "command": value,
+                    "kind": "test",
+                    "required": True,
+                }
+            elif isinstance(value, dict) and value.get("command"):
+                configured[str(name)] = {"name": str(name), **value}
+            else:
+                raise ValueError(f"Invalid configured verification check: {name}")
+        return configured
 
     def _project_verification(self, verification: dict[str, Any]) -> None:
         revision = git.revision(self.root)
@@ -644,9 +804,9 @@ class PSG:
                 },
                 "revision": revision,
                 "confidence": 1.0
-                if verification["evidence"].get("source") == "runtime_executed"
-                else 0.7,
-                "provenance": [verification["evidence"].get("source", "unknown")],
+                if evidence_trust(verification["evidence"]) == RUNTIME_ATTESTED
+                else 0.6,
+                "provenance": [evidence_trust(verification["evidence"]).lower()],
                 "payload": verification,
             },
             bump=False,
@@ -671,6 +831,8 @@ class PSG:
         criterion_id: str,
         status: str,
         evidence: dict[str, Any] | None = None,
+        *,
+        _trust_tier: str = CLAIMED,
     ) -> dict[str, Any]:
         if status not in {"pending", "pass", "fail", "waived"}:
             raise ValueError("Criterion status must be pending, pass, fail, or waived")
@@ -682,20 +844,46 @@ class PSG:
                 raise ValueError(
                     f"Passing acceptance evidence requires: {', '.join(missing)}"
                 )
-            if recorded_evidence["source"] == "llm_reported":
-                raise ValueError(
-                    "LLM-reported evidence cannot pass acceptance by itself."
+            reference = str(recorded_evidence["reference"])
+            verification = self.store.get_verification(reference)
+            if verification and verification["task_id"] == task_id:
+                if verification["result"] != "pass" or evidence_trust(
+                    verification["evidence"]
+                ) not in {RUNTIME_ATTESTED, EXTERNAL_ATTESTED}:
+                    raise PermissionError(
+                        "Acceptance requires a passing runtime/external attested verification."
+                    )
+                recorded_evidence["source"] = verification["evidence"].get(
+                    "source", "runtime_executed"
+                )
+                recorded_evidence["trust_tier"] = evidence_trust(
+                    verification["evidence"]
+                )
+            elif _trust_tier == USER_APPROVED:
+                recorded_evidence["source"] = "user_asserted"
+                recorded_evidence["trust_tier"] = USER_APPROVED
+            else:
+                raise PermissionError(
+                    "Claimed acceptance cannot self-assert user or external authority; "
+                    "reference a trusted Verification ID or use the explicit CLI approval channel."
                 )
         if status == "waived":
-            source = recorded_evidence.get("source")
             decision_id = recorded_evidence.get("decision_id")
             decision = self.store.get_node(str(decision_id)) if decision_id else None
-            if source != "user_asserted" and not (
-                decision and decision["type"] == "Decision"
-            ):
+            approved_decision = (
+                decision
+                and decision["type"] == "Decision"
+                and is_user_approved(decision)
+                and decision["status"] == "accepted"
+            )
+            if _trust_tier != USER_APPROVED and not approved_decision:
                 raise PermissionError(
-                    "Waiving acceptance requires user_asserted evidence or a Decision node."
+                    "Waiving acceptance requires an explicit CLI user approval or an "
+                    "accepted USER_APPROVED Decision."
                 )
+            recorded_evidence["source"] = "user_asserted"
+            recorded_evidence["trust_tier"] = USER_APPROVED
+        recorded_evidence.setdefault("trust_tier", _trust_tier)
         recorded_evidence.setdefault(
             "worktree_fingerprint", git.worktree_fingerprint(self.root)
         )
@@ -735,7 +923,11 @@ class PSG:
         if debt:
             if debt["type"] != "Debt":
                 raise ValueError(f"Node is not accepted debt: {debt_id}")
-            if debt["status"] == "accepted" and not debt["payload"].get("trigger_met"):
+            if (
+                debt["status"] == "accepted"
+                and is_user_approved(debt)
+                and not debt["payload"].get("trigger_met")
+            ):
                 normalized = "optional"
                 status = "deferred"
                 provided = {
@@ -806,10 +998,37 @@ class PSG:
         return issue
 
     def issue_update(
-        self, issue_id: str, status: str, resolved_by_patch: str | None = None
+        self,
+        issue_id: str,
+        status: str,
+        resolved_by_patch: str | None = None,
+        *,
+        _trust_tier: str = CLAIMED,
     ) -> dict[str, Any]:
         if status not in {"open", "fixed", "deferred", "rejected"}:
             raise ValueError("Issue status must be open, fixed, deferred, or rejected")
+        issue = self.store.get_issue(issue_id)
+        if not issue:
+            raise KeyError(f"Unknown issue: {issue_id}")
+        if (
+            issue["severity"] in {"blocker", "major"}
+            and status != "open"
+            and _trust_tier not in APPROVAL_TRUST_TIERS
+        ):
+            self.store.event(
+                "issue.resolution_claimed",
+                {
+                    "issue_id": issue_id,
+                    "status": status,
+                    "resolved_by_patch": resolved_by_patch,
+                },
+            )
+            return {
+                "issue_id": issue_id,
+                "status": issue["status"],
+                "claimed_status": status,
+                "approval_required": True,
+            }
         self.store.update_issue(issue_id, status, resolved_by_patch)
         node = self.store.get_node(issue_id)
         if node:
@@ -824,10 +1043,52 @@ class PSG:
         }
 
     def guardrails_get(self) -> dict[str, Any]:
+        review = self.config.get("review", {})
         return {
             "authority": self.config.get("authority", {}),
             "dependencies": self.config.get("dependencies", {}),
-            "guardrails": self.config.get("guardrails", {}),
+            "effective": {
+                "frozen_mutation": {
+                    "mode": "ENFORCED",
+                    "configurable": False,
+                },
+                "out_of_scope_write": {
+                    "mode": "BLOCKED",
+                    "configurable": False,
+                },
+                "dirty_portable_state": {
+                    "mode": "REJECTED_UNTIL_USER_APPROVED",
+                    "configurable": False,
+                },
+                "stale_evidence": {
+                    "mode": "REJECTED",
+                    "configurable": False,
+                },
+                "mcp_verification_commands": {
+                    "mode": "ALLOWLIST_ONLY",
+                    "configurable": False,
+                },
+                "accepted_debt": {
+                    "mode": "REOPEN_ON_APPROVED_TRIGGER_ONLY",
+                    "configurable": False,
+                },
+                "high_risk_review": {
+                    "mode": "USER_OR_EXTERNAL_APPROVAL_REQUIRED"
+                    if self.config.get("risk", {}).get(
+                        "high_requires_independent_review", True
+                    )
+                    else "NOT_REQUIRED",
+                    "configurable": True,
+                },
+                "review_round_limit": {
+                    "mode": int(review.get("general_round_limit", 2)),
+                    "configurable": True,
+                },
+                "fix_round_limit": {
+                    "mode": int(review.get("targeted_fix_limit", 2)),
+                    "configurable": True,
+                },
+            },
         }
 
     def debt_record(
@@ -849,19 +1110,21 @@ class PSG:
             "id": debt_id,
             "type": "Debt",
             "title": what.strip(),
-            "status": "accepted",
-            "maturity": "accepted",
+            "status": "proposed",
+            "maturity": "proposed",
             "policy": "mutable",
-            "source": {"kind": "user_explicit", "task_id": task_id},
+            "source": {"kind": "agent_claim", "task_id": task_id},
             "revision": git.revision(self.root),
-            "confidence": 1.0,
-            "provenance": ["user_explicit", "accepted_debt"],
+            "confidence": 0.6,
+            "provenance": ["claimed", "proposed_debt"],
             "payload": {
                 "what": what.strip(),
                 "why": why.strip(),
                 "ceiling": ceiling.strip(),
                 "revisit_trigger": revisit_trigger.strip(),
                 "trigger_met": False,
+                "trust_tier": CLAIMED,
+                "approval_required": True,
             },
         }
         self.store.upsert_node(node, bump=False)
@@ -871,7 +1134,7 @@ class PSG:
                 "type": "introduced-by",
                 "dst": task_id,
                 "confidence": 1.0,
-                "provenance": "accepted_debt",
+                "provenance": "proposed_debt",
                 "revision": git.revision(self.root),
             },
             bump=False,
@@ -885,26 +1148,77 @@ class PSG:
                     "type": "affects",
                     "dst": affected,
                     "confidence": 1.0,
-                    "provenance": "accepted_debt",
+                    "provenance": "proposed_debt",
                     "revision": git.revision(self.root),
                 },
                 bump=False,
             )
         self.store.bump_graph_revision()
-        self.store.event("debt.accepted", {"debt_id": debt_id, "task_id": task_id})
+        self.store.event("debt.proposed", {"debt_id": debt_id, "task_id": task_id})
+        self._persist()
+        return self.store.get_node(debt_id) or node
+
+    def debt_approve(self, debt_id: str) -> dict[str, Any]:
+        node = self.store.get_node(debt_id)
+        if not node or node["type"] != "Debt":
+            raise KeyError(f"Unknown debt: {debt_id}")
+        node["status"] = "accepted"
+        node["maturity"] = "accepted"
+        node["source"] = {
+            "kind": "user_approved",
+            "task_id": node.get("source", {}).get("task_id"),
+        }
+        node["confidence"] = 1.0
+        node["provenance"] = ["user_approved", "accepted_debt"]
+        node["payload"]["trust_tier"] = USER_APPROVED
+        node["payload"]["approval_required"] = False
+        self.store.upsert_node(node)
+        self.store.event("debt.accepted", {"debt_id": debt_id})
         self._persist()
         return self.store.get_node(debt_id) or node
 
     def debt_review(
-        self, debt_id: str, *, trigger_met: bool, evidence: dict[str, Any]
+        self,
+        debt_id: str,
+        *,
+        trigger_met: bool,
+        evidence: dict[str, Any],
+        _trust_tier: str = CLAIMED,
     ) -> dict[str, Any]:
         node = self.store.get_node(debt_id)
         if not node or node["type"] != "Debt":
             raise KeyError(f"Unknown debt: {debt_id}")
+        if not is_user_approved(node) or node["status"] not in {"accepted", "due"}:
+            return {
+                "debt_id": debt_id,
+                "trigger_met": False,
+                "review_action": "DEBT_APPROVAL_REQUIRED",
+                "trust_tier": CLAIMED,
+            }
         if trigger_met and not evidence:
             raise ValueError("Marking a debt trigger as met requires evidence.")
+        if _trust_tier not in APPROVAL_TRUST_TIERS:
+            self.store.event(
+                "debt.trigger_claimed",
+                {
+                    "debt_id": debt_id,
+                    "claimed_trigger_met": bool(trigger_met),
+                    "evidence": evidence,
+                },
+            )
+            currently_due = bool(node["payload"].get("trigger_met"))
+            return {
+                "debt_id": debt_id,
+                "trigger_met": currently_due,
+                "claimed_trigger_met": bool(trigger_met),
+                "review_action": "USER_APPROVAL_REQUIRED"
+                if trigger_met or currently_due
+                else "DO_NOT_REOPEN",
+                "trust_tier": CLAIMED,
+            }
         node["payload"]["trigger_met"] = bool(trigger_met)
         node["payload"]["trigger_evidence"] = evidence
+        node["payload"]["trigger_trust_tier"] = _trust_tier
         node["status"] = "due" if trigger_met else "accepted"
         self.store.upsert_node(node)
         self.store.event(
@@ -934,9 +1248,13 @@ class PSG:
             )
         if resolution == "user_override":
             decision = self.store.get_node(decision_id) if decision_id else None
-            if not decision or decision["type"] != "Decision":
+            if (
+                not decision
+                or decision["type"] != "Decision"
+                or not is_user_approved(decision)
+            ):
                 raise PermissionError(
-                    "A user override conflict requires a Decision node."
+                    "A user override conflict requires an accepted USER_APPROVED Decision."
                 )
         conflict_id = self.store.next_node_id("CONFLICT")
         node = self.node_create(
@@ -974,6 +1292,7 @@ class PSG:
         actor_id: str | None = None,
         session_id: str | None = None,
         model_family: str | None = None,
+        _trust_tier: str = CLAIMED,
     ) -> dict[str, Any]:
         result = self.convergence.review_record(
             task_id,
@@ -981,6 +1300,7 @@ class PSG:
             actor_id=actor_id,
             session_id=session_id,
             model_family=model_family,
+            trust_tier=_trust_tier,
         )
         self._persist()
         return result

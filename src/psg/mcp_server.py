@@ -151,7 +151,7 @@ def decision_record(
     scope: list[str] | None = None,
     mutation_effect: str | None = None,
 ) -> dict[str, Any]:
-    """Persist a material engineering or product decision with rationale and rejected alternatives."""
+    """Propose a decision; MCP claims never apply mutation effects until CLI user approval."""
     return _graph().decision_record(
         decision_id=decision_id,
         statement=statement,
@@ -167,17 +167,9 @@ def node_policy_set(
     node_id: str,
     policy: str,
     reason: str,
-    override: bool = False,
-    decision_id: str | None = None,
 ) -> dict[str, Any]:
-    """Set mutable/read-only/interface-locked/frozen policy; unfreezing needs explicit override."""
-    return _graph().node_policy_set(
-        node_id,
-        policy,
-        reason,
-        override=override,
-        decision_id=decision_id,
-    )
+    """Maintain or tighten policy; MCP cannot weaken an existing boundary."""
+    return _graph().node_policy_set(node_id, policy, reason)
 
 
 @mcp.tool(title="Validate patch", annotations=STATE_WRITE)
@@ -194,10 +186,10 @@ def patch_validate_proposed(task_id: str, diff: str) -> dict[str, Any]:
 
 @mcp.tool(title="Run verification", annotations=STATE_WRITE)
 def verification_run(
-    task_id: str, checks: list[dict[str, Any]] | None = None
+    task_id: str, check_names: list[str] | None = None
 ) -> dict[str, Any]:
-    """Execute configured or explicit checks in the repository and record runtime-trusted results."""
-    return _graph().verify(task_id, checks)
+    """Run only check names allowlisted in .psg/config.yaml; commands never come from MCP."""
+    return _graph().verify(task_id, check_names)
 
 
 @mcp.tool(title="Record verification", annotations=STATE_WRITE)
@@ -206,20 +198,17 @@ def verification_record(
     name: str,
     result: str,
     kind: str = "test",
-    command: str | None = None,
     required: bool = True,
-    source: str = "llm_reported",
     evidence: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
-    """Record externally produced evidence; LLM-reported passes do not satisfy the ship gate."""
+    """Record a CLAIMED result; MCP cannot assert user, runtime, reviewer, or external authority."""
     return _graph().verification_record(
         task_id=task_id,
         name=name,
         result=result,
         kind=kind,
-        command=command,
         required=required,
-        source=source,
+        source="llm_reported",
         evidence=evidence or {},
     )
 
@@ -273,7 +262,7 @@ def review_record(
     session_id: str | None = None,
     model_family: str | None = None,
 ) -> dict[str, Any]:
-    """Record one independent review round and enforce the no-new-blocker/review budget rules."""
+    """Record a declared review; actor labels are CLAIMED and cannot satisfy high-risk independence."""
     return _graph().review_record(
         task_id,
         new_blocking_issues,
@@ -292,7 +281,7 @@ def debt_record(
     revisit_trigger: str,
     affected_nodes: list[str] | None = None,
 ) -> dict[str, Any]:
-    """Record intentional debt with a ceiling and a concrete revisit trigger."""
+    """Propose bounded debt; only explicit CLI user approval can accept it."""
     return _graph().debt_record(
         task_id=task_id,
         what=what,
@@ -307,7 +296,7 @@ def debt_record(
 def debt_review(
     debt_id: str, trigger_met: bool, evidence: dict[str, Any]
 ) -> dict[str, Any]:
-    """Reopen accepted debt only when its recorded trigger has evidence."""
+    """Report trigger evidence; MCP claims cannot reopen accepted debt."""
     return _graph().debt_review(debt_id, trigger_met=trigger_met, evidence=evidence)
 
 

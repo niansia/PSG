@@ -8,12 +8,15 @@ from typing import Any
 
 from . import git
 from .store import Store
+from .trust import CLAIMED, RUNTIME_ATTESTED, VALID_TRUST_TIERS
+from .util import atomic_write_text, sha256_text
 
 
 class VerificationEngine:
     def __init__(self, root: Path, store: Store):
         self.root = root
         self.store = store
+        self.log_dir = store.event_log.parent / "verification"
 
     def record(
         self,
@@ -24,35 +27,41 @@ class VerificationEngine:
         kind: str = "test",
         command: str | None = None,
         required: bool = True,
-        source: str = "llm_reported",
+        source: str = "agent_claim",
+        trust_tier: str = CLAIMED,
         evidence: dict[str, Any] | None = None,
+        verification_id: str | None = None,
     ) -> dict[str, Any]:
         normalized = result.lower()
         if normalized not in {"pass", "fail", "error", "skipped"}:
             raise ValueError(
                 "Verification result must be pass, fail, error, or skipped"
             )
+        if trust_tier not in VALID_TRUST_TIERS:
+            raise ValueError(f"Unsupported verification trust tier: {trust_tier}")
         if source not in {
             "runtime_executed",
             "external_tool",
             "llm_reported",
             "user_asserted",
             "reviewer",
+            "agent_claim",
         }:
             raise ValueError(f"Unsupported verification source: {source}")
-        recorded_evidence = dict(evidence or {})
-        if (
-            source == "external_tool"
-            and normalized == "pass"
-            and not recorded_evidence.get("reference")
-        ):
-            raise ValueError("Passing external-tool evidence requires a reference.")
+        if trust_tier == RUNTIME_ATTESTED and source != "runtime_executed":
+            raise ValueError("Runtime attestation requires runtime-executed evidence.")
+        recorded_evidence = {
+            key: value
+            for key, value in dict(evidence or {}).items()
+            if key not in {"output", "stdout", "stderr", "trust_tier"}
+        }
         recorded_evidence["source"] = source
+        recorded_evidence["trust_tier"] = trust_tier
         recorded_evidence.setdefault(
             "worktree_fingerprint", git.worktree_fingerprint(self.root)
         )
         verification = {
-            "id": self.store.next_id("verifications", "V"),
+            "id": verification_id or self.store.next_id("verifications", "V"),
             "task_id": task_id,
             "name": name,
             "kind": kind,
@@ -72,7 +81,9 @@ class VerificationEngine:
             command = str(check["command"])
             required = bool(check.get("required", True))
             timeout = int(check.get("timeout_seconds", 300))
+            verification_id = self.store.next_id("verifications", "V")
             started = time.monotonic()
+            output = ""
             try:
                 process = subprocess.run(
                     command,
@@ -91,28 +102,39 @@ class VerificationEngine:
                     "kind": "command_result",
                     "exit_code": process.returncode,
                     "duration_seconds": round(time.monotonic() - started, 3),
-                    "output": process.stdout[-12000:],
                 }
+                output = process.stdout
             except subprocess.TimeoutExpired as exc:
                 result = "error"
                 evidence = {
                     "kind": "timeout",
                     "duration_seconds": round(time.monotonic() - started, 3),
                     "timeout_seconds": timeout,
-                    "output": (exc.stdout or "")[-12000:]
-                    if isinstance(exc.stdout, str)
-                    else "",
                 }
+                output = exc.stdout or "" if isinstance(exc.stdout, str) else ""
+            self.log_dir.mkdir(parents=True, exist_ok=True)
+            log_path = self.log_dir / f"{verification_id}.log"
+            log_content = f"check: {name}\ncommand: {command}\n\n{output}"
+            atomic_write_text(log_path, log_content)
+            evidence.update(
+                {
+                    "check_name": name,
+                    "output_hash": f"sha256:{sha256_text(output)}",
+                    "reference": f"local:verification/{verification_id}.log",
+                }
+            )
             results.append(
                 self.record(
                     task_id,
                     name=name,
                     result=result,
                     kind=str(check.get("kind", "test")),
-                    command=command,
+                    command=name,
                     required=required,
                     source="runtime_executed",
+                    trust_tier=RUNTIME_ATTESTED,
                     evidence=evidence,
+                    verification_id=verification_id,
                 )
             )
         return results

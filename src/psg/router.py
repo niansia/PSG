@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import re
 from collections import deque
 from pathlib import Path
 from typing import Any
@@ -45,9 +46,10 @@ class ContextRouter:
             + int(payload.get("expansion_hops", 0))
             + (1 if task["risk"] == "high" else 0)
         )
-        selected_ids, distance = self._traverse(
-            [node["id"] for node in start_nodes], min(hops, 4)
-        )
+        traversal_starts = [node["id"] for node in start_nodes]
+        if self.store.get_node(task_id):
+            traversal_starts.append(task_id)
+        selected_ids, distance = self._traverse(traversal_starts, min(hops, 4))
         selected_nodes = [
             node for node_id in selected_ids if (node := self.store.get_node(node_id))
         ]
@@ -201,23 +203,48 @@ class ContextRouter:
         return list({node["id"]: node for node in nodes}.values())
 
     def _intent_fallback(self, intent: str) -> list[dict[str, Any]]:
-        words = {
-            word.lower()
-            for word in intent.replace("_", " ").replace("-", " ").split()
-            if len(word) >= 3
-        }
-        scored: list[tuple[int, dict[str, Any]]] = []
-        for node in self.store.list_nodes("File"):
-            title = node["title"].lower()
-            score = sum(word in title for word in words)
+        words = self._lexical_terms(intent)
+        scored: list[tuple[float, dict[str, Any]]] = []
+        candidates = [
+            *self.store.list_nodes("File"),
+            *self.store.list_nodes("Symbol"),
+        ]
+        for node in candidates:
+            source = node.get("source", {})
+            payload = node.get("payload", {})
+            searchable = " ".join(
+                str(value)
+                for value in (
+                    node.get("title", ""),
+                    source.get("path", ""),
+                    payload.get("qualname", ""),
+                    payload.get("signature", ""),
+                )
+            )
+            candidate_terms = self._lexical_terms(searchable)
+            overlap = words & candidate_terms
+            score = float(len(overlap) * 3)
+            normalized = searchable.lower()
+            score += sum(1.0 for word in words if word in normalized)
+            if node["type"] == "Symbol" and overlap:
+                score += 0.5
             if score:
                 scored.append((score, node))
         return [
             node
             for _, node in sorted(scored, key=lambda pair: (-pair[0], pair[1]["id"]))[
-                :5
+                :8
             ]
         ]
+
+    @staticmethod
+    def _lexical_terms(value: str) -> set[str]:
+        expanded = re.sub(r"(?<=[a-z0-9])(?=[A-Z])", " ", value)
+        return {
+            token.lower()
+            for token in re.findall(r"[\w]+", expanded.replace("_", " "))
+            if len(token) >= 2
+        }
 
     def _traverse(
         self, starts: list[str], max_hops: int
@@ -236,6 +263,8 @@ class ContextRouter:
                     "verified-by",
                     "locks",
                     "contains",
+                    "requires",
+                    "targets",
                 }:
                     continue
                 other = edge["dst"] if edge["src"] == node_id else edge["src"]
@@ -267,17 +296,7 @@ class ContextRouter:
     ) -> list[dict[str, Any]]:
         candidates: list[dict[str, Any]] = []
         for node in nodes:
-            compact = {
-                "id": node["id"],
-                "type": node["type"],
-                "title": node["title"],
-                "policy": node["policy"],
-                "maturity": node["maturity"],
-                "source": node["source"],
-                "revision": node["revision"],
-                "confidence": node["confidence"],
-                "summary": node["payload"],
-            }
+            compact = ContextRouter._compact_node(node)
             estimate = max(1, len(canonical_json(compact)) // 4)
             relevance = 1.0 / (1 + distance.get(node["id"], 3))
             criticality = (
@@ -293,9 +312,9 @@ class ContextRouter:
                 4,
             )
             compact["token_estimate"] = estimate
-            compact["score"] = score
+            compact["_score"] = score
             candidates.append(compact)
-        candidates.sort(key=lambda item: (-item["score"], item["id"]))
+        candidates.sort(key=lambda item: (-item["_score"], item["id"]))
         packed: list[dict[str, Any]] = []
         used = 0
         for item in candidates:
@@ -305,6 +324,68 @@ class ContextRouter:
                 "read_only",
             }
             if mandatory or used + item["token_estimate"] <= budget:
+                item.pop("_score", None)
                 packed.append(item)
                 used += item["token_estimate"]
         return packed
+
+    @staticmethod
+    def _compact_node(node: dict[str, Any]) -> dict[str, Any]:
+        node_type = node["type"]
+        compact: dict[str, Any] = {
+            "id": node["id"],
+            "type": node_type,
+            "title": node["title"],
+            "policy": node["policy"],
+        }
+        source = node.get("source", {})
+        compact_source = {
+            key: source[key]
+            for key in ("path", "kind", "line_start", "line_end")
+            if source.get(key) not in (None, "")
+        }
+        if compact_source:
+            compact["source"] = compact_source
+
+        payload = node.get("payload", {})
+        keys_by_type = {
+            "File": ("language", "parse_status"),
+            "Symbol": ("kind", "qualname", "signature", "line_start", "line_end"),
+            "Task": ("intent", "risk", "builder_actor"),
+            "Requirement": ("text", "mandatory", "status"),
+            "Constraint": ("text", "kind"),
+            "Decision": (
+                "statement",
+                "rationale",
+                "scope",
+                "mutation_effect",
+                "trust_tier",
+            ),
+            "Debt": (
+                "what",
+                "why",
+                "ceiling",
+                "revisit_trigger",
+                "trigger_met",
+                "trust_tier",
+            ),
+            "Issue": ("severity", "claim", "status", "debt_id"),
+            "Verification": (
+                "name",
+                "kind",
+                "result",
+                "source",
+                "reference",
+                "trust_tier",
+            ),
+        }
+        summary = {
+            key: payload[key]
+            for key in keys_by_type.get(node_type, ())
+            if payload.get(key) not in (None, "", [], {})
+        }
+        if summary:
+            compact["summary"] = summary
+        if node_type not in {"File", "Symbol"}:
+            compact["maturity"] = node["maturity"]
+        return compact

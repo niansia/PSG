@@ -65,7 +65,16 @@ Test explicit attempts to:
 - reuse passing evidence after changing the worktree;
 - mark criteria passed without evidence;
 - unfreeze a node without a recorded decision;
-- exceed review or fix budgets.
+- exceed review or fix budgets;
+- dirty-edit portable YAML to widen scope before the next runtime starts;
+- label claimed evidence as `external_tool` or `user_asserted`;
+- create a proposed Decision or Debt and attempt to self-approve it over MCP;
+- claim an independent reviewer by changing only `actor_id`; and
+- submit arbitrary shell text through the MCP verification interface.
+
+### Target localization
+
+Evaluate two stages separately. First measure natural-language intent to target File/Symbol localization without revealing the reference path. Then measure context routing conditional on a supplied or correctly localized target. The included synthetic benchmark exercises only the second stage and must not be reported as localization evidence.
 
 ## Metrics
 

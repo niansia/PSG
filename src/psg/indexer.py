@@ -2,7 +2,9 @@ from __future__ import annotations
 
 import ast
 import fnmatch
+import io
 import re
+import tokenize
 from collections.abc import Iterable
 from dataclasses import dataclass
 from pathlib import Path
@@ -332,7 +334,8 @@ class Indexer:
         digest: str,
     ) -> list[dict[str, Any]]:
         edges: list[dict[str, Any]] = []
-        for line_number, line in enumerate(text.splitlines(), 1):
+        annotation_lines = self._debt_annotation_lines(rel, text)
+        for line_number, line in annotation_lines:
             match = _DEBT_MARKER.search(line)
             if not match:
                 continue
@@ -363,8 +366,8 @@ class Indexer:
                     "id": debt_id,
                     "type": "Debt",
                     "title": values["what"],
-                    "status": "accepted",
-                    "maturity": "accepted",
+                    "status": "proposed",
+                    "maturity": "proposed",
                     "policy": "mutable",
                     "source": {
                         "kind": "psg_debt_annotation",
@@ -372,14 +375,15 @@ class Indexer:
                         "line": line_number,
                     },
                     "revision": f"sha256:{digest}",
-                    "confidence": 1.0,
-                    "provenance": ["repo_deterministic", "psg-debt"],
+                    "confidence": 0.8,
+                    "provenance": ["repo_deterministic", "psg-debt", "claimed"],
                     "payload": {
                         "what": values["what"],
                         "why": values["why"],
                         "ceiling": values["ceiling"],
                         "revisit_trigger": revisit,
                         "trigger_met": False,
+                        "trust_tier": "CLAIMED",
                     },
                 },
                 bump=False,
@@ -410,6 +414,19 @@ class Indexer:
                 }
             )
         return edges
+
+    @staticmethod
+    def _debt_annotation_lines(rel: str, text: str) -> list[tuple[int, str]]:
+        if not rel.endswith(".py"):
+            return list(enumerate(text.splitlines(), 1))
+        try:
+            return [
+                (token.start[0], token.string)
+                for token in tokenize.generate_tokens(io.StringIO(text).readline)
+                if token.type == tokenize.COMMENT
+            ]
+        except (IndentationError, tokenize.TokenError):
+            return []
 
     def _excluded(self, rel: str) -> bool:
         patterns = self.config.get("index", {}).get("exclude", [])

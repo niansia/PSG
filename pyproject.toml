@@ -25,6 +25,11 @@ psg-mcp = "psg.mcp_server:main"
 [tool.setuptools.packages.find]
 where = ["src"]
 
+[tool.setuptools.data-files]
+"share/psg/skill" = ["skills/psg/SKILL.md"]
+"share/psg/skill/agents" = ["skills/psg/agents/openai.yaml"]
+"share/psg/skill/references" = ["skills/psg/references/*.md"]
+
 [tool.pytest.ini_options]
 addopts = "-q"
 testpaths = ["tests"]

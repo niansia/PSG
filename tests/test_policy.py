@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from psg.runtime import PSG
+from psg.trust import USER_APPROVED
 
 
 def make_diff(path: str, old: str, new: str) -> str:
@@ -102,12 +103,14 @@ def test_unfreezing_requires_override_and_recorded_decision(graph: PSG) -> None:
         statement="Allow backend revision",
         rationale=["A new requirement needs it"],
     )
+    graph.decision_approve("D-unfreeze")
     updated = graph.node_policy_set(
         "file:src/backend.py",
         "mutable",
         "New requirement",
         override=True,
         decision_id="D-unfreeze",
+        _trust_tier=USER_APPROVED,
     )
     assert updated["policy"] == "mutable"
 
@@ -160,13 +163,14 @@ def test_frozen_python_symbol_blocks_only_its_hunk(graph: PSG, repo) -> None:
 
 
 def test_architecture_lock_edge_blocks_symbol_change(graph: PSG, repo) -> None:
-    graph.node_create(
-        node_id="ARCH-0001",
-        node_type="Architecture",
-        title="Stable backend algorithm",
-        payload={"reason": "accepted architecture"},
+    graph.decision_record(
+        decision_id="ARCH-0001",
+        statement="Stable backend algorithm",
+        rationale=["Accepted architecture"],
+        scope=["symbol:src/backend.py:locked_api"],
+        mutation_effect="frozen",
     )
-    graph.edge_create("ARCH-0001", "locks", "symbol:src/backend.py:locked_api")
+    graph.decision_approve("ARCH-0001")
     opened = graph.task_open(
         intent="Try to alter locked architecture",
         acceptance_criteria=[],
@@ -180,7 +184,67 @@ def test_architecture_lock_edge_blocks_symbol_change(graph: PSG, repo) -> None:
     )
     result = graph.patch_validate(opened["id"])
     assert result["allowed"] is False
-    assert "edge:ARCH-0001:locks" in str(result["violations"])
+    assert "symbol:src/backend.py:locked_api" in str(result["violations"])
+    assert "frozen" in str(result["violations"])
+
+
+def test_claimed_graph_lock_does_not_gain_policy_authority(graph: PSG, repo) -> None:
+    graph.node_create(
+        node_id="ARCH-CLAIMED",
+        node_type="Architecture",
+        title="Agent-claimed architecture",
+        payload={"mutation_effect": "frozen"},
+    )
+    graph.edge_create("ARCH-CLAIMED", "locks", "symbol:src/backend.py:locked_api")
+    policy, source = graph.policy.effective_node_policy(
+        "symbol:src/backend.py:locked_api"
+    )
+    assert policy == "mutable"
+    assert source != "edge:ARCH-CLAIMED:locks"
+
+
+def test_claimed_decision_cannot_unlock_frozen_node(graph: PSG) -> None:
+    graph.node_policy_set("file:src/backend.py", "frozen", "Stable boundary")
+    proposed = graph.decision_record(
+        decision_id="D-CLAIMED-UNLOCK",
+        statement="Unlock it",
+        rationale=["Agent wants to change it"],
+        scope=["file:src/backend.py"],
+        mutation_effect="mutable",
+    )
+    assert proposed["status"] == "proposed"
+    assert graph.store.get_node("file:src/backend.py")["policy"] == "frozen"
+    try:
+        graph.node_policy_set(
+            "file:src/backend.py",
+            "mutable",
+            "Claimed override",
+            override=True,
+            decision_id="D-CLAIMED-UNLOCK",
+        )
+    except PermissionError as exc:
+        assert "USER_APPROVED" in str(exc)
+    else:
+        raise AssertionError("A claimed Decision must not weaken policy")
+
+
+def test_decision_approval_validates_all_scope_before_acceptance(graph: PSG) -> None:
+    graph.decision_record(
+        decision_id="D-BAD-SCOPE",
+        statement="Freeze unresolved scope",
+        rationale=["test"],
+        scope=["file:does-not-exist.py"],
+        mutation_effect="frozen",
+    )
+    try:
+        graph.decision_approve("D-BAD-SCOPE")
+    except KeyError as exc:
+        assert "does not resolve" in str(exc)
+    else:
+        raise AssertionError("Invalid scope must fail before Decision acceptance")
+    decision = graph.store.get_node("D-BAD-SCOPE")
+    assert decision["status"] == "proposed"
+    assert decision["payload"]["approval_required"] is True
 
 
 def test_staged_rename_keeps_source_policy(graph: PSG, repo) -> None:

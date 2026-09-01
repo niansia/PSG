@@ -8,6 +8,12 @@ import pytest
 from psg.runtime import PSG
 
 
+@pytest.fixture(autouse=True)
+def isolated_psg_home(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("PSG_HOME", str(tmp_path / "global-psg"))
+    monkeypatch.setenv("PSG_USER_HOME", str(tmp_path / "user-home"))
+
+
 def run(repo: Path, *args: str) -> str:
     process = subprocess.run(
         list(args),

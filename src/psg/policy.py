@@ -10,6 +10,7 @@ from typing import Any
 
 from . import git
 from .store import Store
+from .trust import is_user_approved
 from .util import normalize_path, sha256_bytes
 
 VALID_POLICIES = {"mutable", "read_only", "interface_locked", "frozen"}
@@ -242,10 +243,17 @@ class PolicyEngine:
         for edge in self.store.edges_for([node_id], both=True):
             if edge["dst"] != node_id:
                 continue
+            if edge.get("provenance") not in {
+                "user_approved",
+                "external_attested",
+            }:
+                continue
+            source = self.store.get_node(edge["src"])
+            if not is_user_approved(source):
+                continue
             if edge["type"] == "locks":
                 values.append(("frozen", f"edge:{edge['src']}:locks"))
             elif edge["type"] == "constrained-by":
-                source = self.store.get_node(edge["src"])
                 effect = (source or {}).get("payload", {}).get("mutation_effect")
                 normalized = {
                     "freeze": "frozen",

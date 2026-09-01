@@ -6,7 +6,17 @@ import sys
 from pathlib import Path
 from typing import Any
 
+from .config import discover_root
+from .installer import (
+    DEFAULT_UPDATE_SOURCE,
+    installation_status,
+    set_global_enabled,
+    setup_skill,
+    uninstall_installation,
+    update_installation,
+)
 from .runtime import PSG
+from .trust import CLAIMED, USER_APPROVED
 from .util import pretty_json
 
 
@@ -35,17 +45,43 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--root", type=Path, help="Repository root (defaults to the current project)"
     )
+    parser.add_argument(
+        "--json", action="store_true", help="Emit machine-readable JSON"
+    )
     sub = parser.add_subparsers(dest="command", required=True)
 
     init = sub.add_parser("init", help="Initialize PSG in a Git repository")
     init.add_argument("--project")
+    setup = sub.add_parser("setup", help="Install the complete PSG Skill bundle")
+    setup.add_argument(
+        "host",
+        nargs="?",
+        choices=["auto", "codex", "claude", "gemini", "all"],
+        default="auto",
+    )
+    setup.add_argument(
+        "--skill-dir",
+        help="Custom parent directory that should receive the psg Skill folder",
+    )
+    setup.add_argument("--all", dest="all_hosts", action="store_true")
 
-    sub.add_parser("status", help="Show project and task status")
-    sub.add_parser("on", help="Enable automatic PSG governance")
-    sub.add_parser("off", help="Disable automatic PSG governance")
+    sub.add_parser("status", help="Show project, Agent, and runtime status")
+    on = sub.add_parser("on", help="Enable automatic PSG governance")
+    on.add_argument("--global", dest="global_scope", action="store_true")
+    off = sub.add_parser("off", help="Disable automatic PSG governance")
+    off.add_argument("--global", dest="global_scope", action="store_true")
+    update = sub.add_parser("update", help="Update runtime and refresh integrations")
+    update.add_argument("--source", default=DEFAULT_UPDATE_SOURCE)
+    sub.add_parser(
+        "uninstall",
+        help="Remove runtime and integrations while preserving project .psg/ state",
+    )
     sub.add_parser("guardrails", help="Show authority, dependencies, and guardrails")
-    state = sub.add_parser("state", help="Synchronize portable project state")
-    state.add_argument("action", choices=["sync"])
+    state = sub.add_parser(
+        "state", help="Synchronize or explicitly accept portable state"
+    )
+    state.add_argument("action", choices=["sync", "accept"])
+    state.add_argument("--reason")
     index = sub.add_parser(
         "index", help="Incrementally index repository files and Python symbols"
     )
@@ -89,6 +125,8 @@ def build_parser() -> argparse.ArgumentParser:
     decision_record.add_argument("--rejected", action="append", default=[])
     decision_record.add_argument("--scope", action="append", default=[])
     decision_record.add_argument("--mutation-effect")
+    decision_approve = decision_sub.add_parser("approve")
+    decision_approve.add_argument("id")
 
     task = sub.add_parser("task", help="Open and manage tasks")
     task_sub = task.add_subparsers(dest="task_command", required=True)
@@ -117,6 +155,7 @@ def build_parser() -> argparse.ArgumentParser:
     criterion.add_argument("criterion_id")
     criterion.add_argument("status", choices=["pending", "pass", "fail", "waived"])
     criterion.add_argument("--evidence", default="{}")
+    criterion.add_argument("--user-approved", action="store_true")
 
     context = sub.add_parser(
         "context", help="Build or expand minimum sufficient context"
@@ -142,6 +181,7 @@ def build_parser() -> argparse.ArgumentParser:
         "verify", help="Run configured or explicit deterministic checks"
     )
     verify.add_argument("task_id")
+    verify.add_argument("--name", action="append", default=[])
     verify.add_argument("--check", action="append", default=[])
 
     record = sub.add_parser(
@@ -159,6 +199,7 @@ def build_parser() -> argparse.ArgumentParser:
         choices=["external_tool", "llm_reported", "user_asserted", "reviewer"],
         default="llm_reported",
     )
+    record.add_argument("--user-approved", action="store_true")
 
     issue = sub.add_parser("issue", help="Report and update evidence-backed issues")
     issue_sub = issue.add_subparsers(dest="issue_command", required=True)
@@ -176,6 +217,7 @@ def build_parser() -> argparse.ArgumentParser:
         "status", choices=["open", "fixed", "deferred", "rejected"]
     )
     issue_update.add_argument("--patch")
+    issue_update.add_argument("--user-approved", action="store_true")
     issue_list = issue_sub.add_parser("list")
     issue_list.add_argument("task_id")
     issue_list.add_argument("--status")
@@ -186,6 +228,7 @@ def build_parser() -> argparse.ArgumentParser:
     review.add_argument("--actor")
     review.add_argument("--session")
     review.add_argument("--model-family")
+    review.add_argument("--user-approved", action="store_true")
     fix = sub.add_parser("fix", help="Record one targeted correction cycle")
     fix.add_argument("task_id")
     fix.add_argument("--introduced", type=int, default=0)
@@ -202,10 +245,13 @@ def build_parser() -> argparse.ArgumentParser:
     debt_add.add_argument("--ceiling", required=True)
     debt_add.add_argument("--revisit", required=True)
     debt_add.add_argument("--affected", action="append", default=[])
+    debt_approve = debt_sub.add_parser("approve")
+    debt_approve.add_argument("debt_id")
     debt_review = debt_sub.add_parser("review")
     debt_review.add_argument("debt_id")
     debt_review.add_argument("--trigger-met", action="store_true")
     debt_review.add_argument("--evidence", default="{}")
+    debt_review.add_argument("--user-approved", action="store_true")
 
     snapshot = sub.add_parser(
         "snapshot", help="Create, list, or restore graph snapshots"
@@ -222,11 +268,54 @@ def build_parser() -> argparse.ArgumentParser:
 
 
 def dispatch(args: argparse.Namespace) -> Any:
+    if args.command == "setup":
+        return setup_skill(
+            "auto" if args.all_hosts else args.host, skill_dir=args.skill_dir
+        )
+    if args.command == "update":
+        return update_installation(args.source)
+    if args.command == "uninstall":
+        return uninstall_installation()
+    if args.command in {"on", "off"} and args.global_scope:
+        return set_global_enabled(args.command == "on")
     if args.command == "init":
-        return PSG.initialize(args.root, project=args.project).status()
+        setup_result = None
+        installed = installation_status()
+        detected = [item for item in installed["agents"] if item["detected"]]
+        if not detected or any(
+            not item["skill_installed"] or not item["mcp_registered"]
+            for item in detected
+        ):
+            setup_result = setup_skill()
+        graph = PSG.initialize(args.root, project=args.project)
+        status = graph.status()
+        status["doctor"] = graph.doctor()
+        status["installation"] = installation_status()
+        status["setup"] = setup_result
+        return status
+    if args.command == "state" and args.action == "accept":
+        return PSG.accept_portable_state(args.root, reason=args.reason or "")
+    if args.command == "status":
+        root = discover_root(args.root)
+        if not (root / ".psg" / "config.yaml").is_file():
+            return {
+                "enabled": False,
+                "project_enabled": False,
+                "global_enabled": installation_status()["global_enabled"],
+                "project": root.name,
+                "root": str(root),
+                "git_clean": False,
+                "portable_state": "",
+                "active_tasks": [],
+                "doctor": {"healthy": False, "problems": ["not_initialized"]},
+                "installation": installation_status(),
+            }
     graph = PSG(args.root)
     if args.command == "status":
-        return graph.status()
+        value = graph.status()
+        value["doctor"] = graph.doctor()
+        value["installation"] = installation_status()
+        return value
     if args.command == "on":
         return graph.set_enabled(True)
     if args.command == "off":
@@ -238,7 +327,9 @@ def dispatch(args: argparse.Namespace) -> Any:
     if args.command == "index":
         return graph.index(force=args.force)
     if args.command == "doctor":
-        return graph.doctor()
+        value = graph.doctor()
+        value["installation"] = installation_status()
+        return value
     if args.command == "node":
         if args.node_command == "add":
             return graph.node_create(
@@ -259,12 +350,15 @@ def dispatch(args: argparse.Namespace) -> Any:
             args.reason,
             override=args.override,
             decision_id=args.decision,
+            _trust_tier=USER_APPROVED if args.override else CLAIMED,
         )
     if args.command == "edge":
         return graph.edge_create(
             args.src, args.type, args.dst, confidence=args.confidence
         )
     if args.command == "decision":
+        if args.decision_command == "approve":
+            return graph.decision_approve(args.id)
         return graph.decision_record(
             decision_id=args.id,
             statement=args.statement,
@@ -299,7 +393,11 @@ def dispatch(args: argparse.Namespace) -> Any:
                 raise KeyError(f"Unknown task: {args.id}")
             return value
         return graph.criterion_set(
-            args.task_id, args.criterion_id, args.status, _json(args.evidence, {})
+            args.task_id,
+            args.criterion_id,
+            args.status,
+            _json(args.evidence, {}),
+            _trust_tier=USER_APPROVED if args.user_approved else CLAIMED,
         )
     if args.command == "context":
         if args.context_command == "build":
@@ -313,7 +411,9 @@ def dispatch(args: argparse.Namespace) -> Any:
             )
         return graph.patch_validate(args.task_id, phase=args.phase)
     if args.command == "verify":
-        return graph.verify(args.task_id, _checks(args.check) if args.check else None)
+        if args.check:
+            return graph.verify_commands(args.task_id, _checks(args.check))
+        return graph.verify(args.task_id, args.name or None)
     if args.command == "verification":
         return graph.verification_record(
             task_id=args.task_id,
@@ -324,6 +424,7 @@ def dispatch(args: argparse.Namespace) -> Any:
             required=not args.optional,
             source=args.source,
             evidence=_json(args.evidence, {}),
+            _trust_tier=USER_APPROVED if args.user_approved else CLAIMED,
         )
     if args.command == "issue":
         if args.issue_command == "report":
@@ -337,7 +438,12 @@ def dispatch(args: argparse.Namespace) -> Any:
                 debt_id=args.debt,
             )
         if args.issue_command == "update":
-            return graph.issue_update(args.id, args.status, args.patch)
+            return graph.issue_update(
+                args.id,
+                args.status,
+                args.patch,
+                _trust_tier=USER_APPROVED if args.user_approved else CLAIMED,
+            )
         return graph.store.list_issues(args.task_id, status=args.status)
     if args.command == "review":
         return graph.review_record(
@@ -346,6 +452,7 @@ def dispatch(args: argparse.Namespace) -> Any:
             actor_id=args.actor,
             session_id=args.session,
             model_family=args.model_family,
+            _trust_tier=USER_APPROVED if args.user_approved else CLAIMED,
         )
     if args.command == "fix":
         return graph.fix_record(args.task_id, args.introduced, args.resolved)
@@ -361,10 +468,13 @@ def dispatch(args: argparse.Namespace) -> Any:
                 revisit_trigger=args.revisit,
                 affected_nodes=args.affected,
             )
+        if args.debt_command == "approve":
+            return graph.debt_approve(args.debt_id)
         return graph.debt_review(
             args.debt_id,
             trigger_met=args.trigger_met,
             evidence=_json(args.evidence, {}),
+            _trust_tier=USER_APPROVED if args.user_approved else CLAIMED,
         )
     if args.command == "snapshot":
         if args.snapshot_command == "list":
@@ -385,7 +495,19 @@ def main(argv: list[str] | None = None) -> int:
     args = parser.parse_args(argv)
     try:
         result = dispatch(args)
-        print(pretty_json(result))
+        if args.json or args.command not in {
+            "setup",
+            "init",
+            "status",
+            "on",
+            "off",
+            "update",
+            "uninstall",
+            "doctor",
+        }:
+            print(pretty_json(result))
+        else:
+            print(_console_safe(_human_output(args.command, result)))
         return 0
     except (
         FileNotFoundError,
@@ -400,6 +522,105 @@ def main(argv: list[str] | None = None) -> int:
             file=sys.stderr,
         )
         return 2
+
+
+def _mark(value: bool) -> str:
+    return "✓" if value else "○"
+
+
+def _console_safe(value: str, encoding: str | None = None) -> str:
+    """Keep friendly output usable in legacy Windows console encodings."""
+    selected_encoding = encoding or getattr(sys.stdout, "encoding", None) or "utf-8"
+    try:
+        value.encode(selected_encoding)
+        return value
+    except (LookupError, UnicodeEncodeError):
+        fallback = (
+            value.replace("✓", "[ok]")
+            .replace("○", "[--]")
+            .replace("→", "->")
+            .replace("·", "-")
+        )
+        try:
+            fallback.encode(selected_encoding)
+            return fallback
+        except (LookupError, UnicodeEncodeError):
+            return fallback.encode(selected_encoding, errors="replace").decode(
+                selected_encoding, errors="replace"
+            )
+
+
+def _human_output(command: str, value: dict[str, Any]) -> str:
+    if command in {"status", "init"}:
+        installation = value.get("installation", {})
+        agents = installation.get("agents", [])
+        lines = [f"PSG {installation.get('version', '1.0')}", "", "Project"]
+        lines.extend(
+            [
+                f"{_mark(bool(value.get('enabled')))} Enabled",
+                f"{_mark(bool(value.get('portable_state')))} Initialized",
+                f"{_mark(bool(value.get('doctor', {}).get('healthy', True)))} State healthy",
+                f"{_mark(bool(value.get('git_clean')))} Git clean",
+            ]
+        )
+        lines.extend(["", "Agents"])
+        for agent in agents:
+            ready = agent.get("skill_installed") and agent.get("mcp_registered")
+            if agent.get("detected"):
+                lines.append(f"{_mark(bool(ready))} {agent['name']}")
+            else:
+                lines.append(f"○ {agent['name']} (not installed)")
+        lines.extend(["", "Runtime"])
+        lines.append(
+            f"{_mark(bool(installation.get('global_enabled', True)))} Global governance enabled"
+        )
+        lines.append(f"{_mark(bool(value.get('portable_state')))} Project state synced")
+        lines.extend(["", "Current task"])
+        active = value.get("active_tasks", [])
+        if active:
+            lines.extend(
+                f"{item['id']} · {item['status']} · {item['intent']}" for item in active
+            )
+        else:
+            lines.append("None")
+        if not value.get("portable_state"):
+            closing = "Run 'psg init' in this Git project."
+        else:
+            closing = "Ready." if value.get("enabled") else "PSG is paused."
+        lines.extend(["", closing])
+        return "\n".join(lines)
+    if command == "setup":
+        lines = [f"PSG {value.get('version', '1.0')} setup", ""]
+        for item in value.get("installed", []):
+            lines.append(f"✓ PSG Skill → {item['host']}")
+        for item in value.get("integrations", []):
+            lines.append(
+                f"{_mark(bool(item.get('mcp_registered')))} PSG MCP → {item['host']}"
+            )
+            if item.get("error"):
+                lines.append(f"  {item['error']}")
+        for warning in value.get("warnings", []):
+            lines.append(f"○ {warning}")
+        lines.extend(
+            ["", "PSG ready." if value.get("ready") else "Setup needs attention."]
+        )
+        return "\n".join(lines)
+    if command in {"on", "off"}:
+        scope = value.get("scope", "project")
+        state = "enabled" if value.get("enabled") else "paused"
+        return f"PSG {scope} governance is {state}."
+    if command == "doctor":
+        return "PSG doctor: healthy." if value.get("healthy") else pretty_json(value)
+    if command == "update":
+        return value.get("message", "PSG updated.")
+    if command == "uninstall":
+        return "\n".join(
+            [
+                value.get("message", "PSG integrations removed."),
+                "Durable project state was preserved.",
+            ]
+        )
+    return pretty_json(value)
 
 
 if __name__ == "__main__":
