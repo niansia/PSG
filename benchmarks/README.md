@@ -48,8 +48,12 @@ Other disclosed limits:
   named in Codex command events. It undercounts reads the agent performs another way.
 - The Codex CLI does not expose a per-run dollar charge, so `reported_cost_usd` is
   `null`. Tokens and wall time are reported; a price is not invented from them.
-- Raw traces in `results/agentic-ab-traces/` are published with local absolute paths
-  redacted to `<WORKTREE>`, `<BENCHMARK_BASE>`, `<TMP>`, and `<USER_HOME>`.
+- Raw traces are written to `results/agentic-ab-traces/` with local absolute paths redacted
+  to `<WORKTREE>`, `<BENCHMARK_BASE>`, `<TMP>`, and `<USER_HOME>`.
+
+No 10-pair run has been completed yet, so `results/agentic-ab-latest.json` and
+`results/agentic-ab-traces/` are not in this repository. A partial run is not a result, and
+PSG does not publish numbers it did not measure.
 
 ## 2. Deterministic Task-Boundary benchmark
 
