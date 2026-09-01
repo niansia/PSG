@@ -16,7 +16,7 @@ Run `psg doctor` before attempting recovery when tools fail to load, the databas
 - `psg setup` auto-detects Codex, Claude Code, and Gemini CLI, installs the full Skill bundle, and registers `psg-mcp` through each host's native CLI.
 - `psg init` opts the current Git project into governance and repairs missing host integration when possible.
 - `psg status`, `psg on`, and `psg off` are the ordinary project controls. Add `--global` to `on` or `off` for the global automatic-governance switch.
-- `psg update` refreshes runtime, bundle, and MCP registrations.
+- `psg update` resolves and installs the newest stable `vX.Y.Z` release tag, then refreshes the bundle and MCP registrations. `--channel dev` is an explicit opt-in to `main`; `--source` is an advanced override.
 - `psg uninstall` removes installed integrations and runtime while preserving all project `.psg/` directories.
 
 The advanced commands below are Agent/developer interfaces, not normal onboarding steps.

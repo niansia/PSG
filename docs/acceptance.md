@@ -33,7 +33,7 @@ This document maps the reviewed completion requirements to implemented behavior 
 
 ## Verified release results
 
-- Automated behavior, adversarial, packaging, and Skill archive tests: **61 passing locally**; CI repeats the suite on Python 3.10.
+- Automated behavior, adversarial, packaging, and Skill archive tests: **64 passing locally**; CI repeats the suite on Python 3.10.
 - Ruff lint and format checks: **passing**.
 - Synthetic sequential benchmark: **12/12 SHIPPABLE**.
 - Benchmark file-read reduction: **89.69%** versus disclosed all-files baseline.

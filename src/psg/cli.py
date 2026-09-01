@@ -8,7 +8,7 @@ from typing import Any
 
 from .config import discover_root
 from .installer import (
-    DEFAULT_UPDATE_SOURCE,
+    DEFAULT_UPDATE_CHANNEL,
     installation_status,
     set_global_enabled,
     setup_skill,
@@ -71,7 +71,16 @@ def build_parser() -> argparse.ArgumentParser:
     off = sub.add_parser("off", help="Disable automatic PSG governance")
     off.add_argument("--global", dest="global_scope", action="store_true")
     update = sub.add_parser("update", help="Update runtime and refresh integrations")
-    update.add_argument("--source", default=DEFAULT_UPDATE_SOURCE)
+    update_source = update.add_mutually_exclusive_group()
+    update_source.add_argument(
+        "--channel",
+        choices=["stable", "dev"],
+        default=DEFAULT_UPDATE_CHANNEL,
+        help="Update channel (default: latest stable release)",
+    )
+    update_source.add_argument(
+        "--source", help="Advanced: explicit pip package source override"
+    )
     sub.add_parser(
         "uninstall",
         help="Remove runtime and integrations while preserving project .psg/ state",
@@ -273,7 +282,7 @@ def dispatch(args: argparse.Namespace) -> Any:
             "auto" if args.all_hosts else args.host, skill_dir=args.skill_dir
         )
     if args.command == "update":
-        return update_installation(args.source)
+        return update_installation(source=args.source, channel=args.channel)
     if args.command == "uninstall":
         return uninstall_installation()
     if args.command in {"on", "off"} and args.global_scope:

@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import os
+import re
 import shutil
 import subprocess
 import sys
@@ -32,7 +33,8 @@ HOSTS = {
         "skill_parent": Path(".gemini") / "skills",
     },
 }
-DEFAULT_UPDATE_SOURCE = "psg-runtime[mcp] @ git+https://github.com/niansia/PSG.git"
+REPOSITORY_GIT_URL = "https://github.com/niansia/PSG.git"
+DEFAULT_UPDATE_CHANNEL = "stable"
 CommandRunner = Callable[[list[str]], subprocess.CompletedProcess[str]]
 
 
@@ -40,7 +42,7 @@ def psg_version() -> str:
     try:
         return version("psg-runtime")
     except PackageNotFoundError:
-        return "1.0.0-dev"
+        return "1.0.1-dev"
 
 
 def global_home() -> Path:
@@ -199,10 +201,18 @@ def installation_status() -> dict[str, Any]:
 
 
 def update_installation(
-    source: str = DEFAULT_UPDATE_SOURCE, *, runner: CommandRunner | None = None
+    source: str | None = None,
+    *,
+    channel: str = DEFAULT_UPDATE_CHANNEL,
+    runner: CommandRunner | None = None,
 ) -> dict[str, Any]:
     run = runner or _run_command
-    upgrade = run([sys.executable, "-m", "pip", "install", "--upgrade", source])
+    resolved_source, release = _resolve_update_source(
+        source=source, channel=channel, runner=run
+    )
+    upgrade = run(
+        [sys.executable, "-m", "pip", "install", "--upgrade", resolved_source]
+    )
     if upgrade.returncode != 0:
         raise RuntimeError(_command_error("PSG runtime update failed", upgrade))
     setup = run([sys.executable, "-m", "psg.cli", "--json", "setup"])
@@ -214,10 +224,50 @@ def update_installation(
         refreshed = {"output": setup.stdout.strip()}
     return {
         "updated": True,
-        "source": source,
+        "channel": "custom" if source else channel,
+        "release": release,
+        "source": resolved_source,
         "integrations": refreshed,
-        "message": "Runtime, Skill bundle, and MCP registrations were refreshed.",
+        "message": (
+            f"PSG {release} was installed from the "
+            f"{'custom source' if source else channel + ' channel'}; "
+            "the Skill bundle and MCP registrations were refreshed."
+        ),
     }
+
+
+def _resolve_update_source(
+    *, source: str | None, channel: str, runner: CommandRunner
+) -> tuple[str, str]:
+    if source:
+        return source, "custom"
+    if channel == "dev":
+        return f"psg-runtime[mcp] @ git+{REPOSITORY_GIT_URL}@main", "main"
+    if channel != DEFAULT_UPDATE_CHANNEL:
+        raise ValueError(f"Unsupported PSG update channel: {channel}")
+    tag = _latest_stable_tag(runner)
+    return f"psg-runtime[mcp] @ git+{REPOSITORY_GIT_URL}@{tag}", tag
+
+
+def _latest_stable_tag(runner: CommandRunner) -> str:
+    process = runner(["git", "ls-remote", "--tags", "--refs", REPOSITORY_GIT_URL])
+    if process.returncode != 0:
+        raise RuntimeError(
+            _command_error("Could not discover the latest stable PSG release", process)
+        )
+    releases: list[tuple[tuple[int, int, int], str]] = []
+    for line in process.stdout.splitlines():
+        match = re.search(r"refs/tags/(v(\d+)\.(\d+)\.(\d+))$", line.strip())
+        if match:
+            releases.append(
+                (
+                    (int(match.group(2)), int(match.group(3)), int(match.group(4))),
+                    match.group(1),
+                )
+            )
+    if not releases:
+        raise RuntimeError("No stable PSG release tag matching vX.Y.Z was found.")
+    return max(releases)[1]
 
 
 def uninstall_installation(

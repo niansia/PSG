@@ -10,7 +10,7 @@ ROOT = Path(__file__).resolve().parents[1]
 
 def test_skill_source_and_release_archive_are_complete_and_in_sync() -> None:
     source = ROOT / "skills" / "psg"
-    archive = ROOT / "artifacts" / "psg-skill-v1.0.0.zip"
+    archive = ROOT / "artifacts" / "psg-skill-v1.0.1.zip"
     required = {
         "psg/SKILL.md",
         "psg/agents/openai.yaml",
@@ -28,7 +28,7 @@ def test_skill_source_and_release_archive_are_complete_and_in_sync() -> None:
 
 def test_runtime_wheel_embeds_the_complete_skill_bundle() -> None:
     source = ROOT / "skills" / "psg"
-    wheel = ROOT / "artifacts" / "psg_runtime-1.0.0-py3-none-any.whl"
+    wheel = ROOT / "artifacts" / "psg_runtime-1.0.1-py3-none-any.whl"
     relative_files = {
         Path("SKILL.md"),
         Path("agents/openai.yaml"),

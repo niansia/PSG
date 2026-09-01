@@ -32,7 +32,7 @@ Opening a task materializes the task, its acceptance criteria as `Requirement` n
 
 ## Distribution layer
 
-The runtime remains host-neutral. A small installer maps the same Skill bundle and `psg-mcp` command into Codex, Claude Code, and Gemini CLI using each host's native Skill location and MCP management command. `psg setup` auto-detects hosts, `psg update` refreshes the runtime/bundle/registrations, and `psg uninstall` removes integrations without touching project `.psg/` directories. No host-specific PSG runtime is created.
+The runtime remains host-neutral. A small installer maps the same Skill bundle and `psg-mcp` command into Codex, Claude Code, and Gemini CLI using each host's native Skill location and MCP management command. `psg setup` auto-detects hosts, `psg update` resolves the highest stable `vX.Y.Z` tag before refreshing the runtime/bundle/registrations, and `psg uninstall` removes integrations without touching project `.psg/` directories. Following `main` requires the explicit `--channel dev` option. No host-specific PSG runtime is created.
 
 Global installation makes PSG available; `.psg/config.yaml` opts a repository into governance. Project and global `on`/`off` switches are independent, so a globally installed Skill does not govern repositories that have not run `psg init`.
 

@@ -7,13 +7,13 @@ PSG has two installed parts: the Python runtime (`psg` and `psg-mcp`) and the co
 ### Windows
 
 ```powershell
-python -m pip install "psg-runtime[mcp] @ git+https://github.com/niansia/PSG.git@v1.0.0"; psg setup
+python -m pip install "psg-runtime[mcp] @ git+https://github.com/niansia/PSG.git@v1.0.1"; psg setup
 ```
 
 ### macOS / Linux
 
 ```bash
-python3 -m pip install "psg-runtime[mcp] @ git+https://github.com/niansia/PSG.git@v1.0.0" && psg setup
+python3 -m pip install "psg-runtime[mcp] @ git+https://github.com/niansia/PSG.git@v1.0.1" && psg setup
 ```
 
 `psg setup` detects installed Codex, Claude Code, and Gemini CLI executables. For every detected host it:
@@ -31,6 +31,8 @@ psg init
 ```
 
 `psg init` creates `.psg/`, performs the first incremental index, and automatically runs setup if a detected host is missing its integration.
+
+PSG v1 deliberately uses the Python package as its distribution channel. Native standalone binaries and package-manager entries such as WinGet and Homebrew are v1.1 distribution polish; they will remain wrappers around the same runtime rather than new architectural dependencies.
 
 ## Supported hosts
 
@@ -73,10 +75,11 @@ If a host starts MCP outside the repository, its process must inherit the projec
 
 ```text
 psg update
+psg update --channel dev
 psg uninstall
 ```
 
-`psg update` upgrades the runtime from the configured source, refreshes the bundled Skill, and re-registers the detected MCP integrations. `psg uninstall` removes PSG's Host integrations and runtime package, but never searches for or deletes project `.psg/` directories. Reinstalling PSG can reuse those durable project states.
+`psg update` discovers the newest stable `vX.Y.Z` Git release tag, upgrades to that exact tag, refreshes the bundled Skill, and re-registers the detected MCP integrations. Prerelease tags and `main` are never selected by the stable channel. `psg update --channel dev` explicitly follows `main`; `psg update --source ...` remains an advanced custom-source override. `psg uninstall` removes PSG's Host integrations and runtime package, but never searches for or deletes project `.psg/` directories. Reinstalling PSG can reuse those durable project states.
 
 ## Global and project lifecycle
 
@@ -102,7 +105,7 @@ When an Agent presents one of these proposals, review it before using the matchi
 From the bundled wheel:
 
 ```powershell
-python -m pip install ".\psg_runtime-1.0.0-py3-none-any.whl[mcp]"; psg setup
+python -m pip install ".\psg_runtime-1.0.1-py3-none-any.whl[mcp]"; psg setup
 ```
 
 From a source checkout:

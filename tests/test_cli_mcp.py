@@ -194,6 +194,64 @@ def test_update_refreshes_runtime_then_integrations() -> None:
     assert commands[1][-2:] == ["--json", "setup"]
 
 
+def test_update_defaults_to_latest_stable_release() -> None:
+    commands: list[list[str]] = []
+
+    def runner(command: list[str]) -> subprocess.CompletedProcess[str]:
+        commands.append(command)
+        if command[:3] == ["git", "ls-remote", "--tags"]:
+            output = (
+                "aaa\trefs/tags/v1.0.0\n"
+                "bbb\trefs/tags/v1.2.0\n"
+                "ccc\trefs/tags/v2.0.0-rc.1"
+            )
+            return subprocess.CompletedProcess(command, 0, output, "")
+        if "psg.cli" in command:
+            return subprocess.CompletedProcess(
+                command, 0, json.dumps({"ready": True}), ""
+            )
+        return subprocess.CompletedProcess(command, 0, "updated", "")
+
+    result = update_installation(runner=runner)
+    assert result["channel"] == "stable"
+    assert result["release"] == "v1.2.0"
+    assert result["source"].endswith("PSG.git@v1.2.0")
+    assert commands[0][:4] == ["git", "ls-remote", "--tags", "--refs"]
+
+
+def test_dev_update_explicitly_tracks_main() -> None:
+    commands: list[list[str]] = []
+
+    def runner(command: list[str]) -> subprocess.CompletedProcess[str]:
+        commands.append(command)
+        if "psg.cli" in command:
+            return subprocess.CompletedProcess(
+                command, 0, json.dumps({"ready": True}), ""
+            )
+        return subprocess.CompletedProcess(command, 0, "updated", "")
+
+    result = update_installation(channel="dev", runner=runner)
+    assert result["channel"] == "dev"
+    assert result["release"] == "main"
+    assert result["source"].endswith("PSG.git@main")
+    assert not any(command[:2] == ["git", "ls-remote"] for command in commands)
+
+
+def test_cli_update_requires_explicit_dev_channel(monkeypatch, capsys) -> None:
+    calls: list[tuple[str | None, str]] = []
+
+    def update(*, source: str | None, channel: str) -> dict[str, object]:
+        calls.append((source, channel))
+        return {"updated": True, "message": "updated"}
+
+    monkeypatch.setattr("psg.cli.update_installation", update)
+    assert main(["--json", "update"]) == 0
+    capsys.readouterr()
+    assert main(["--json", "update", "--channel", "dev"]) == 0
+    capsys.readouterr()
+    assert calls == [(None, "stable"), (None, "dev")]
+
+
 def test_init_repairs_missing_host_integration(repo, monkeypatch, capsys) -> None:
     calls: list[str] = []
     fake_status = {

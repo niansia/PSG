@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "psg-runtime"
-version = "1.0.0"
+version = "1.0.1"
 description = "Graph-guided project state, mutation governance, and evidence-based ship gates for coding agents."
 readme = "README.md"
 requires-python = ">=3.10"

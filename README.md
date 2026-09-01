@@ -10,7 +10,7 @@
 
 [![Python 3.10+](https://img.shields.io/badge/Python-3.10%2B-6EAEDB?style=flat-square)](https://www.python.org/)
 [![CI](https://github.com/niansia/PSG/actions/workflows/ci.yml/badge.svg)](https://github.com/niansia/PSG/actions/workflows/ci.yml)
-[![Release](https://img.shields.io/badge/release-v1.0.0-F3B557?style=flat-square)](https://github.com/niansia/PSG/releases/tag/v1.0.0)
+[![Release](https://img.shields.io/badge/release-v1.0.1-F3B557?style=flat-square)](https://github.com/niansia/PSG/releases/tag/v1.0.1)
 [![Status](https://img.shields.io/badge/status-complete%20MVP-FF9364?style=flat-square)](docs/acceptance.md)
 
 </div>
@@ -26,13 +26,13 @@ Install once. The command installs the runtime, the complete Skill bundle, and M
 ### Windows
 
 ```powershell
-python -m pip install "psg-runtime[mcp] @ git+https://github.com/niansia/PSG.git@v1.0.0"; psg setup
+python -m pip install "psg-runtime[mcp] @ git+https://github.com/niansia/PSG.git@v1.0.1"; psg setup
 ```
 
 ### macOS / Linux
 
 ```bash
-python3 -m pip install "psg-runtime[mcp] @ git+https://github.com/niansia/PSG.git@v1.0.0" && psg setup
+python3 -m pip install "psg-runtime[mcp] @ git+https://github.com/niansia/PSG.git@v1.0.1" && psg setup
 ```
 
 Then opt a Git project in once:
@@ -58,7 +58,7 @@ psg off          # Temporarily disable automatic PSG governance
 psg on           # Enable it again
 ```
 
-`psg off --global` and `psg on --global` pause or resume automatic governance across all initialized projects. `psg update`, `psg doctor`, and `psg uninstall` manage the installation; uninstall preserves every project's durable `.psg/` state.
+`psg off --global` and `psg on --global` pause or resume automatic governance across all initialized projects. `psg update` installs the newest stable `vX.Y.Z` release; it never follows `main` unless you explicitly choose `psg update --channel dev`. `psg doctor` and `psg uninstall` manage health and removal; uninstall preserves every project's durable `.psg/` state.
 
 ## Supported agents
 
@@ -155,7 +155,7 @@ MCP `decision_record` and `debt_record` therefore create proposals. Frozen unloc
 ## Included interfaces
 
 - [`skills/psg/`](skills/psg/) — the complete Skill bundle: entry playbook, agent metadata, and supporting references.
-- [`artifacts/psg-skill-v1.0.0.zip`](artifacts/psg-skill-v1.0.0.zip) — the distributable Skill bundle.
+- [`artifacts/psg-skill-v1.0.1.zip`](artifacts/psg-skill-v1.0.1.zip) — the distributable Skill bundle.
 - `psg` — human-friendly product commands plus `--json` and advanced/debug APIs.
 - `psg-mcp` — local MCP server exposing the same graph, index, validation, verification, debt, conflict, and ship operations.
 
