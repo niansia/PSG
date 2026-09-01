@@ -104,6 +104,12 @@ def build_skill_archive(version: str, output_dir: Path) -> Path:
 
 
 def build_wheel(output_dir: Path) -> Path:
+    # setuptools reuses build/lib, which silently carries forward files that are no
+    # longer in src/ and line endings from whenever they were first copied. A release
+    # wheel must contain this checkout and nothing else.
+    for stale in (ROOT / "build", ROOT / "src" / "psg_runtime.egg-info"):
+        if stale.exists():
+            shutil.rmtree(stale)
     subprocess.run(
         [sys.executable, "-m", "pip", "wheel", ".", "--no-deps", "-w", str(output_dir)],
         cwd=ROOT,
@@ -113,7 +119,27 @@ def build_wheel(output_dir: Path) -> Path:
     wheels = sorted(output_dir.glob("psg_runtime-*-py3-none-any.whl"))
     if len(wheels) != 1:
         raise SystemExit(f"Expected exactly one runtime wheel, found {wheels}")
+    verify_wheel_contents(wheels[0])
     return wheels[0]
+
+
+def verify_wheel_contents(wheel: Path) -> None:
+    """Refuse to ship a wheel carrying anything but this checkout's psg package."""
+    with zipfile.ZipFile(wheel) as bundle:
+        names = bundle.namelist()
+        top_level = {name.split("/", 1)[0] for name in names if "/" in name}
+        unexpected = {
+            item
+            for item in top_level
+            if item != "psg" and not item.startswith("psg_runtime-")
+        }
+        if unexpected:
+            raise SystemExit(
+                f"Wheel contains unexpected top-level entries: {sorted(unexpected)}"
+            )
+        for name in names:
+            if name.endswith(".py") and b"\r\n" in bundle.read(name):
+                raise SystemExit(f"Wheel carries CRLF line endings: {name}")
 
 
 def _venv_executable(prefix: Path, name: str) -> Path:

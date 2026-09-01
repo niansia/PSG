@@ -55,3 +55,24 @@ def test_runtime_wheel_embeds_the_complete_skill_bundle() -> None:
         (source / "agents" / "openai.yaml").read_text(encoding="utf-8")
     )
     assert agent["interface"]["display_name"] == "PSG"
+
+
+def test_runtime_wheel_ships_only_this_project() -> None:
+    """A reused setuptools build directory silently smuggles stale packages into the wheel."""
+    wheel = ROOT / "artifacts" / "psg_runtime-1.1.0-py3-none-any.whl"
+    with zipfile.ZipFile(wheel) as bundle:
+        names = bundle.namelist()
+        top_level = {name.split("/", 1)[0] for name in names if "/" in name}
+        unexpected = {
+            item
+            for item in top_level
+            if item != "psg" and not item.startswith("psg_runtime-")
+        }
+        assert not unexpected, (
+            f"wheel carries unexpected packages: {sorted(unexpected)}"
+        )
+        crlf = b"\x0d\x0a"
+        carriage = [
+            name for name in names if name.endswith(".py") and crlf in bundle.read(name)
+        ]
+        assert not carriage, f"wheel carries CRLF line endings: {carriage}"
