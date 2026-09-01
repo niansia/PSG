@@ -1,0 +1,15 @@
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+.coverage
+htmlcov/
+.venv/
+dist/
+build/
+tmp/
+.workgraph/workgraph.db
+.workgraph/workgraph.db-*
+.workgraph/events.jsonl
+.workgraph/cache/
+.workgraph/exports/

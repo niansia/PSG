@@ -1,0 +1,28 @@
+context:
+  default_token_budget: 12000
+index:
+  exclude:
+  - .git/**
+  - .workgraph/**
+  - .venv/**
+  - venv/**
+  - node_modules/**
+  - dist/**
+  - build/**
+  - tmp/**
+  languages:
+  - python
+  mode: incremental
+policies:
+  default: mutable
+project: WorkGraph
+review:
+  general_round_limit: 2
+  no_new_blocker_stop_rounds: 2
+  targeted_fix_limit: 2
+risk:
+  high_requires_independent_review: true
+source_of_truth: git
+verification:
+  commands: []
+version: 1

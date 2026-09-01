@@ -1,0 +1,164 @@
+{
+  "benchmark": "workgraph-sequential-v1",
+  "repository": {
+    "indexed": {
+      "dependencies": 71,
+      "errors": [],
+      "indexed": 38,
+      "removed": 0,
+      "revision": "fca909dcda0d04ef1508aaa242143a0e299a63cc",
+      "scanned": 42,
+      "symbols": 37,
+      "unchanged": 0,
+      "unsupported": 0
+    },
+    "source_files": 38
+  },
+  "summary": {
+    "baseline_file_reads": 456,
+    "baseline_token_estimate": 15948,
+    "context_token_reduction_percent": 60.28,
+    "file_read_reduction_percent": 89.69,
+    "review_rounds": 2,
+    "review_stopped_at_budget": true,
+    "tasks_shippable": 12,
+    "unauthorized_frozen_mutation_blocked": true,
+    "workgraph_file_reads": 47,
+    "workgraph_token_estimate": 6334
+  },
+  "task_count": 12,
+  "tasks": [
+    {
+      "baseline_file_reads": 38,
+      "baseline_token_estimate": 1329,
+      "context_confidence": 0.95,
+      "policy_allowed": true,
+      "ship_status": "SHIPPABLE",
+      "target": "pkg/feature_0.py",
+      "task_id": "T-0001",
+      "workgraph_file_reads": 3,
+      "workgraph_token_estimate": 428
+    },
+    {
+      "baseline_file_reads": 38,
+      "baseline_token_estimate": 1329,
+      "context_confidence": 0.95,
+      "policy_allowed": true,
+      "ship_status": "SHIPPABLE",
+      "target": "pkg/feature_1.py",
+      "task_id": "T-0002",
+      "workgraph_file_reads": 4,
+      "workgraph_token_estimate": 536
+    },
+    {
+      "baseline_file_reads": 38,
+      "baseline_token_estimate": 1329,
+      "context_confidence": 0.95,
+      "policy_allowed": true,
+      "ship_status": "SHIPPABLE",
+      "target": "pkg/feature_2.py",
+      "task_id": "T-0003",
+      "workgraph_file_reads": 4,
+      "workgraph_token_estimate": 536
+    },
+    {
+      "baseline_file_reads": 38,
+      "baseline_token_estimate": 1329,
+      "context_confidence": 0.95,
+      "policy_allowed": true,
+      "ship_status": "SHIPPABLE",
+      "target": "pkg/feature_3.py",
+      "task_id": "T-0004",
+      "workgraph_file_reads": 4,
+      "workgraph_token_estimate": 536
+    },
+    {
+      "baseline_file_reads": 38,
+      "baseline_token_estimate": 1329,
+      "context_confidence": 0.95,
+      "policy_allowed": true,
+      "ship_status": "SHIPPABLE",
+      "target": "pkg/feature_4.py",
+      "task_id": "T-0005",
+      "workgraph_file_reads": 4,
+      "workgraph_token_estimate": 536
+    },
+    {
+      "baseline_file_reads": 38,
+      "baseline_token_estimate": 1329,
+      "context_confidence": 0.95,
+      "policy_allowed": true,
+      "ship_status": "SHIPPABLE",
+      "target": "pkg/feature_5.py",
+      "task_id": "T-0006",
+      "workgraph_file_reads": 4,
+      "workgraph_token_estimate": 536
+    },
+    {
+      "baseline_file_reads": 38,
+      "baseline_token_estimate": 1329,
+      "context_confidence": 0.95,
+      "policy_allowed": true,
+      "ship_status": "SHIPPABLE",
+      "target": "pkg/feature_6.py",
+      "task_id": "T-0007",
+      "workgraph_file_reads": 4,
+      "workgraph_token_estimate": 536
+    },
+    {
+      "baseline_file_reads": 38,
+      "baseline_token_estimate": 1329,
+      "context_confidence": 0.95,
+      "policy_allowed": true,
+      "ship_status": "SHIPPABLE",
+      "target": "pkg/feature_7.py",
+      "task_id": "T-0008",
+      "workgraph_file_reads": 4,
+      "workgraph_token_estimate": 536
+    },
+    {
+      "baseline_file_reads": 38,
+      "baseline_token_estimate": 1329,
+      "context_confidence": 0.95,
+      "policy_allowed": true,
+      "ship_status": "SHIPPABLE",
+      "target": "pkg/feature_8.py",
+      "task_id": "T-0009",
+      "workgraph_file_reads": 4,
+      "workgraph_token_estimate": 536
+    },
+    {
+      "baseline_file_reads": 38,
+      "baseline_token_estimate": 1329,
+      "context_confidence": 0.95,
+      "policy_allowed": true,
+      "ship_status": "SHIPPABLE",
+      "target": "pkg/feature_9.py",
+      "task_id": "T-0010",
+      "workgraph_file_reads": 4,
+      "workgraph_token_estimate": 537
+    },
+    {
+      "baseline_file_reads": 38,
+      "baseline_token_estimate": 1329,
+      "context_confidence": 0.95,
+      "policy_allowed": true,
+      "ship_status": "SHIPPABLE",
+      "target": "pkg/feature_10.py",
+      "task_id": "T-0011",
+      "workgraph_file_reads": 4,
+      "workgraph_token_estimate": 540
+    },
+    {
+      "baseline_file_reads": 38,
+      "baseline_token_estimate": 1329,
+      "context_confidence": 0.95,
+      "policy_allowed": true,
+      "ship_status": "SHIPPABLE",
+      "target": "pkg/feature_11.py",
+      "task_id": "T-0012",
+      "workgraph_file_reads": 4,
+      "workgraph_token_estimate": 541
+    }
+  ]
+}
