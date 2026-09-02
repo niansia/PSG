@@ -1,5 +1,5 @@
 version: 1
-graph_revision: 315
+graph_revision: 330
 nodes:
 - id: T-0001-C1
   type: Constraint
@@ -149,6 +149,66 @@ nodes:
   payload:
     text: Preserve existing public CLI syntax and ordinary CLAIMED/RUNTIME_ATTESTED
       behavior.
+- id: T-0003-C1
+  type: Constraint
+  title: Do not weaken, mock, or add bypasses to production trust/runtime code.
+  status: active
+  maturity: accepted
+  policy: mutable
+  revision: 8a94a91eb95b9d7ca9e87c66c6f7cfe492a21940
+  confidence: 1.0
+  updated_at: '2026-09-02T00:40:30+00:00'
+  source:
+    kind: task_constraint
+    task_id: T-0003
+  provenance:
+  - agent_interpreted_user_intent
+  - task_projection
+  payload:
+    text: Do not weaken, mock, or add bypasses to production trust/runtime code.
+- id: T-0003-C2
+  type: Constraint
+  title: Use interactive test doubles only inside tests; use Git-clean committed state
+    for automated benchmark setup.
+  status: active
+  maturity: accepted
+  policy: mutable
+  revision: 8a94a91eb95b9d7ca9e87c66c6f7cfe492a21940
+  confidence: 1.0
+  updated_at: '2026-09-02T00:40:30+00:00'
+  source:
+    kind: task_constraint
+    task_id: T-0003
+  provenance:
+  - agent_interpreted_user_intent
+  - task_projection
+  payload:
+    text: Use interactive test doubles only inside tests; use Git-clean committed
+      state for automated benchmark setup.
+- id: I-0001
+  type: Issue
+  title: Required verification 'test' did not pass
+  status: open
+  maturity: working
+  policy: mutable
+  revision: 8a94a91eb95b9d7ca9e87c66c6f7cfe492a21940
+  confidence: 1.0
+  updated_at: '2026-09-02T00:43:47+00:00'
+  source:
+    kind: review
+    task_id: T-0003
+  provenance:
+  - review
+  payload:
+    debt_id: null
+    evidence:
+      kind: verification_failure
+      result: fail
+      verification_id: V-0010
+    evidence_sufficient: true
+    relation_to_task: caused_by_patch
+    severity: major
+    violates: null
 - id: T-0001-AC1
   type: Requirement
   title: A repository-native SVG hero uses a black background and centers the integrated
@@ -366,6 +426,62 @@ nodes:
   payload:
     evidence: {}
     mandatory: true
+- id: T-0003-AC1
+  type: Requirement
+  title: Portable rehydration and dirty-state acceptance tests simulate an explicit
+    interactive operator instead of bypassing the runtime gate.
+  status: pending
+  maturity: proposed
+  policy: mutable
+  revision: 8a94a91eb95b9d7ca9e87c66c6f7cfe492a21940
+  confidence: 1.0
+  updated_at: '2026-09-02T00:40:30+00:00'
+  source:
+    kind: task_acceptance
+    task_id: T-0003
+  provenance:
+  - agent_interpreted_user_intent
+  - task_projection
+  payload:
+    evidence: {}
+    mandatory: true
+- id: T-0003-AC2
+  type: Requirement
+  title: The agentic benchmark builds its verification allowlist from clean committed
+    governance state and never invokes a user approval operation non-interactively.
+  status: pending
+  maturity: proposed
+  policy: mutable
+  revision: 8a94a91eb95b9d7ca9e87c66c6f7cfe492a21940
+  confidence: 1.0
+  updated_at: '2026-09-02T00:40:30+00:00'
+  source:
+    kind: task_acceptance
+    task_id: T-0003
+  provenance:
+  - agent_interpreted_user_intent
+  - task_projection
+  payload:
+    evidence: {}
+    mandatory: true
+- id: T-0003-AC3
+  type: Requirement
+  title: The full test suite, lint, and benchmark fixture smoke test pass.
+  status: pending
+  maturity: proposed
+  policy: mutable
+  revision: 8a94a91eb95b9d7ca9e87c66c6f7cfe492a21940
+  confidence: 1.0
+  updated_at: '2026-09-02T00:40:30+00:00'
+  source:
+    kind: task_acceptance
+    task_id: T-0003
+  provenance:
+  - agent_interpreted_user_intent
+  - task_projection
+  payload:
+    evidence: {}
+    mandatory: true
 - id: T-0001
   type: Task
   title: 'Redesign the PSG README product surface and hero: replace the illustrated
@@ -416,6 +532,28 @@ nodes:
       cannot bypass the interactive operator gate that currently exists only in the
       CLI.
     risk: high
+- id: T-0003
+  type: Task
+  title: Migrate the two legacy test fixtures and the agentic benchmark fixture to
+    the runtime-enforced USER_APPROVED boundary without weakening production behavior.
+  status: active
+  maturity: working
+  policy: mutable
+  revision: 8a94a91eb95b9d7ca9e87c66c6f7cfe492a21940
+  confidence: 1.0
+  updated_at: '2026-09-02T00:40:30+00:00'
+  source:
+    kind: psg_runtime
+  provenance:
+  - agent_interpreted_user_intent
+  - psg_runtime
+  payload:
+    builder_actor: codex
+    contract_version: 1
+    intent: Migrate the two legacy test fixtures and the agentic benchmark fixture
+      to the runtime-enforced USER_APPROVED boundary without weakening production
+      behavior.
+    risk: medium
 - id: V-0001
   type: Verification
   title: policy:mutation-boundary
@@ -440,10 +578,10 @@ nodes:
     required: true
     revision: 2d1c8210ead1bd723c8ffbbd516a3c279a1d5789
     evidence:
-      worktree_fingerprint: 914d1045b8d5324c7d29fc7f93d5fae60fb5329fb507b885ddd0c50fe84229d9
-      trust_tier: RUNTIME_ATTESTED
       source: runtime_executed
+      trust_tier: RUNTIME_ATTESTED
       phase: postflight
+      worktree_fingerprint: 914d1045b8d5324c7d29fc7f93d5fae60fb5329fb507b885ddd0c50fe84229d9
 - id: V-0002
   type: Verification
   title: test
@@ -468,15 +606,15 @@ nodes:
     required: true
     revision: 2d1c8210ead1bd723c8ffbbd516a3c279a1d5789
     evidence:
+      source: runtime_executed
+      kind: command_result
+      trust_tier: RUNTIME_ATTESTED
+      duration_seconds: 163.547
+      exit_code: 0
+      output_hash: sha256:7afc53a1537dbaa0ff7c2643a498acbf677c1c736c89e80e92325b693d34b29b
       worktree_fingerprint: c0609b2f49ef104bc696092b5872b7e764d0f76f83340403cb3c5815cdaca500
       check_name: test
       reference: local:verification/V-0002.log
-      trust_tier: RUNTIME_ATTESTED
-      exit_code: 0
-      source: runtime_executed
-      output_hash: sha256:7afc53a1537dbaa0ff7c2643a498acbf677c1c736c89e80e92325b693d34b29b
-      kind: command_result
-      duration_seconds: 163.547
 - id: V-0003
   type: Verification
   title: lint
@@ -501,15 +639,15 @@ nodes:
     required: true
     revision: 2d1c8210ead1bd723c8ffbbd516a3c279a1d5789
     evidence:
+      source: runtime_executed
+      kind: command_result
+      trust_tier: RUNTIME_ATTESTED
+      duration_seconds: 0.125
+      exit_code: 0
+      output_hash: sha256:82b3e6a6c090a57601d22943bd23fca9218d1031dbe5a7b754092f9a156b4f18
       worktree_fingerprint: c0609b2f49ef104bc696092b5872b7e764d0f76f83340403cb3c5815cdaca500
       check_name: lint
       reference: local:verification/V-0003.log
-      trust_tier: RUNTIME_ATTESTED
-      exit_code: 0
-      source: runtime_executed
-      output_hash: sha256:82b3e6a6c090a57601d22943bd23fca9218d1031dbe5a7b754092f9a156b4f18
-      kind: command_result
-      duration_seconds: 0.125
 - id: V-0004
   type: Verification
   title: policy:mutation-boundary
@@ -534,10 +672,10 @@ nodes:
     required: true
     revision: 2d1c8210ead1bd723c8ffbbd516a3c279a1d5789
     evidence:
-      worktree_fingerprint: 51daafcb3bed5f2ea0fdd94af7ec5d77ec94100b6235fae3d24de85eba151ea0
-      trust_tier: RUNTIME_ATTESTED
       source: runtime_executed
+      trust_tier: RUNTIME_ATTESTED
       phase: postflight
+      worktree_fingerprint: 51daafcb3bed5f2ea0fdd94af7ec5d77ec94100b6235fae3d24de85eba151ea0
 - id: V-0005
   type: Verification
   title: test
@@ -562,15 +700,15 @@ nodes:
     required: true
     revision: 2d1c8210ead1bd723c8ffbbd516a3c279a1d5789
     evidence:
+      source: runtime_executed
+      kind: command_result
+      trust_tier: RUNTIME_ATTESTED
+      duration_seconds: 159.844
+      exit_code: 0
+      output_hash: sha256:e929f6ed3e3d4e2e6aca90b16c31b4ac2f14c3650c30643ff3a976f372b158f2
       worktree_fingerprint: 51daafcb3bed5f2ea0fdd94af7ec5d77ec94100b6235fae3d24de85eba151ea0
       check_name: test
       reference: local:verification/V-0005.log
-      trust_tier: RUNTIME_ATTESTED
-      exit_code: 0
-      source: runtime_executed
-      output_hash: sha256:e929f6ed3e3d4e2e6aca90b16c31b4ac2f14c3650c30643ff3a976f372b158f2
-      kind: command_result
-      duration_seconds: 159.844
 - id: V-0006
   type: Verification
   title: lint
@@ -595,15 +733,15 @@ nodes:
     required: true
     revision: 2d1c8210ead1bd723c8ffbbd516a3c279a1d5789
     evidence:
+      source: runtime_executed
+      kind: command_result
+      trust_tier: RUNTIME_ATTESTED
+      duration_seconds: 0.14
+      exit_code: 0
+      output_hash: sha256:82b3e6a6c090a57601d22943bd23fca9218d1031dbe5a7b754092f9a156b4f18
       worktree_fingerprint: 51daafcb3bed5f2ea0fdd94af7ec5d77ec94100b6235fae3d24de85eba151ea0
       check_name: lint
       reference: local:verification/V-0006.log
-      trust_tier: RUNTIME_ATTESTED
-      exit_code: 0
-      source: runtime_executed
-      output_hash: sha256:82b3e6a6c090a57601d22943bd23fca9218d1031dbe5a7b754092f9a156b4f18
-      kind: command_result
-      duration_seconds: 0.14
 - id: V-0007
   type: Verification
   title: policy:mutation-boundary
@@ -628,10 +766,10 @@ nodes:
     required: true
     revision: 2d1c8210ead1bd723c8ffbbd516a3c279a1d5789
     evidence:
-      worktree_fingerprint: 51daafcb3bed5f2ea0fdd94af7ec5d77ec94100b6235fae3d24de85eba151ea0
-      trust_tier: RUNTIME_ATTESTED
       source: runtime_executed
+      trust_tier: RUNTIME_ATTESTED
       phase: ship_gate
+      worktree_fingerprint: 51daafcb3bed5f2ea0fdd94af7ec5d77ec94100b6235fae3d24de85eba151ea0
 - id: V-0008
   type: Verification
   title: policy:mutation-boundary
@@ -656,11 +794,112 @@ nodes:
     required: true
     revision: 3451a0fdd74999975e3c24adf643aba9fff73c30
     evidence:
-      worktree_fingerprint: 8abbab1bc1ad12ce61096e9b0aa9233b2887f5ad96dc4ddfec024d1d2943d4f7
-      trust_tier: RUNTIME_ATTESTED
       source: runtime_executed
+      trust_tier: RUNTIME_ATTESTED
       phase: postflight
+      worktree_fingerprint: 8abbab1bc1ad12ce61096e9b0aa9233b2887f5ad96dc4ddfec024d1d2943d4f7
+- id: V-0009
+  type: Verification
+  title: policy:mutation-boundary
+  status: pass
+  maturity: accepted
+  policy: mutable
+  revision: 8a94a91eb95b9d7ca9e87c66c6f7cfe492a21940
+  confidence: 1.0
+  updated_at: '2026-09-02T00:41:22+00:00'
+  source:
+    kind: runtime_executed
+    task_id: T-0003
+  provenance:
+  - runtime_attested
+  payload:
+    id: V-0009
+    task_id: T-0003
+    name: policy:mutation-boundary
+    kind: policy
+    command: null
+    result: pass
+    required: true
+    revision: 8a94a91eb95b9d7ca9e87c66c6f7cfe492a21940
+    evidence:
+      source: runtime_executed
+      trust_tier: RUNTIME_ATTESTED
+      phase: postflight
+      worktree_fingerprint: 1288ee37e8a99613eed61f6f23c818ebf76d3b9f9580cb22d2235816716bbb0d
+- id: V-0010
+  type: Verification
+  title: test
+  status: fail
+  maturity: working
+  policy: mutable
+  revision: 8a94a91eb95b9d7ca9e87c66c6f7cfe492a21940
+  confidence: 1.0
+  updated_at: '2026-09-02T00:43:47+00:00'
+  source:
+    kind: runtime_executed
+    task_id: T-0003
+  provenance:
+  - runtime_attested
+  payload:
+    id: V-0010
+    task_id: T-0003
+    name: test
+    kind: test
+    command: test
+    result: fail
+    required: true
+    revision: 8a94a91eb95b9d7ca9e87c66c6f7cfe492a21940
+    evidence:
+      source: runtime_executed
+      kind: command_result
+      trust_tier: RUNTIME_ATTESTED
+      duration_seconds: 137.125
+      exit_code: 1
+      output_hash: sha256:6b190f049cf4e20a744979bdc4226aa02347861e2e36621be1335e4284cbec57
+      worktree_fingerprint: 1288ee37e8a99613eed61f6f23c818ebf76d3b9f9580cb22d2235816716bbb0d
+      check_name: test
+      reference: local:verification/V-0010.log
+- id: V-0011
+  type: Verification
+  title: lint
+  status: pass
+  maturity: accepted
+  policy: mutable
+  revision: 8a94a91eb95b9d7ca9e87c66c6f7cfe492a21940
+  confidence: 1.0
+  updated_at: '2026-09-02T00:43:47+00:00'
+  source:
+    kind: runtime_executed
+    task_id: T-0003
+  provenance:
+  - runtime_attested
+  payload:
+    id: V-0011
+    task_id: T-0003
+    name: lint
+    kind: lint
+    command: lint
+    result: pass
+    required: true
+    revision: 8a94a91eb95b9d7ca9e87c66c6f7cfe492a21940
+    evidence:
+      source: runtime_executed
+      kind: command_result
+      trust_tier: RUNTIME_ATTESTED
+      duration_seconds: 0.157
+      exit_code: 0
+      output_hash: sha256:82b3e6a6c090a57601d22943bd23fca9218d1031dbe5a7b754092f9a156b4f18
+      worktree_fingerprint: 1288ee37e8a99613eed61f6f23c818ebf76d3b9f9580cb22d2235816716bbb0d
+      check_name: lint
+      reference: local:verification/V-0011.log
 edges:
+- src: I-0001
+  type: introduced-by
+  dst: T-0003
+  confidence: 1.0
+  provenance: runtime_projection
+  revision: 8a94a91eb95b9d7ca9e87c66c6f7cfe492a21940
+  created_at: '2026-09-02T00:43:47+00:00'
 - src: T-0001
   type: constrained-by
   dst: T-0001-C1
@@ -1368,6 +1607,104 @@ edges:
   provenance: task_projection
   revision: 3451a0fdd74999975e3c24adf643aba9fff73c30
   created_at: '2026-09-01T16:37:22+00:00'
+- src: T-0003
+  type: constrained-by
+  dst: T-0003-C1
+  confidence: 1.0
+  provenance: task_projection
+  revision: 8a94a91eb95b9d7ca9e87c66c6f7cfe492a21940
+  created_at: '2026-09-02T00:40:30+00:00'
+- src: T-0003
+  type: constrained-by
+  dst: T-0003-C2
+  confidence: 1.0
+  provenance: task_projection
+  revision: 8a94a91eb95b9d7ca9e87c66c6f7cfe492a21940
+  created_at: '2026-09-02T00:40:30+00:00'
+- src: T-0003
+  type: requires
+  dst: T-0003-AC1
+  confidence: 1.0
+  provenance: task_projection
+  revision: 8a94a91eb95b9d7ca9e87c66c6f7cfe492a21940
+  created_at: '2026-09-02T00:40:30+00:00'
+- src: T-0003
+  type: requires
+  dst: T-0003-AC2
+  confidence: 1.0
+  provenance: task_projection
+  revision: 8a94a91eb95b9d7ca9e87c66c6f7cfe492a21940
+  created_at: '2026-09-02T00:40:30+00:00'
+- src: T-0003
+  type: requires
+  dst: T-0003-AC3
+  confidence: 1.0
+  provenance: task_projection
+  revision: 8a94a91eb95b9d7ca9e87c66c6f7cfe492a21940
+  created_at: '2026-09-02T00:40:30+00:00'
+- src: T-0003
+  type: verified-by
+  dst: V-0009
+  confidence: 1.0
+  provenance: runtime_projection
+  revision: 8a94a91eb95b9d7ca9e87c66c6f7cfe492a21940
+  created_at: '2026-09-02T00:41:22+00:00'
+- src: T-0003
+  type: verified-by
+  dst: V-0010
+  confidence: 1.0
+  provenance: runtime_projection
+  revision: 8a94a91eb95b9d7ca9e87c66c6f7cfe492a21940
+  created_at: '2026-09-02T00:43:47+00:00'
+- src: T-0003
+  type: verified-by
+  dst: V-0011
+  confidence: 1.0
+  provenance: runtime_projection
+  revision: 8a94a91eb95b9d7ca9e87c66c6f7cfe492a21940
+  created_at: '2026-09-02T00:43:47+00:00'
+- src: T-0003-AC1
+  type: targets
+  dst: file:benchmarks/agentic_ab.py
+  confidence: 1.0
+  provenance: task_projection
+  revision: 8a94a91eb95b9d7ca9e87c66c6f7cfe492a21940
+  created_at: '2026-09-02T00:40:30+00:00'
+- src: T-0003-AC1
+  type: targets
+  dst: file:tests/test_index_router.py
+  confidence: 1.0
+  provenance: task_projection
+  revision: 8a94a91eb95b9d7ca9e87c66c6f7cfe492a21940
+  created_at: '2026-09-02T00:40:30+00:00'
+- src: T-0003-AC2
+  type: targets
+  dst: file:benchmarks/agentic_ab.py
+  confidence: 1.0
+  provenance: task_projection
+  revision: 8a94a91eb95b9d7ca9e87c66c6f7cfe492a21940
+  created_at: '2026-09-02T00:40:30+00:00'
+- src: T-0003-AC2
+  type: targets
+  dst: file:tests/test_index_router.py
+  confidence: 1.0
+  provenance: task_projection
+  revision: 8a94a91eb95b9d7ca9e87c66c6f7cfe492a21940
+  created_at: '2026-09-02T00:40:30+00:00'
+- src: T-0003-AC3
+  type: targets
+  dst: file:benchmarks/agentic_ab.py
+  confidence: 1.0
+  provenance: task_projection
+  revision: 8a94a91eb95b9d7ca9e87c66c6f7cfe492a21940
+  created_at: '2026-09-02T00:40:30+00:00'
+- src: T-0003-AC3
+  type: targets
+  dst: file:tests/test_index_router.py
+  confidence: 1.0
+  provenance: task_projection
+  revision: 8a94a91eb95b9d7ca9e87c66c6f7cfe492a21940
+  created_at: '2026-09-02T00:40:30+00:00'
 tasks:
 - id: T-0001
   intent: 'Redesign the PSG README product surface and hero: replace the illustrated
@@ -1648,10 +1985,10 @@ tasks:
     revision: 2d1c8210ead1bd723c8ffbbd516a3c279a1d5789
     created_at: '2026-09-01T16:27:49+00:00'
     evidence:
-      worktree_fingerprint: 914d1045b8d5324c7d29fc7f93d5fae60fb5329fb507b885ddd0c50fe84229d9
-      trust_tier: RUNTIME_ATTESTED
       source: runtime_executed
+      trust_tier: RUNTIME_ATTESTED
       phase: postflight
+      worktree_fingerprint: 914d1045b8d5324c7d29fc7f93d5fae60fb5329fb507b885ddd0c50fe84229d9
   - id: V-0002
     task_id: T-0001
     name: test
@@ -1662,15 +1999,15 @@ tasks:
     revision: 2d1c8210ead1bd723c8ffbbd516a3c279a1d5789
     created_at: '2026-09-01T16:30:37+00:00'
     evidence:
+      source: runtime_executed
+      kind: command_result
+      trust_tier: RUNTIME_ATTESTED
+      duration_seconds: 163.547
+      exit_code: 0
+      output_hash: sha256:7afc53a1537dbaa0ff7c2643a498acbf677c1c736c89e80e92325b693d34b29b
       worktree_fingerprint: c0609b2f49ef104bc696092b5872b7e764d0f76f83340403cb3c5815cdaca500
       check_name: test
       reference: local:verification/V-0002.log
-      trust_tier: RUNTIME_ATTESTED
-      exit_code: 0
-      source: runtime_executed
-      output_hash: sha256:7afc53a1537dbaa0ff7c2643a498acbf677c1c736c89e80e92325b693d34b29b
-      kind: command_result
-      duration_seconds: 163.547
   - id: V-0003
     task_id: T-0001
     name: lint
@@ -1681,15 +2018,15 @@ tasks:
     revision: 2d1c8210ead1bd723c8ffbbd516a3c279a1d5789
     created_at: '2026-09-01T16:30:37+00:00'
     evidence:
+      source: runtime_executed
+      kind: command_result
+      trust_tier: RUNTIME_ATTESTED
+      duration_seconds: 0.125
+      exit_code: 0
+      output_hash: sha256:82b3e6a6c090a57601d22943bd23fca9218d1031dbe5a7b754092f9a156b4f18
       worktree_fingerprint: c0609b2f49ef104bc696092b5872b7e764d0f76f83340403cb3c5815cdaca500
       check_name: lint
       reference: local:verification/V-0003.log
-      trust_tier: RUNTIME_ATTESTED
-      exit_code: 0
-      source: runtime_executed
-      output_hash: sha256:82b3e6a6c090a57601d22943bd23fca9218d1031dbe5a7b754092f9a156b4f18
-      kind: command_result
-      duration_seconds: 0.125
   - id: V-0004
     task_id: T-0001
     name: policy:mutation-boundary
@@ -1700,10 +2037,10 @@ tasks:
     revision: 2d1c8210ead1bd723c8ffbbd516a3c279a1d5789
     created_at: '2026-09-01T16:32:32+00:00'
     evidence:
-      worktree_fingerprint: 51daafcb3bed5f2ea0fdd94af7ec5d77ec94100b6235fae3d24de85eba151ea0
-      trust_tier: RUNTIME_ATTESTED
       source: runtime_executed
+      trust_tier: RUNTIME_ATTESTED
       phase: postflight
+      worktree_fingerprint: 51daafcb3bed5f2ea0fdd94af7ec5d77ec94100b6235fae3d24de85eba151ea0
   - id: V-0005
     task_id: T-0001
     name: test
@@ -1714,15 +2051,15 @@ tasks:
     revision: 2d1c8210ead1bd723c8ffbbd516a3c279a1d5789
     created_at: '2026-09-01T16:35:16+00:00'
     evidence:
+      source: runtime_executed
+      kind: command_result
+      trust_tier: RUNTIME_ATTESTED
+      duration_seconds: 159.844
+      exit_code: 0
+      output_hash: sha256:e929f6ed3e3d4e2e6aca90b16c31b4ac2f14c3650c30643ff3a976f372b158f2
       worktree_fingerprint: 51daafcb3bed5f2ea0fdd94af7ec5d77ec94100b6235fae3d24de85eba151ea0
       check_name: test
       reference: local:verification/V-0005.log
-      trust_tier: RUNTIME_ATTESTED
-      exit_code: 0
-      source: runtime_executed
-      output_hash: sha256:e929f6ed3e3d4e2e6aca90b16c31b4ac2f14c3650c30643ff3a976f372b158f2
-      kind: command_result
-      duration_seconds: 159.844
   - id: V-0006
     task_id: T-0001
     name: lint
@@ -1733,15 +2070,15 @@ tasks:
     revision: 2d1c8210ead1bd723c8ffbbd516a3c279a1d5789
     created_at: '2026-09-01T16:35:17+00:00'
     evidence:
+      source: runtime_executed
+      kind: command_result
+      trust_tier: RUNTIME_ATTESTED
+      duration_seconds: 0.14
+      exit_code: 0
+      output_hash: sha256:82b3e6a6c090a57601d22943bd23fca9218d1031dbe5a7b754092f9a156b4f18
       worktree_fingerprint: 51daafcb3bed5f2ea0fdd94af7ec5d77ec94100b6235fae3d24de85eba151ea0
       check_name: lint
       reference: local:verification/V-0006.log
-      trust_tier: RUNTIME_ATTESTED
-      exit_code: 0
-      source: runtime_executed
-      output_hash: sha256:82b3e6a6c090a57601d22943bd23fca9218d1031dbe5a7b754092f9a156b4f18
-      kind: command_result
-      duration_seconds: 0.14
   - id: V-0007
     task_id: T-0001
     name: policy:mutation-boundary
@@ -1752,10 +2089,10 @@ tasks:
     revision: 2d1c8210ead1bd723c8ffbbd516a3c279a1d5789
     created_at: '2026-09-01T16:36:01+00:00'
     evidence:
-      worktree_fingerprint: 51daafcb3bed5f2ea0fdd94af7ec5d77ec94100b6235fae3d24de85eba151ea0
-      trust_tier: RUNTIME_ATTESTED
       source: runtime_executed
+      trust_tier: RUNTIME_ATTESTED
       phase: ship_gate
+      worktree_fingerprint: 51daafcb3bed5f2ea0fdd94af7ec5d77ec94100b6235fae3d24de85eba151ea0
 - id: T-0002
   intent: Harden USER_APPROVED at the runtime boundary so direct Python callers cannot
     bypass the interactive operator gate that currently exists only in the CLI.
@@ -2147,9 +2484,273 @@ tasks:
     revision: 3451a0fdd74999975e3c24adf643aba9fff73c30
     created_at: '2026-09-02T00:39:59+00:00'
     evidence:
-      worktree_fingerprint: 8abbab1bc1ad12ce61096e9b0aa9233b2887f5ad96dc4ddfec024d1d2943d4f7
-      trust_tier: RUNTIME_ATTESTED
       source: runtime_executed
+      trust_tier: RUNTIME_ATTESTED
       phase: postflight
-generated_at: '2026-09-02T00:39:59+00:00'
+      worktree_fingerprint: 8abbab1bc1ad12ce61096e9b0aa9233b2887f5ad96dc4ddfec024d1d2943d4f7
+- id: T-0003
+  intent: Migrate the two legacy test fixtures and the agentic benchmark fixture to
+    the runtime-enforced USER_APPROVED boundary without weakening production behavior.
+  status: open
+  risk: medium
+  context_budget: 12000
+  review_budget: 1
+  fix_budget: 1
+  review_rounds: 0
+  fix_cycles: 0
+  no_new_blocking_rounds: 0
+  baseline_snapshot: S-0004
+  baseline_git_rev: 8a94a91eb95b9d7ca9e87c66c6f7cfe492a21940
+  graph_rev: 326
+  created_at: '2026-09-02T00:40:30+00:00'
+  updated_at: '2026-09-02T00:40:31+00:00'
+  payload:
+    authorized_forbidden:
+    - .github/**
+    - README*.md
+    - artifacts/**
+    - docs/**
+    - src/psg/**
+    authorized_read_only:
+    - src/psg/portable.py
+    - src/psg/runtime.py
+    - src/psg/trust.py
+    authorized_write:
+    - benchmarks/agentic_ab.py
+    - tests/test_index_router.py
+    builder_actor: codex
+    completion_boundary:
+      current_task_blockers: 0
+      evidence_fresh: true
+      fix_budget: 1
+      high_risk_review: false
+      mandatory_acceptance: pass_or_approved_waiver
+      mutation_guardrail: pass
+      required_verification: passing_fresh_trusted
+      review_budget: 1
+      stop_when_shippable: true
+    constraints:
+    - Do not weaken, mock, or add bypasses to production trust/runtime code.
+    - Use interactive test doubles only inside tests; use Git-clean committed state
+      for automated benchmark setup.
+    context_confidence: 0.95
+    context_node_ids:
+    - file:benchmarks/agentic_ab.py
+    - file:tests/test_index_router.py
+    - T-0003
+    - file:src/psg/config.py
+    - file:src/psg/runtime.py
+    - file:src/psg/__init__.py
+    - file:src/psg/portable.py
+    - T-0003-AC3
+    - symbol:benchmarks/agentic_ab.py:main
+    - symbol:benchmarks/agentic_ab.py:AgentTask
+    - T-0003-AC1
+    - T-0003-C1
+    - T-0003-AC2
+    - symbol:benchmarks/agentic_ab.py:_skill_digest
+    - symbol:benchmarks/agentic_ab.py:_changed_paths
+    - symbol:benchmarks/agentic_ab.py:_json_events
+    - symbol:benchmarks/agentic_ab.py:_path_pattern
+    - symbol:benchmarks/agentic_ab.py:_run_provenance
+    - symbol:benchmarks/agentic_ab.py:_sanitizer.sanitize
+    - symbol:benchmarks/agentic_ab.py:_run_tests
+    - symbol:benchmarks/agentic_ab.py:_sanitizer
+    - symbol:benchmarks/agentic_ab.py:_extract_usage
+    - symbol:benchmarks/agentic_ab.py:_open_contract
+    - symbol:benchmarks/agentic_ab.py:_psg_outcome
+    - symbol:benchmarks/agentic_ab.py:_trace_file_reads.visit
+    - symbol:benchmarks/agentic_ab.py:_write_base_repository
+    - symbol:benchmarks/agentic_ab.py:run_benchmark.aggregate
+    - symbol:benchmarks/agentic_ab.py:_run_agent
+    - symbol:benchmarks/agentic_ab.py:_run
+    - T-0003-C2
+    - symbol:benchmarks/agentic_ab.py:_trace_file_reads
+    - symbol:tests/test_index_router.py:test_context_expansion_requires_evidence
+    - symbol:tests/test_index_router.py:test_task_tables_are_projected_into_graph
+    - symbol:tests/test_index_router.py:test_router_builds_impact_aware_working_set
+    - symbol:tests/test_index_router.py:test_independent_clients_share_project_state
+    - symbol:tests/test_index_router.py:test_incremental_python_index_and_persistence
+    - symbol:tests/test_index_router.py:test_incremental_index_only_updates_changed_file
+    - symbol:tests/test_index_router.py:test_portable_state_rehydrates_a_fresh_checkout
+    - symbol:tests/test_index_router.py:test_router_uses_task_edges_and_symbol_lexical_fallback
+    - symbol:tests/test_index_router.py:test_structured_psg_debt_annotation_becomes_graph_node
+    - symbol:benchmarks/agentic_ab.py:run_benchmark
+    - symbol:tests/test_index_router.py:test_dirty_config_cannot_replace_verification_allowlist
+    - symbol:tests/test_index_router.py:test_psg_debt_marker_inside_python_string_is_not_an_annotation
+    - symbol:tests/test_index_router.py:test_dirty_portable_state_is_rejected_until_explicit_acceptance
+    contract_hash: sha256:96183b7e9db486b576eddacffcce39d49f8d2468ccb5e93a220735489776be66
+    contract_state: sealed
+    contract_version: 1
+    dependency_justifications: []
+    forbidden:
+    - src/psg/**
+    - README*.md
+    - docs/**
+    - .github/**
+    - artifacts/**
+    governance_baseline:
+      .psg/.gitignore: a7d8bdcefba82a95ebc021d87c629fdea21f13af953bf01e28b7cf8b0eeceb41
+      .psg/config.yaml: 62e14a38e58c105ecafd2ab23333b8450961f52b472796fc3c38767ad5daa8ec
+      .psg/policies.yaml: 227671c9d72980e62ca57b7bf3191ed3bfb889849662f881a5900c91fd91328f
+    localization:
+      candidates:
+      - benchmarks/agentic_ab.py
+      - tests/test_index_router.py
+      kind: declared_targets
+    non_goals:
+    - Change any production API or approval rule.
+    - Alter benchmark tasks, metrics, or published results.
+    read_only:
+    - src/psg/runtime.py
+    - src/psg/trust.py
+    - src/psg/portable.py
+    requires_scope_approval: false
+    review_boundary:
+      blocking_relations:
+      - caused_by_patch
+      - violates_acceptance
+      - violates_project_constraint
+      blocking_severities:
+      - blocker
+      - major
+      follow_up_relations:
+      - future_improvement
+      - pre_existing
+      - unrelated
+      no_scope_expansion_by_review: true
+      requires_sufficient_evidence: true
+    scope_approval_reasons: []
+    targets:
+    - tests/test_index_router.py
+    - benchmarks/agentic_ab.py
+    working_set:
+      forbidden:
+      - .github/**
+      - README*.md
+      - artifacts/**
+      - docs/**
+      - src/psg/**
+      rationale:
+        .github/**: explicit forbidden scope
+        README*.md: explicit forbidden scope
+        artifacts/**: explicit forbidden scope
+        benchmarks/agentic_ab.py: explicit/target write scope
+        docs/**: explicit forbidden scope
+        src/psg/**: explicit forbidden scope
+        src/psg/__init__.py: dependency, reverse dependency, contract, or verification
+          context
+        src/psg/config.py: dependency, reverse dependency, contract, or verification
+          context
+        src/psg/portable.py: read-only boundary (node:file:src/psg/portable.py)
+        src/psg/runtime.py: read-only boundary (node:file:src/psg/runtime.py)
+        src/psg/trust.py: explicit read-only scope
+        tests/test_index_router.py: explicit/target write scope
+      read:
+      - src/psg/__init__.py
+      - src/psg/config.py
+      read_only:
+      - src/psg/portable.py
+      - src/psg/runtime.py
+      - src/psg/trust.py
+      write:
+      - benchmarks/agentic_ab.py
+      - tests/test_index_router.py
+    write:
+    - tests/test_index_router.py
+    - benchmarks/agentic_ab.py
+  criteria:
+  - id: T-0003-AC1
+    task_id: T-0003
+    text: Portable rehydration and dirty-state acceptance tests simulate an explicit
+      interactive operator instead of bypassing the runtime gate.
+    mandatory: true
+    status: pending
+    evidence: {}
+  - id: T-0003-AC2
+    task_id: T-0003
+    text: The agentic benchmark builds its verification allowlist from clean committed
+      governance state and never invokes a user approval operation non-interactively.
+    mandatory: true
+    status: pending
+    evidence: {}
+  - id: T-0003-AC3
+    task_id: T-0003
+    text: The full test suite, lint, and benchmark fixture smoke test pass.
+    mandatory: true
+    status: pending
+    evidence: {}
+  issues:
+  - id: I-0001
+    task_id: T-0003
+    severity: major
+    claim: Required verification 'test' did not pass
+    violates: null
+    introduced_by_patch: null
+    resolved_by_patch: null
+    status: open
+    created_at: '2026-09-02T00:43:47+00:00'
+    updated_at: '2026-09-02T00:43:47+00:00'
+    relation_to_task: caused_by_patch
+    evidence_sufficient: true
+    evidence:
+      kind: verification_failure
+      result: fail
+      verification_id: V-0010
+    affected_nodes: []
+    blocks_current_task: true
+  verifications:
+  - id: V-0009
+    task_id: T-0003
+    name: policy:mutation-boundary
+    kind: policy
+    command: null
+    result: pass
+    required: true
+    revision: 8a94a91eb95b9d7ca9e87c66c6f7cfe492a21940
+    created_at: '2026-09-02T00:41:22+00:00'
+    evidence:
+      source: runtime_executed
+      trust_tier: RUNTIME_ATTESTED
+      phase: postflight
+      worktree_fingerprint: 1288ee37e8a99613eed61f6f23c818ebf76d3b9f9580cb22d2235816716bbb0d
+  - id: V-0010
+    task_id: T-0003
+    name: test
+    kind: test
+    command: test
+    result: fail
+    required: true
+    revision: 8a94a91eb95b9d7ca9e87c66c6f7cfe492a21940
+    created_at: '2026-09-02T00:43:46+00:00'
+    evidence:
+      source: runtime_executed
+      kind: command_result
+      trust_tier: RUNTIME_ATTESTED
+      duration_seconds: 137.125
+      exit_code: 1
+      output_hash: sha256:6b190f049cf4e20a744979bdc4226aa02347861e2e36621be1335e4284cbec57
+      worktree_fingerprint: 1288ee37e8a99613eed61f6f23c818ebf76d3b9f9580cb22d2235816716bbb0d
+      check_name: test
+      reference: local:verification/V-0010.log
+  - id: V-0011
+    task_id: T-0003
+    name: lint
+    kind: lint
+    command: lint
+    result: pass
+    required: true
+    revision: 8a94a91eb95b9d7ca9e87c66c6f7cfe492a21940
+    created_at: '2026-09-02T00:43:46+00:00'
+    evidence:
+      source: runtime_executed
+      kind: command_result
+      trust_tier: RUNTIME_ATTESTED
+      duration_seconds: 0.157
+      exit_code: 0
+      output_hash: sha256:82b3e6a6c090a57601d22943bd23fca9218d1031dbe5a7b754092f9a156b4f18
+      worktree_fingerprint: 1288ee37e8a99613eed61f6f23c818ebf76d3b9f9580cb22d2235816716bbb0d
+      check_name: lint
+      reference: local:verification/V-0011.log
+generated_at: '2026-09-02T00:43:47+00:00'
 config_hash: 62e14a38e58c105ecafd2ab23333b8450961f52b472796fc3c38767ad5daa8ec

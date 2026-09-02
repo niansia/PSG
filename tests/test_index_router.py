@@ -1,9 +1,17 @@
 from __future__ import annotations
 
+import sys
+
 import yaml
 
 from psg.portable import PortableStateTrustError
 from psg.runtime import PSG
+
+
+def allow_operator_approval(monkeypatch) -> None:
+    monkeypatch.setattr(sys.stdin, "isatty", lambda: True, raising=False)
+    monkeypatch.setattr(sys.stdout, "isatty", lambda: True, raising=False)
+    monkeypatch.setattr("builtins.input", lambda *_: "APPROVE")
 
 
 def test_incremental_python_index_and_persistence(graph: PSG) -> None:
@@ -112,9 +120,12 @@ def test_task_tables_are_projected_into_graph(graph: PSG) -> None:
     )
 
 
-def test_portable_state_rehydrates_a_fresh_checkout(graph: PSG, repo, tmp_path) -> None:
+def test_portable_state_rehydrates_a_fresh_checkout(
+    graph: PSG, repo, tmp_path, monkeypatch
+) -> None:
     from conftest import run
 
+    allow_operator_approval(monkeypatch)
     graph.decision_record(
         decision_id="D-portable",
         statement="Freeze the backend algorithm",
@@ -188,7 +199,7 @@ def test_router_uses_task_edges_and_symbol_lexical_fallback(graph: PSG) -> None:
 
 
 def test_dirty_portable_state_is_rejected_until_explicit_acceptance(
-    graph: PSG, repo
+    graph: PSG, repo, monkeypatch
 ) -> None:
     opened = graph.task_open(
         intent="Portable tamper boundary",
@@ -210,6 +221,7 @@ def test_dirty_portable_state_is_rejected_until_explicit_acceptance(
     else:
         raise AssertionError("Dirty portable state must not auto-import")
 
+    allow_operator_approval(monkeypatch)
     accepted = PSG.accept_portable_state(repo, reason="Reviewed test state change")
     assert accepted["accepted"] is True
     reloaded = PSG(repo)

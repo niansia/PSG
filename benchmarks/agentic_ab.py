@@ -193,9 +193,11 @@ def _write_base_repository(root: Path) -> str:
         }
     }
     save_yaml(graph.paths.config, graph.config)
-    PSG.accept_portable_state(
-        root, reason="Benchmark fixture defines its allowlisted test command"
-    )
+    # Automated fixtures cannot mint USER_APPROVED. Commit the reviewed fixture
+    # configuration first so the next runtime imports it through the clean-Git
+    # portable-state path used after a checkout or pull.
+    _run(root, "git", "add", ".")
+    _run(root, "git", "commit", "-m", "configure PSG benchmark fixture")
     graph = PSG(root)
     graph.index(force=True)
     _run(root, "git", "add", ".")
