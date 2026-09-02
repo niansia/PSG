@@ -2,6 +2,36 @@
 
 All notable changes to PSG are recorded here. Versions follow [semantic versioning](https://semver.org/).
 
+## [1.1.3] — 2026-09-02
+
+The release-identity correction and runtime approval hardening release. The existing v1.1.2
+tag and Release remain immutable; v1.1.3 is the first release to include every hardening and
+documentation change made after that tag under a new version identity.
+
+### Security
+
+- **`USER_APPROVED` is enforced at the Runtime boundary.** Direct Python callers can no
+  longer bypass the interactive operator gate used by the CLI. Runtime approval operations
+  fail closed without an interactive terminal and the literal operator confirmation.
+
+### Fixed
+
+- **Release identity is one-to-one again.** The tracked v1.1.2 wheel and Skill archive are
+  restored to the exact bytes published by the immutable v1.1.2 Release. New v1.1.3 artifacts
+  are validated against the v1.1.3 source, clean-installed, checksummed, and published only
+  under the v1.1.3 tag.
+- **The historical agentic A/B table is unmistakably marked superseded** in all four README
+  translations. It remains available for transparency, but is not presented as evidence for
+  the current release because the run loaded an older installed Skill than the Runtime under
+  test and predates the current localization behavior.
+
+### Changed
+
+- The README product surface is shorter and task-boundary-first, with a shared branded SVG
+  workflow diagram and a compact dark-canvas PSG identity.
+- Release tests now compare every Python file inside the tracked wheel with `src/psg` byte for
+  byte, in addition to validating the complete Skill bundle and clean-install behavior.
+
 ## [1.1.2] — 2026-09-02
 
 The enforcement release. v1.1.1 sealed the write boundary but still trusted a prompt to stop
@@ -228,6 +258,7 @@ to expansion by review.
   policy engine, verification and trust tiers, convergence and ship gate, installable
   Skill bundle, and the `psg` CLI plus `psg-mcp` server.
 
+[1.1.3]: https://github.com/niansia/PSG/releases/tag/v1.1.3
 [1.1.2]: https://github.com/niansia/PSG/releases/tag/v1.1.2
 [1.1.1]: https://github.com/niansia/PSG/releases/tag/v1.1.1
 [1.1.0]: https://github.com/niansia/PSG/releases/tag/v1.1.0

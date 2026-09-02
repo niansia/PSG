@@ -10,7 +10,7 @@ ROOT = Path(__file__).resolve().parents[1]
 
 def test_skill_source_and_release_archive_are_complete_and_in_sync() -> None:
     source = ROOT / "skills" / "psg"
-    archive = ROOT / "artifacts" / "psg-skill-v1.1.2.zip"
+    archive = ROOT / "artifacts" / "psg-skill-v1.1.3.zip"
     required = {
         "psg/SKILL.md",
         "psg/agents/openai.yaml",
@@ -29,7 +29,7 @@ def test_skill_source_and_release_archive_are_complete_and_in_sync() -> None:
 
 def test_runtime_wheel_embeds_the_complete_skill_bundle() -> None:
     source = ROOT / "skills" / "psg"
-    wheel = ROOT / "artifacts" / "psg_runtime-1.1.2-py3-none-any.whl"
+    wheel = ROOT / "artifacts" / "psg_runtime-1.1.3-py3-none-any.whl"
     relative_files = {
         Path("SKILL.md"),
         Path("agents/openai.yaml"),
@@ -59,7 +59,7 @@ def test_runtime_wheel_embeds_the_complete_skill_bundle() -> None:
 
 def test_runtime_wheel_ships_only_this_project() -> None:
     """A reused setuptools build directory silently smuggles stale packages into the wheel."""
-    wheel = ROOT / "artifacts" / "psg_runtime-1.1.2-py3-none-any.whl"
+    wheel = ROOT / "artifacts" / "psg_runtime-1.1.3-py3-none-any.whl"
     with zipfile.ZipFile(wheel) as bundle:
         names = bundle.namelist()
         top_level = {name.split("/", 1)[0] for name in names if "/" in name}
@@ -76,6 +76,20 @@ def test_runtime_wheel_ships_only_this_project() -> None:
             name for name in names if name.endswith(".py") and crlf in bundle.read(name)
         ]
         assert not carriage, f"wheel carries CRLF line endings: {carriage}"
+
+
+def test_runtime_wheel_matches_every_python_source_byte_for_byte() -> None:
+    """A release wheel must represent this checkout, not a similarly named build."""
+    source_root = ROOT / "src"
+    wheel = ROOT / "artifacts" / "psg_runtime-1.1.3-py3-none-any.whl"
+    with zipfile.ZipFile(wheel) as bundle:
+        names = set(bundle.namelist())
+        for source in sorted((source_root / "psg").rglob("*.py")):
+            archive_name = source.relative_to(source_root).as_posix()
+            assert archive_name in names, f"wheel is missing source: {archive_name}"
+            assert bundle.read(archive_name) == source.read_bytes(), (
+                f"wheel diverges from source: {archive_name}"
+            )
 
 
 TRANSLATIONS = {

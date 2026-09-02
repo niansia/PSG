@@ -17,13 +17,13 @@ PSG はコーディングエージェントに永続的なタスク境界とプ�
 ### Windows
 
 ```powershell
-python -m pip install "psg-runtime[mcp] @ git+https://github.com/niansia/PSG.git@v1.1.2"; psg setup
+python -m pip install "psg-runtime[mcp] @ git+https://github.com/niansia/PSG.git@v1.1.3"; psg setup
 ```
 
 ### macOS / Linux
 
 ```bash
-python3 -m pip install "psg-runtime[mcp] @ git+https://github.com/niansia/PSG.git@v1.1.2" && psg setup
+python3 -m pip install "psg-runtime[mcp] @ git+https://github.com/niansia/PSG.git@v1.1.3" && psg setup
 ```
 
 次に、Git プロジェクト内で実行します。
@@ -81,9 +81,13 @@ SHIPPABLE
 
 一般レビューはそこで終わります。
 
-## 測定結果：PSG OFF vs ON
+## 過去の A/B 結果（現在は無効）
 
-同じモデル、プロンプト、repository baseline を使用した、Codex CLI の 10 組のペアタスクです。この統制実験は最新のローカライズ変更より前のものであり、測定時点のトレードオフを示す証拠であって、現在の性能予測ではありません。
+> **証拠の状態：Superseded。**
+
+**この実験は透明性のために保存していますが、現行 PSG リリースの証拠ではありません。当時 Codex が読み込んだ PSG Skill は、テスト対象の Runtime より古く、その後ローカライズも変更されました。これらの数値から現行版の PSG OFF/ON 性能を主張することはありません。**
+
+この過去の実験には、同じモデル、プロンプト、repository baseline を使用した Codex CLI の 10 組のペアタスクが含まれます。
 
 | 指標 | PSG OFF | PSG ON |
 | --- | ---: | ---: |

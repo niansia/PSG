@@ -17,13 +17,13 @@ PSG 為 coding agent 提供持久的任務邊界與專案狀態，不必讓每�
 ### Windows
 
 ```powershell
-python -m pip install "psg-runtime[mcp] @ git+https://github.com/niansia/PSG.git@v1.1.2"; psg setup
+python -m pip install "psg-runtime[mcp] @ git+https://github.com/niansia/PSG.git@v1.1.3"; psg setup
 ```
 
 ### macOS / Linux
 
 ```bash
-python3 -m pip install "psg-runtime[mcp] @ git+https://github.com/niansia/PSG.git@v1.1.2" && psg setup
+python3 -m pip install "psg-runtime[mcp] @ git+https://github.com/niansia/PSG.git@v1.1.3" && psg setup
 ```
 
 接著在 Git 專案內執行：
@@ -81,9 +81,13 @@ SHIPPABLE
 
 一般性 review 到此停止。
 
-## 實測結果：PSG OFF vs ON
+## 歷史 A/B 結果（已被取代）
 
-10 組配對的 Codex CLI 任務，使用相同模型、prompt 與 repository baseline。這次受控測試早於最新的定位邏輯，因此它呈現的是當時量到的取捨，不是對目前效能的預測。
+> **證據狀態：Superseded。**
+
+**保留這次測試是為了透明揭露，但它不是目前 PSG 版本的證據。當時 Codex 載入的 PSG Skill 比受測 Runtime 更舊，定位邏輯之後也已改變，因此這些數字不代表目前版本的 PSG OFF/ON 效能。**
+
+這次歷史測試包含 10 組配對的 Codex CLI 任務，使用相同模型、prompt 與 repository baseline。
 
 | 指標 | PSG OFF | PSG ON |
 | --- | ---: | ---: |

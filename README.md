@@ -17,13 +17,13 @@ PSG gives coding agents a persistent task boundary and project state instead of 
 ### Windows
 
 ```powershell
-python -m pip install "psg-runtime[mcp] @ git+https://github.com/niansia/PSG.git@v1.1.2"; psg setup
+python -m pip install "psg-runtime[mcp] @ git+https://github.com/niansia/PSG.git@v1.1.3"; psg setup
 ```
 
 ### macOS / Linux
 
 ```bash
-python3 -m pip install "psg-runtime[mcp] @ git+https://github.com/niansia/PSG.git@v1.1.2" && psg setup
+python3 -m pip install "psg-runtime[mcp] @ git+https://github.com/niansia/PSG.git@v1.1.3" && psg setup
 ```
 
 Then, inside a Git project:
@@ -81,9 +81,13 @@ SHIPPABLE
 
 General review stops there.
 
-## Measured result: PSG OFF vs ON
+## Historical A/B result — superseded
 
-10 matched Codex CLI task pairs, using the same model, prompt, and repository baseline. This controlled run predates the latest localization changes, so it is evidence of the measured trade-off—not a prediction of current performance.
+> **Evidence status: Superseded.**
+
+**This run is preserved for transparency, but it is not evidence for the current PSG release. Codex loaded an older installed PSG Skill than the runtime under test, and localization has since changed. No current-version OFF-versus-ON performance claim is made from these numbers.**
+
+The historical run contains 10 matched Codex CLI task pairs using the same model, prompt, and repository baseline.
 
 | Metric | PSG OFF | PSG ON |
 | --- | ---: | ---: |
