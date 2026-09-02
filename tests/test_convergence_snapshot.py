@@ -1,8 +1,16 @@
 from __future__ import annotations
 
+import sys
+
 import pytest
 
 from psg.trust import USER_APPROVED
+
+
+def allow_operator_approval(monkeypatch) -> None:
+    monkeypatch.setattr(sys.stdin, "isatty", lambda: True, raising=False)
+    monkeypatch.setattr(sys.stdout, "isatty", lambda: True, raising=False)
+    monkeypatch.setattr("builtins.input", lambda *_: "APPROVE")
 
 
 def runtime_pass(graph, task_id: str):
@@ -163,8 +171,11 @@ def test_ship_gate_revalidates_current_diff_and_rejects_stale_tests(
     assert result["verification_summary"]["stale"]
 
 
-def test_policy_pass_does_not_replace_functional_verification(graph, task) -> None:
+def test_policy_pass_does_not_replace_functional_verification(
+    graph, task, monkeypatch
+) -> None:
     task_id = task["id"]
+    allow_operator_approval(monkeypatch)
     graph.criterion_set(
         task_id,
         f"{task_id}-AC1",
@@ -178,8 +189,11 @@ def test_policy_pass_does_not_replace_functional_verification(graph, task) -> No
     assert result["verification_summary"]["missing"] is True
 
 
-def test_llm_reported_pass_is_not_trusted_by_ship_gate(graph, task) -> None:
+def test_llm_reported_pass_is_not_trusted_by_ship_gate(
+    graph, task, monkeypatch
+) -> None:
     task_id = task["id"]
+    allow_operator_approval(monkeypatch)
     graph.verification_record(
         task_id=task_id,
         name="claimed:test",
@@ -230,7 +244,7 @@ def test_acceptance_pass_and_waiver_require_authority(graph, task) -> None:
         raise AssertionError("Expected waiver authority validation")
 
 
-def test_high_risk_review_requires_a_different_actor(graph) -> None:
+def test_high_risk_review_requires_a_different_actor(graph, monkeypatch) -> None:
     opened = graph.task_open(
         intent="High-risk change",
         acceptance_criteria=[],
@@ -243,6 +257,7 @@ def test_high_risk_review_requires_a_different_actor(graph) -> None:
     graph.review_record(task_id, 0, actor_id="reviewer-2", session_id="review")
     declared = graph.ship_evaluate(task_id)
     assert declared["independent_review_satisfied"] is False
+    allow_operator_approval(monkeypatch)
     graph.review_record(
         task_id,
         0,
@@ -254,7 +269,9 @@ def test_high_risk_review_requires_a_different_actor(graph) -> None:
     assert independent["independent_review_satisfied"] is True
 
 
-def test_accepted_debt_is_not_reopened_before_trigger(graph, task) -> None:
+def test_accepted_debt_is_not_reopened_before_trigger(
+    graph, task, monkeypatch
+) -> None:
     debt = graph.debt_record(
         task_id=task["id"],
         what="Keep a linear scan for v1",
@@ -263,6 +280,7 @@ def test_accepted_debt_is_not_reopened_before_trigger(graph, task) -> None:
         revisit_trigger="records exceed 30000",
         affected_nodes=["symbol:src/app.py:feature"],
     )
+    allow_operator_approval(monkeypatch)
     debt = graph.debt_approve(debt["id"])
     issue = graph.issue_report(
         task_id=task["id"],
@@ -279,7 +297,9 @@ def test_accepted_debt_is_not_reopened_before_trigger(graph, task) -> None:
     assert review["review_action"] == "DO_NOT_REOPEN"
 
 
-def test_claimed_debt_trigger_cannot_reopen_accepted_debt(graph, task) -> None:
+def test_claimed_debt_trigger_cannot_reopen_accepted_debt(
+    graph, task, monkeypatch
+) -> None:
     proposed = graph.debt_record(
         task_id=task["id"],
         what="Keep a linear scan for v1",
@@ -287,6 +307,7 @@ def test_claimed_debt_trigger_cannot_reopen_accepted_debt(graph, task) -> None:
         ceiling="50000 records",
         revisit_trigger="records exceed 30000",
     )
+    allow_operator_approval(monkeypatch)
     debt = graph.debt_approve(proposed["id"])
     claimed = graph.debt_review(
         debt["id"],

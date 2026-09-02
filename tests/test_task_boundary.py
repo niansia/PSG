@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import sqlite3
+import sys
 
 import pytest
 
@@ -8,6 +9,12 @@ from psg.cli import main
 from psg.store import SCHEMA, Store
 from psg.task_contract import MAX_FIX_CYCLES, MAX_REVIEW_ROUNDS, contract_hash
 from psg.trust import USER_APPROVED
+
+
+def allow_operator_approval(monkeypatch) -> None:
+    monkeypatch.setattr(sys.stdin, "isatty", lambda: True, raising=False)
+    monkeypatch.setattr(sys.stdout, "isatty", lambda: True, raising=False)
+    monkeypatch.setattr("builtins.input", lambda *_: "APPROVE")
 
 
 def make_ready(graph, task: dict) -> None:
@@ -148,7 +155,9 @@ def test_follow_up_major_does_not_block_ship(graph, task) -> None:
     assert [item["id"] for item in result["follow_up_issues"]] == [follow_up["id"]]
 
 
-def test_ship_after_current_blocker_fixed_keeps_follow_up_visible(graph, task) -> None:
+def test_ship_after_current_blocker_fixed_keeps_follow_up_visible(
+    graph, task, monkeypatch
+) -> None:
     make_ready(graph, task)
     blocker = graph.issue_report(
         task_id=task["id"],
@@ -167,6 +176,7 @@ def test_ship_after_current_blocker_fixed_keeps_follow_up_visible(graph, task) -
     )
     blocked = graph.ship_evaluate(task["id"])
     assert blocked["status"] == "BLOCKED"
+    allow_operator_approval(monkeypatch)
     graph.issue_update(blocker["id"], "fixed", "patch-1", _trust_tier=USER_APPROVED)
     shipped = graph.ship_evaluate(task["id"])
     assert shipped["status"] == "SHIPPABLE"
@@ -458,7 +468,9 @@ def test_narrow_declared_scope_seals_without_asking_for_approval(graph, task) ->
     assert payload["requires_scope_approval"] is False
 
 
-def test_broad_agent_derived_scope_needs_user_approval_before_ship(graph) -> None:
+def test_broad_agent_derived_scope_needs_user_approval_before_ship(
+    graph, monkeypatch
+) -> None:
     opened = open_unscoped_task(graph)
     task_id = opened["id"]
     graph.context_build(task_id)
@@ -471,13 +483,17 @@ def test_broad_agent_derived_scope_needs_user_approval_before_ship(graph) -> Non
     assert blocked["status"] == "BLOCKED"
     assert blocked["scope_approved"] is False
 
+    allow_operator_approval(monkeypatch)
     graph.task_scope_approve(task_id, reason="Reviewed the derived boundary")
     assert graph.ship_evaluate(task_id)["status"] == "SHIPPABLE"
 
 
-def test_scope_approval_does_not_survive_a_different_authority(graph) -> None:
+def test_scope_approval_does_not_survive_a_different_authority(
+    graph, monkeypatch
+) -> None:
     task_id = open_unscoped_task(graph)["id"]
     graph.context_build(task_id)
+    allow_operator_approval(monkeypatch)
     graph.task_scope_approve(task_id, reason="Reviewed the derived boundary")
     stored = graph.store.get_task(task_id)
     payload = stored["payload"]

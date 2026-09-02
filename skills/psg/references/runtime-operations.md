@@ -17,7 +17,7 @@ Run `psg doctor` before attempting recovery when tools fail to load, the databas
 - `psg init` opts the current Git project into governance and repairs missing host integration when possible.
 - `psg status`, `psg on`, and `psg off` are the ordinary project controls. Add `--global` to `on` or `off` for the global automatic-governance switch.
 - `psg handoff [TASK_ID]` builds a read-only review contract and writes it to ignored local state at `.psg/local/handoffs/<task>.md`. `--output` writes elsewhere; a path inside the Git worktree is reported as a warning because it would appear as a project change.
-- `psg task approve-scope TASK_ID --reason "..."` is the user-owned approval for a broad sealed mutation boundary. It is deliberately absent from MCP, and every command that mints USER_APPROVED refuses to run without an interactive terminal, so a captured subprocess or a piped answer cannot approve anything. Present the proposal and let the user type it.
+- `psg task approve-scope TASK_ID --reason "..."` is the user-owned approval for a broad sealed mutation boundary. It is deliberately absent from MCP, and every runtime operation that mints USER_APPROVED refuses to run without an interactive terminal, whether reached through the CLI or a direct Python import. A captured subprocess, piped answer, or caller-supplied trust-tier string cannot approve anything. Present the proposal and let the user type it.
 - `psg update` resolves and installs the newest stable `vX.Y.Z` release tag, then refreshes the bundle and MCP registrations. `--channel dev` is an explicit opt-in to `main`; `--source` is an advanced override.
 - `psg uninstall` removes installed integrations and runtime while preserving all project `.psg/` directories.
 
@@ -51,7 +51,7 @@ Do not parse human-formatted terminal text when JSON tool output is available. D
 
 `verification_run` accepts only names from `verification.commands` in `.psg/config.yaml`. `psg verify TASK_ID --check NAME=COMMAND` is an advanced local CLI boundary for a person deliberately running a one-off command; never substitute it for the MCP allowlist.
 
-Decision, debt, waiver, high-risk review, portable-state acceptance, and frozen-node override commands are user-owned approval actions. They are intentionally absent from the ordinary MCP surface. An Agent must not call them through a shell or add an approval flag for itself. If approval is needed, present the proposal and wait for the user.
+Decision, debt, waiver, high-risk review, portable-state acceptance, and frozen-node override operations are user-owned approval actions. They are intentionally absent from the ordinary MCP surface, and their public runtime methods enforce the same interactive gate as the CLI. An Agent must not call them through a shell, import the runtime to reach them, or add an approval flag for itself. If approval is needed, present the proposal and wait for the user.
 
 The portable projection carries hashes for both its own export and `.psg/config.yaml`. PSG accepts a mismatch only when Git reports the corresponding governance file clean. A dirty mismatch is rejected before config-defined commands run. Do not work around it with `psg state accept`; that command is reserved for a user who reviewed both exact changes and supplies a reason.
 

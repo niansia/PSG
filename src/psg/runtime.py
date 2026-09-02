@@ -41,8 +41,11 @@ from .trust import (
     EXTERNAL_ATTESTED,
     RUNTIME_ATTESTED,
     USER_APPROVED,
+    OperatorApproval,
     evidence_trust,
     is_user_approved,
+    require_interactive_user_approval,
+    require_runtime_user_approval,
 )
 from .util import sha256_bytes, utc_now
 from .verification import VerificationEngine, report_failed_checks
@@ -136,9 +139,15 @@ class PSG:
             raise FileNotFoundError(
                 f"PSG is not initialized in {selected}. Run 'psg init'."
             )
+        if not reason.strip():
+            raise ValueError("Accepting portable state requires an explicit reason.")
+        require_interactive_user_approval(
+            "Accept externally modified PSG governance state",
+            {"Project": str(selected), "Reason": reason.strip()},
+        )
         store = Store(paths.database, paths.events)
         store.initialize()
-        return PortableState(paths.portable_state, store).accept_current(reason)
+        return PortableState(paths.portable_state, store).accept_current(reason.strip())
 
     def _persist(self) -> dict[str, Any]:
         return self.portable.export_from_store()
@@ -229,6 +238,7 @@ class PSG:
         maturity: str = "accepted",
         provenance: list[str] | None = None,
         _trust_tier: str = CLAIMED,
+        _operator_approval: OperatorApproval | None = None,
     ) -> dict[str, Any]:
         if node_type not in VALID_NODE_TYPES:
             raise ValueError(f"Unsupported node type: {node_type}")
@@ -238,6 +248,12 @@ class PSG:
             raise PermissionError(
                 f"Node already exists and cannot be overwritten through node_create: {node_id}"
             )
+        require_runtime_user_approval(
+            _trust_tier,
+            "Create a graph node on user authority",
+            {"Node": node_id, "Type": node_type, "Policy": policy},
+            approval=_operator_approval,
+        )
         protected = node_type in {"Decision", "Debt"}
         claimed_protected = protected and _trust_tier == CLAIMED
         recorded_payload = dict(payload)
@@ -374,6 +390,14 @@ class PSG:
                         f"Decision scope does not resolve to a graph node: {value}"
                     )
                 resolved_scope.append((target_id, target))
+        operator_approval = require_interactive_user_approval(
+            "Approve a Decision and apply its mutation effect",
+            {
+                "Decision": decision_id,
+                "Statement": decision.get("title", "(unknown)"),
+                "Scope": scope,
+            },
+        )
         decision["status"] = "accepted"
         decision["maturity"] = "accepted"
         decision["source"] = {"kind": "user_approved"}
@@ -393,6 +417,7 @@ class PSG:
                         override=True,
                         decision_id=decision_id,
                         _trust_tier=USER_APPROVED,
+                        _operator_approval=operator_approval,
                     )
                 elif normalized_effect:
                     self.store.set_policy(
@@ -433,12 +458,24 @@ class PSG:
         override: bool = False,
         decision_id: str | None = None,
         _trust_tier: str = CLAIMED,
+        _operator_approval: OperatorApproval | None = None,
     ) -> dict[str, Any]:
         if policy not in VALID_POLICIES:
             raise ValueError(f"Unsupported policy: {policy}")
         node = self.store.get_node(node_id)
         if not node:
             raise KeyError(f"Unknown node: {node_id}")
+        require_runtime_user_approval(
+            _trust_tier,
+            "Override a node policy boundary",
+            {
+                "Node": node_id,
+                "New policy": policy,
+                "Decision": decision_id or "(none)",
+                "Reason": reason,
+            },
+            approval=_operator_approval,
+        )
         effective_policy, _ = self.policy.effective_node_policy(node_id)
         weakening = POLICY_RANK[policy] < POLICY_RANK[effective_policy]
         if weakening:
@@ -825,6 +862,15 @@ class PSG:
     def verification_record(
         self, *, _trust_tier: str = CLAIMED, **kwargs: Any
     ) -> dict[str, Any]:
+        require_runtime_user_approval(
+            _trust_tier,
+            "Record a verification result on user authority",
+            {
+                "Task": kwargs.get("task_id", "(unknown)"),
+                "Check": kwargs.get("name", "(unknown)"),
+                "Result": kwargs.get("result", "(unknown)"),
+            },
+        )
         reported_source = str(kwargs.pop("source", "llm_reported"))
         evidence = dict(kwargs.pop("evidence", {}) or {})
         if _trust_tier == CLAIMED:
@@ -989,6 +1035,11 @@ class PSG:
                 )
             recorded_evidence["source"] = "user_asserted"
             recorded_evidence["trust_tier"] = USER_APPROVED
+        require_runtime_user_approval(
+            _trust_tier,
+            "Set an acceptance criterion on user authority",
+            {"Task": task_id, "Criterion": criterion_id, "Status": status},
+        )
         recorded_evidence.setdefault("trust_tier", _trust_tier)
         recorded_evidence.setdefault(
             "worktree_fingerprint", git.worktree_fingerprint(self.root)
@@ -1372,6 +1423,11 @@ class PSG:
         issue = self.store.get_issue(issue_id)
         if not issue:
             raise KeyError(f"Unknown issue: {issue_id}")
+        require_runtime_user_approval(
+            _trust_tier,
+            "Resolve an issue on user authority",
+            {"Issue": issue_id, "New status": status},
+        )
         if (
             issue["severity"] in {"blocker", "major"}
             and status != "open"
@@ -1538,6 +1594,15 @@ class PSG:
             raise ValueError(
                 "Approving a broad mutation boundary requires an explicit reason."
             )
+        require_interactive_user_approval(
+            "Approve a broad sealed mutation boundary",
+            {
+                "Task": task_id,
+                "Contract": payload.get("contract_hash", "(unsealed)"),
+                "Flagged because": payload.get("scope_approval_reasons", []),
+                "Write authority": payload.get("authorized_write", []),
+            },
+        )
         payload["scope_approval"] = {
             "trust_tier": USER_APPROVED,
             "reason": reason.strip(),
@@ -1566,6 +1631,17 @@ class PSG:
         node = self.store.get_node(debt_id)
         if not node or node["type"] != "Debt":
             raise KeyError(f"Unknown debt: {debt_id}")
+        require_interactive_user_approval(
+            "Accept bounded technical debt",
+            {
+                "Debt": debt_id,
+                "What": node.get("title", "(unknown)"),
+                "Ceiling": node.get("payload", {}).get("ceiling", ""),
+                "Revisit trigger": node.get("payload", {}).get(
+                    "revisit_trigger", ""
+                ),
+            },
+        )
         node["status"] = "accepted"
         node["maturity"] = "accepted"
         node["source"] = {
@@ -1601,6 +1677,11 @@ class PSG:
             }
         if trigger_met and not evidence:
             raise ValueError("Marking a debt trigger as met requires evidence.")
+        require_runtime_user_approval(
+            _trust_tier,
+            "Attest a debt revisit trigger on user authority",
+            {"Debt": debt_id, "Trigger met": bool(trigger_met)},
+        )
         if _trust_tier not in APPROVAL_TRUST_TIERS:
             self.store.event(
                 "debt.trigger_claimed",
@@ -1707,6 +1788,15 @@ class PSG:
             raise PermissionError(
                 "NO_SCOPE_EXPANSION_BY_REVIEW: the Task Contract changed outside a new user task."
             )
+        require_runtime_user_approval(
+            _trust_tier,
+            "Attest an independent review on user authority",
+            {
+                "Task": task_id,
+                "Reviewer actor": actor_id or "(unnamed)",
+                "Model family": model_family or "(unnamed)",
+            },
+        )
         result = self.convergence.review_record(
             task_id,
             new_blocking_issues,

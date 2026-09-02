@@ -1,5 +1,5 @@
 version: 1
-graph_revision: 313
+graph_revision: 315
 nodes:
 - id: T-0001-C1
   type: Constraint
@@ -73,6 +73,82 @@ nodes:
   payload:
     text: Keep the main README product-facing and approximately one third of its current
       technical density.
+- id: T-0002-C1
+  type: Constraint
+  title: Move the existing small interactive gate into the trust/runtime boundary;
+    do not add authentication services, tokens, accounts, or cryptography.
+  status: active
+  maturity: accepted
+  policy: mutable
+  revision: 3451a0fdd74999975e3c24adf643aba9fff73c30
+  confidence: 1.0
+  updated_at: '2026-09-01T16:37:22+00:00'
+  source:
+    kind: task_constraint
+    task_id: T-0002
+  provenance:
+  - agent_interpreted_user_intent
+  - task_projection
+  payload:
+    text: Move the existing small interactive gate into the trust/runtime boundary;
+      do not add authentication services, tokens, accounts, or cryptography.
+- id: T-0002-C2
+  type: Constraint
+  title: A caller must not be able to mint USER_APPROVED merely by passing a string
+    or internal-looking keyword.
+  status: active
+  maturity: accepted
+  policy: mutable
+  revision: 3451a0fdd74999975e3c24adf643aba9fff73c30
+  confidence: 1.0
+  updated_at: '2026-09-01T16:37:22+00:00'
+  source:
+    kind: task_constraint
+    task_id: T-0002
+  provenance:
+  - agent_interpreted_user_intent
+  - task_projection
+  payload:
+    text: A caller must not be able to mint USER_APPROVED merely by passing a string
+      or internal-looking keyword.
+- id: T-0002-C3
+  type: Constraint
+  title: Keep the documented limitation that PSG cannot cryptographically distinguish
+    a human from an Agent granted the same full PTY and OS identity.
+  status: active
+  maturity: accepted
+  policy: mutable
+  revision: 3451a0fdd74999975e3c24adf643aba9fff73c30
+  confidence: 1.0
+  updated_at: '2026-09-01T16:37:22+00:00'
+  source:
+    kind: task_constraint
+    task_id: T-0002
+  provenance:
+  - agent_interpreted_user_intent
+  - task_projection
+  payload:
+    text: Keep the documented limitation that PSG cannot cryptographically distinguish
+      a human from an Agent granted the same full PTY and OS identity.
+- id: T-0002-C4
+  type: Constraint
+  title: Preserve existing public CLI syntax and ordinary CLAIMED/RUNTIME_ATTESTED
+    behavior.
+  status: active
+  maturity: accepted
+  policy: mutable
+  revision: 3451a0fdd74999975e3c24adf643aba9fff73c30
+  confidence: 1.0
+  updated_at: '2026-09-01T16:37:22+00:00'
+  source:
+    kind: task_constraint
+    task_id: T-0002
+  provenance:
+  - agent_interpreted_user_intent
+  - task_projection
+  payload:
+    text: Preserve existing public CLI syntax and ordinary CLAIMED/RUNTIME_ATTESTED
+      behavior.
 - id: T-0001-AC1
   type: Requirement
   title: A repository-native SVG hero uses a black background and centers the integrated
@@ -195,6 +271,101 @@ nodes:
       trust_tier: RUNTIME_ATTESTED
       worktree_fingerprint: 51daafcb3bed5f2ea0fdd94af7ec5d77ec94100b6235fae3d24de85eba151ea0
     mandatory: true
+- id: T-0002-AC1
+  type: Requirement
+  title: Every public runtime path that directly mints or accepts USER_APPROVED authority
+    requires interactive operator approval inside the runtime boundary.
+  status: pending
+  maturity: proposed
+  policy: mutable
+  revision: 3451a0fdd74999975e3c24adf643aba9fff73c30
+  confidence: 1.0
+  updated_at: '2026-09-01T16:37:22+00:00'
+  source:
+    kind: task_acceptance
+    task_id: T-0002
+  provenance:
+  - agent_interpreted_user_intent
+  - task_projection
+  payload:
+    evidence: {}
+    mandatory: true
+- id: T-0002-AC2
+  type: Requirement
+  title: Direct non-TTY calls to task_scope_approve, decision_approve, debt_approve,
+    accept_portable_state, and any _trust_tier=USER_APPROVED path fail closed.
+  status: pending
+  maturity: proposed
+  policy: mutable
+  revision: 3451a0fdd74999975e3c24adf643aba9fff73c30
+  confidence: 1.0
+  updated_at: '2026-09-01T16:37:22+00:00'
+  source:
+    kind: task_acceptance
+    task_id: T-0002
+  provenance:
+  - agent_interpreted_user_intent
+  - task_projection
+  payload:
+    evidence: {}
+    mandatory: true
+- id: T-0002-AC3
+  type: Requirement
+  title: The CLI delegates approval to the runtime without double prompting, while
+    all existing user-owned approval commands remain functional.
+  status: pending
+  maturity: proposed
+  policy: mutable
+  revision: 3451a0fdd74999975e3c24adf643aba9fff73c30
+  confidence: 1.0
+  updated_at: '2026-09-01T16:37:22+00:00'
+  source:
+    kind: task_acceptance
+    task_id: T-0002
+  provenance:
+  - agent_interpreted_user_intent
+  - task_projection
+  payload:
+    evidence: {}
+    mandatory: true
+- id: T-0002-AC4
+  type: Requirement
+  title: Adversarial tests cover direct runtime denial, caller-supplied USER_APPROVED
+    denial, and a simulated interactive APPROVE success path.
+  status: pending
+  maturity: proposed
+  policy: mutable
+  revision: 3451a0fdd74999975e3c24adf643aba9fff73c30
+  confidence: 1.0
+  updated_at: '2026-09-01T16:37:22+00:00'
+  source:
+    kind: task_acceptance
+    task_id: T-0002
+  provenance:
+  - agent_interpreted_user_intent
+  - task_projection
+  payload:
+    evidence: {}
+    mandatory: true
+- id: T-0002-AC5
+  type: Requirement
+  title: Trust documentation, lint, and the full test suite pass with no weakening
+    of MCP or existing governance boundaries.
+  status: pending
+  maturity: proposed
+  policy: mutable
+  revision: 3451a0fdd74999975e3c24adf643aba9fff73c30
+  confidence: 1.0
+  updated_at: '2026-09-01T16:37:22+00:00'
+  source:
+    kind: task_acceptance
+    task_id: T-0002
+  provenance:
+  - agent_interpreted_user_intent
+  - task_projection
+  payload:
+    evidence: {}
+    mandatory: true
 - id: T-0001
   type: Task
   title: 'Redesign the PSG README product surface and hero: replace the illustrated
@@ -223,6 +394,28 @@ nodes:
     ship_gate:
       recommendation: SHIP
       status: SHIPPABLE
+- id: T-0002
+  type: Task
+  title: Harden USER_APPROVED at the runtime boundary so direct Python callers cannot
+    bypass the interactive operator gate that currently exists only in the CLI.
+  status: active
+  maturity: working
+  policy: mutable
+  revision: 3451a0fdd74999975e3c24adf643aba9fff73c30
+  confidence: 1.0
+  updated_at: '2026-09-01T16:37:22+00:00'
+  source:
+    kind: psg_runtime
+  provenance:
+  - agent_interpreted_user_intent
+  - psg_runtime
+  payload:
+    builder_actor: codex
+    contract_version: 1
+    intent: Harden USER_APPROVED at the runtime boundary so direct Python callers
+      cannot bypass the interactive operator gate that currently exists only in the
+      CLI.
+    risk: high
 - id: V-0001
   type: Verification
   title: policy:mutation-boundary
@@ -247,10 +440,10 @@ nodes:
     required: true
     revision: 2d1c8210ead1bd723c8ffbbd516a3c279a1d5789
     evidence:
-      phase: postflight
       worktree_fingerprint: 914d1045b8d5324c7d29fc7f93d5fae60fb5329fb507b885ddd0c50fe84229d9
       trust_tier: RUNTIME_ATTESTED
       source: runtime_executed
+      phase: postflight
 - id: V-0002
   type: Verification
   title: test
@@ -275,15 +468,15 @@ nodes:
     required: true
     revision: 2d1c8210ead1bd723c8ffbbd516a3c279a1d5789
     evidence:
-      reference: local:verification/V-0002.log
-      output_hash: sha256:7afc53a1537dbaa0ff7c2643a498acbf677c1c736c89e80e92325b693d34b29b
-      exit_code: 0
-      duration_seconds: 163.547
       worktree_fingerprint: c0609b2f49ef104bc696092b5872b7e764d0f76f83340403cb3c5815cdaca500
-      trust_tier: RUNTIME_ATTESTED
-      kind: command_result
-      source: runtime_executed
       check_name: test
+      reference: local:verification/V-0002.log
+      trust_tier: RUNTIME_ATTESTED
+      exit_code: 0
+      source: runtime_executed
+      output_hash: sha256:7afc53a1537dbaa0ff7c2643a498acbf677c1c736c89e80e92325b693d34b29b
+      kind: command_result
+      duration_seconds: 163.547
 - id: V-0003
   type: Verification
   title: lint
@@ -308,15 +501,15 @@ nodes:
     required: true
     revision: 2d1c8210ead1bd723c8ffbbd516a3c279a1d5789
     evidence:
-      reference: local:verification/V-0003.log
-      output_hash: sha256:82b3e6a6c090a57601d22943bd23fca9218d1031dbe5a7b754092f9a156b4f18
-      exit_code: 0
-      duration_seconds: 0.125
       worktree_fingerprint: c0609b2f49ef104bc696092b5872b7e764d0f76f83340403cb3c5815cdaca500
-      trust_tier: RUNTIME_ATTESTED
-      kind: command_result
-      source: runtime_executed
       check_name: lint
+      reference: local:verification/V-0003.log
+      trust_tier: RUNTIME_ATTESTED
+      exit_code: 0
+      source: runtime_executed
+      output_hash: sha256:82b3e6a6c090a57601d22943bd23fca9218d1031dbe5a7b754092f9a156b4f18
+      kind: command_result
+      duration_seconds: 0.125
 - id: V-0004
   type: Verification
   title: policy:mutation-boundary
@@ -341,10 +534,10 @@ nodes:
     required: true
     revision: 2d1c8210ead1bd723c8ffbbd516a3c279a1d5789
     evidence:
-      phase: postflight
       worktree_fingerprint: 51daafcb3bed5f2ea0fdd94af7ec5d77ec94100b6235fae3d24de85eba151ea0
       trust_tier: RUNTIME_ATTESTED
       source: runtime_executed
+      phase: postflight
 - id: V-0005
   type: Verification
   title: test
@@ -369,15 +562,15 @@ nodes:
     required: true
     revision: 2d1c8210ead1bd723c8ffbbd516a3c279a1d5789
     evidence:
-      reference: local:verification/V-0005.log
-      output_hash: sha256:e929f6ed3e3d4e2e6aca90b16c31b4ac2f14c3650c30643ff3a976f372b158f2
-      exit_code: 0
-      duration_seconds: 159.844
       worktree_fingerprint: 51daafcb3bed5f2ea0fdd94af7ec5d77ec94100b6235fae3d24de85eba151ea0
-      trust_tier: RUNTIME_ATTESTED
-      kind: command_result
-      source: runtime_executed
       check_name: test
+      reference: local:verification/V-0005.log
+      trust_tier: RUNTIME_ATTESTED
+      exit_code: 0
+      source: runtime_executed
+      output_hash: sha256:e929f6ed3e3d4e2e6aca90b16c31b4ac2f14c3650c30643ff3a976f372b158f2
+      kind: command_result
+      duration_seconds: 159.844
 - id: V-0006
   type: Verification
   title: lint
@@ -402,15 +595,15 @@ nodes:
     required: true
     revision: 2d1c8210ead1bd723c8ffbbd516a3c279a1d5789
     evidence:
-      reference: local:verification/V-0006.log
-      output_hash: sha256:82b3e6a6c090a57601d22943bd23fca9218d1031dbe5a7b754092f9a156b4f18
-      exit_code: 0
-      duration_seconds: 0.14
       worktree_fingerprint: 51daafcb3bed5f2ea0fdd94af7ec5d77ec94100b6235fae3d24de85eba151ea0
-      trust_tier: RUNTIME_ATTESTED
-      kind: command_result
-      source: runtime_executed
       check_name: lint
+      reference: local:verification/V-0006.log
+      trust_tier: RUNTIME_ATTESTED
+      exit_code: 0
+      source: runtime_executed
+      output_hash: sha256:82b3e6a6c090a57601d22943bd23fca9218d1031dbe5a7b754092f9a156b4f18
+      kind: command_result
+      duration_seconds: 0.14
 - id: V-0007
   type: Verification
   title: policy:mutation-boundary
@@ -435,10 +628,38 @@ nodes:
     required: true
     revision: 2d1c8210ead1bd723c8ffbbd516a3c279a1d5789
     evidence:
-      phase: ship_gate
       worktree_fingerprint: 51daafcb3bed5f2ea0fdd94af7ec5d77ec94100b6235fae3d24de85eba151ea0
       trust_tier: RUNTIME_ATTESTED
       source: runtime_executed
+      phase: ship_gate
+- id: V-0008
+  type: Verification
+  title: policy:mutation-boundary
+  status: pass
+  maturity: accepted
+  policy: mutable
+  revision: 3451a0fdd74999975e3c24adf643aba9fff73c30
+  confidence: 1.0
+  updated_at: '2026-09-02T00:39:59+00:00'
+  source:
+    kind: runtime_executed
+    task_id: T-0002
+  provenance:
+  - runtime_attested
+  payload:
+    id: V-0008
+    task_id: T-0002
+    name: policy:mutation-boundary
+    kind: policy
+    command: null
+    result: pass
+    required: true
+    revision: 3451a0fdd74999975e3c24adf643aba9fff73c30
+    evidence:
+      worktree_fingerprint: 8abbab1bc1ad12ce61096e9b0aa9233b2887f5ad96dc4ddfec024d1d2943d4f7
+      trust_tier: RUNTIME_ATTESTED
+      source: runtime_executed
+      phase: postflight
 edges:
 - src: T-0001
   type: constrained-by
@@ -727,6 +948,426 @@ edges:
   provenance: task_projection
   revision: 2d1c8210ead1bd723c8ffbbd516a3c279a1d5789
   created_at: '2026-09-01T16:16:53+00:00'
+- src: T-0002
+  type: constrained-by
+  dst: T-0002-C1
+  confidence: 1.0
+  provenance: task_projection
+  revision: 3451a0fdd74999975e3c24adf643aba9fff73c30
+  created_at: '2026-09-01T16:37:22+00:00'
+- src: T-0002
+  type: constrained-by
+  dst: T-0002-C2
+  confidence: 1.0
+  provenance: task_projection
+  revision: 3451a0fdd74999975e3c24adf643aba9fff73c30
+  created_at: '2026-09-01T16:37:22+00:00'
+- src: T-0002
+  type: constrained-by
+  dst: T-0002-C3
+  confidence: 1.0
+  provenance: task_projection
+  revision: 3451a0fdd74999975e3c24adf643aba9fff73c30
+  created_at: '2026-09-01T16:37:22+00:00'
+- src: T-0002
+  type: constrained-by
+  dst: T-0002-C4
+  confidence: 1.0
+  provenance: task_projection
+  revision: 3451a0fdd74999975e3c24adf643aba9fff73c30
+  created_at: '2026-09-01T16:37:22+00:00'
+- src: T-0002
+  type: requires
+  dst: T-0002-AC1
+  confidence: 1.0
+  provenance: task_projection
+  revision: 3451a0fdd74999975e3c24adf643aba9fff73c30
+  created_at: '2026-09-01T16:37:22+00:00'
+- src: T-0002
+  type: requires
+  dst: T-0002-AC2
+  confidence: 1.0
+  provenance: task_projection
+  revision: 3451a0fdd74999975e3c24adf643aba9fff73c30
+  created_at: '2026-09-01T16:37:22+00:00'
+- src: T-0002
+  type: requires
+  dst: T-0002-AC3
+  confidence: 1.0
+  provenance: task_projection
+  revision: 3451a0fdd74999975e3c24adf643aba9fff73c30
+  created_at: '2026-09-01T16:37:22+00:00'
+- src: T-0002
+  type: requires
+  dst: T-0002-AC4
+  confidence: 1.0
+  provenance: task_projection
+  revision: 3451a0fdd74999975e3c24adf643aba9fff73c30
+  created_at: '2026-09-01T16:37:22+00:00'
+- src: T-0002
+  type: requires
+  dst: T-0002-AC5
+  confidence: 1.0
+  provenance: task_projection
+  revision: 3451a0fdd74999975e3c24adf643aba9fff73c30
+  created_at: '2026-09-01T16:37:22+00:00'
+- src: T-0002
+  type: verified-by
+  dst: V-0008
+  confidence: 1.0
+  provenance: runtime_projection
+  revision: 3451a0fdd74999975e3c24adf643aba9fff73c30
+  created_at: '2026-09-02T00:39:59+00:00'
+- src: T-0002-AC1
+  type: targets
+  dst: file:docs/architecture.md
+  confidence: 1.0
+  provenance: task_projection
+  revision: 3451a0fdd74999975e3c24adf643aba9fff73c30
+  created_at: '2026-09-01T16:37:22+00:00'
+- src: T-0002-AC1
+  type: targets
+  dst: file:docs/trust-and-security.md
+  confidence: 1.0
+  provenance: task_projection
+  revision: 3451a0fdd74999975e3c24adf643aba9fff73c30
+  created_at: '2026-09-01T16:37:22+00:00'
+- src: T-0002-AC1
+  type: targets
+  dst: file:skills/psg/references/runtime-operations.md
+  confidence: 1.0
+  provenance: task_projection
+  revision: 3451a0fdd74999975e3c24adf643aba9fff73c30
+  created_at: '2026-09-01T16:37:22+00:00'
+- src: T-0002-AC1
+  type: targets
+  dst: file:src/psg/cli.py
+  confidence: 1.0
+  provenance: task_projection
+  revision: 3451a0fdd74999975e3c24adf643aba9fff73c30
+  created_at: '2026-09-01T16:37:22+00:00'
+- src: T-0002-AC1
+  type: targets
+  dst: file:src/psg/runtime.py
+  confidence: 1.0
+  provenance: task_projection
+  revision: 3451a0fdd74999975e3c24adf643aba9fff73c30
+  created_at: '2026-09-01T16:37:22+00:00'
+- src: T-0002-AC1
+  type: targets
+  dst: file:src/psg/trust.py
+  confidence: 1.0
+  provenance: task_projection
+  revision: 3451a0fdd74999975e3c24adf643aba9fff73c30
+  created_at: '2026-09-01T16:37:22+00:00'
+- src: T-0002-AC1
+  type: targets
+  dst: file:tests/test_cli_mcp.py
+  confidence: 1.0
+  provenance: task_projection
+  revision: 3451a0fdd74999975e3c24adf643aba9fff73c30
+  created_at: '2026-09-01T16:37:22+00:00'
+- src: T-0002-AC1
+  type: targets
+  dst: file:tests/test_convergence_snapshot.py
+  confidence: 1.0
+  provenance: task_projection
+  revision: 3451a0fdd74999975e3c24adf643aba9fff73c30
+  created_at: '2026-09-01T16:37:22+00:00'
+- src: T-0002-AC1
+  type: targets
+  dst: file:tests/test_policy.py
+  confidence: 1.0
+  provenance: task_projection
+  revision: 3451a0fdd74999975e3c24adf643aba9fff73c30
+  created_at: '2026-09-01T16:37:22+00:00'
+- src: T-0002-AC1
+  type: targets
+  dst: file:tests/test_task_boundary.py
+  confidence: 1.0
+  provenance: task_projection
+  revision: 3451a0fdd74999975e3c24adf643aba9fff73c30
+  created_at: '2026-09-01T16:37:22+00:00'
+- src: T-0002-AC2
+  type: targets
+  dst: file:docs/architecture.md
+  confidence: 1.0
+  provenance: task_projection
+  revision: 3451a0fdd74999975e3c24adf643aba9fff73c30
+  created_at: '2026-09-01T16:37:22+00:00'
+- src: T-0002-AC2
+  type: targets
+  dst: file:docs/trust-and-security.md
+  confidence: 1.0
+  provenance: task_projection
+  revision: 3451a0fdd74999975e3c24adf643aba9fff73c30
+  created_at: '2026-09-01T16:37:22+00:00'
+- src: T-0002-AC2
+  type: targets
+  dst: file:skills/psg/references/runtime-operations.md
+  confidence: 1.0
+  provenance: task_projection
+  revision: 3451a0fdd74999975e3c24adf643aba9fff73c30
+  created_at: '2026-09-01T16:37:22+00:00'
+- src: T-0002-AC2
+  type: targets
+  dst: file:src/psg/cli.py
+  confidence: 1.0
+  provenance: task_projection
+  revision: 3451a0fdd74999975e3c24adf643aba9fff73c30
+  created_at: '2026-09-01T16:37:22+00:00'
+- src: T-0002-AC2
+  type: targets
+  dst: file:src/psg/runtime.py
+  confidence: 1.0
+  provenance: task_projection
+  revision: 3451a0fdd74999975e3c24adf643aba9fff73c30
+  created_at: '2026-09-01T16:37:22+00:00'
+- src: T-0002-AC2
+  type: targets
+  dst: file:src/psg/trust.py
+  confidence: 1.0
+  provenance: task_projection
+  revision: 3451a0fdd74999975e3c24adf643aba9fff73c30
+  created_at: '2026-09-01T16:37:22+00:00'
+- src: T-0002-AC2
+  type: targets
+  dst: file:tests/test_cli_mcp.py
+  confidence: 1.0
+  provenance: task_projection
+  revision: 3451a0fdd74999975e3c24adf643aba9fff73c30
+  created_at: '2026-09-01T16:37:22+00:00'
+- src: T-0002-AC2
+  type: targets
+  dst: file:tests/test_convergence_snapshot.py
+  confidence: 1.0
+  provenance: task_projection
+  revision: 3451a0fdd74999975e3c24adf643aba9fff73c30
+  created_at: '2026-09-01T16:37:22+00:00'
+- src: T-0002-AC2
+  type: targets
+  dst: file:tests/test_policy.py
+  confidence: 1.0
+  provenance: task_projection
+  revision: 3451a0fdd74999975e3c24adf643aba9fff73c30
+  created_at: '2026-09-01T16:37:22+00:00'
+- src: T-0002-AC2
+  type: targets
+  dst: file:tests/test_task_boundary.py
+  confidence: 1.0
+  provenance: task_projection
+  revision: 3451a0fdd74999975e3c24adf643aba9fff73c30
+  created_at: '2026-09-01T16:37:22+00:00'
+- src: T-0002-AC3
+  type: targets
+  dst: file:docs/architecture.md
+  confidence: 1.0
+  provenance: task_projection
+  revision: 3451a0fdd74999975e3c24adf643aba9fff73c30
+  created_at: '2026-09-01T16:37:22+00:00'
+- src: T-0002-AC3
+  type: targets
+  dst: file:docs/trust-and-security.md
+  confidence: 1.0
+  provenance: task_projection
+  revision: 3451a0fdd74999975e3c24adf643aba9fff73c30
+  created_at: '2026-09-01T16:37:22+00:00'
+- src: T-0002-AC3
+  type: targets
+  dst: file:skills/psg/references/runtime-operations.md
+  confidence: 1.0
+  provenance: task_projection
+  revision: 3451a0fdd74999975e3c24adf643aba9fff73c30
+  created_at: '2026-09-01T16:37:22+00:00'
+- src: T-0002-AC3
+  type: targets
+  dst: file:src/psg/cli.py
+  confidence: 1.0
+  provenance: task_projection
+  revision: 3451a0fdd74999975e3c24adf643aba9fff73c30
+  created_at: '2026-09-01T16:37:22+00:00'
+- src: T-0002-AC3
+  type: targets
+  dst: file:src/psg/runtime.py
+  confidence: 1.0
+  provenance: task_projection
+  revision: 3451a0fdd74999975e3c24adf643aba9fff73c30
+  created_at: '2026-09-01T16:37:22+00:00'
+- src: T-0002-AC3
+  type: targets
+  dst: file:src/psg/trust.py
+  confidence: 1.0
+  provenance: task_projection
+  revision: 3451a0fdd74999975e3c24adf643aba9fff73c30
+  created_at: '2026-09-01T16:37:22+00:00'
+- src: T-0002-AC3
+  type: targets
+  dst: file:tests/test_cli_mcp.py
+  confidence: 1.0
+  provenance: task_projection
+  revision: 3451a0fdd74999975e3c24adf643aba9fff73c30
+  created_at: '2026-09-01T16:37:22+00:00'
+- src: T-0002-AC3
+  type: targets
+  dst: file:tests/test_convergence_snapshot.py
+  confidence: 1.0
+  provenance: task_projection
+  revision: 3451a0fdd74999975e3c24adf643aba9fff73c30
+  created_at: '2026-09-01T16:37:22+00:00'
+- src: T-0002-AC3
+  type: targets
+  dst: file:tests/test_policy.py
+  confidence: 1.0
+  provenance: task_projection
+  revision: 3451a0fdd74999975e3c24adf643aba9fff73c30
+  created_at: '2026-09-01T16:37:22+00:00'
+- src: T-0002-AC3
+  type: targets
+  dst: file:tests/test_task_boundary.py
+  confidence: 1.0
+  provenance: task_projection
+  revision: 3451a0fdd74999975e3c24adf643aba9fff73c30
+  created_at: '2026-09-01T16:37:22+00:00'
+- src: T-0002-AC4
+  type: targets
+  dst: file:docs/architecture.md
+  confidence: 1.0
+  provenance: task_projection
+  revision: 3451a0fdd74999975e3c24adf643aba9fff73c30
+  created_at: '2026-09-01T16:37:22+00:00'
+- src: T-0002-AC4
+  type: targets
+  dst: file:docs/trust-and-security.md
+  confidence: 1.0
+  provenance: task_projection
+  revision: 3451a0fdd74999975e3c24adf643aba9fff73c30
+  created_at: '2026-09-01T16:37:22+00:00'
+- src: T-0002-AC4
+  type: targets
+  dst: file:skills/psg/references/runtime-operations.md
+  confidence: 1.0
+  provenance: task_projection
+  revision: 3451a0fdd74999975e3c24adf643aba9fff73c30
+  created_at: '2026-09-01T16:37:22+00:00'
+- src: T-0002-AC4
+  type: targets
+  dst: file:src/psg/cli.py
+  confidence: 1.0
+  provenance: task_projection
+  revision: 3451a0fdd74999975e3c24adf643aba9fff73c30
+  created_at: '2026-09-01T16:37:22+00:00'
+- src: T-0002-AC4
+  type: targets
+  dst: file:src/psg/runtime.py
+  confidence: 1.0
+  provenance: task_projection
+  revision: 3451a0fdd74999975e3c24adf643aba9fff73c30
+  created_at: '2026-09-01T16:37:22+00:00'
+- src: T-0002-AC4
+  type: targets
+  dst: file:src/psg/trust.py
+  confidence: 1.0
+  provenance: task_projection
+  revision: 3451a0fdd74999975e3c24adf643aba9fff73c30
+  created_at: '2026-09-01T16:37:22+00:00'
+- src: T-0002-AC4
+  type: targets
+  dst: file:tests/test_cli_mcp.py
+  confidence: 1.0
+  provenance: task_projection
+  revision: 3451a0fdd74999975e3c24adf643aba9fff73c30
+  created_at: '2026-09-01T16:37:22+00:00'
+- src: T-0002-AC4
+  type: targets
+  dst: file:tests/test_convergence_snapshot.py
+  confidence: 1.0
+  provenance: task_projection
+  revision: 3451a0fdd74999975e3c24adf643aba9fff73c30
+  created_at: '2026-09-01T16:37:22+00:00'
+- src: T-0002-AC4
+  type: targets
+  dst: file:tests/test_policy.py
+  confidence: 1.0
+  provenance: task_projection
+  revision: 3451a0fdd74999975e3c24adf643aba9fff73c30
+  created_at: '2026-09-01T16:37:22+00:00'
+- src: T-0002-AC4
+  type: targets
+  dst: file:tests/test_task_boundary.py
+  confidence: 1.0
+  provenance: task_projection
+  revision: 3451a0fdd74999975e3c24adf643aba9fff73c30
+  created_at: '2026-09-01T16:37:22+00:00'
+- src: T-0002-AC5
+  type: targets
+  dst: file:docs/architecture.md
+  confidence: 1.0
+  provenance: task_projection
+  revision: 3451a0fdd74999975e3c24adf643aba9fff73c30
+  created_at: '2026-09-01T16:37:22+00:00'
+- src: T-0002-AC5
+  type: targets
+  dst: file:docs/trust-and-security.md
+  confidence: 1.0
+  provenance: task_projection
+  revision: 3451a0fdd74999975e3c24adf643aba9fff73c30
+  created_at: '2026-09-01T16:37:22+00:00'
+- src: T-0002-AC5
+  type: targets
+  dst: file:skills/psg/references/runtime-operations.md
+  confidence: 1.0
+  provenance: task_projection
+  revision: 3451a0fdd74999975e3c24adf643aba9fff73c30
+  created_at: '2026-09-01T16:37:22+00:00'
+- src: T-0002-AC5
+  type: targets
+  dst: file:src/psg/cli.py
+  confidence: 1.0
+  provenance: task_projection
+  revision: 3451a0fdd74999975e3c24adf643aba9fff73c30
+  created_at: '2026-09-01T16:37:22+00:00'
+- src: T-0002-AC5
+  type: targets
+  dst: file:src/psg/runtime.py
+  confidence: 1.0
+  provenance: task_projection
+  revision: 3451a0fdd74999975e3c24adf643aba9fff73c30
+  created_at: '2026-09-01T16:37:22+00:00'
+- src: T-0002-AC5
+  type: targets
+  dst: file:src/psg/trust.py
+  confidence: 1.0
+  provenance: task_projection
+  revision: 3451a0fdd74999975e3c24adf643aba9fff73c30
+  created_at: '2026-09-01T16:37:22+00:00'
+- src: T-0002-AC5
+  type: targets
+  dst: file:tests/test_cli_mcp.py
+  confidence: 1.0
+  provenance: task_projection
+  revision: 3451a0fdd74999975e3c24adf643aba9fff73c30
+  created_at: '2026-09-01T16:37:22+00:00'
+- src: T-0002-AC5
+  type: targets
+  dst: file:tests/test_convergence_snapshot.py
+  confidence: 1.0
+  provenance: task_projection
+  revision: 3451a0fdd74999975e3c24adf643aba9fff73c30
+  created_at: '2026-09-01T16:37:22+00:00'
+- src: T-0002-AC5
+  type: targets
+  dst: file:tests/test_policy.py
+  confidence: 1.0
+  provenance: task_projection
+  revision: 3451a0fdd74999975e3c24adf643aba9fff73c30
+  created_at: '2026-09-01T16:37:22+00:00'
+- src: T-0002-AC5
+  type: targets
+  dst: file:tests/test_task_boundary.py
+  confidence: 1.0
+  provenance: task_projection
+  revision: 3451a0fdd74999975e3c24adf643aba9fff73c30
+  created_at: '2026-09-01T16:37:22+00:00'
 tasks:
 - id: T-0001
   intent: 'Redesign the PSG README product surface and hero: replace the illustrated
@@ -1007,10 +1648,10 @@ tasks:
     revision: 2d1c8210ead1bd723c8ffbbd516a3c279a1d5789
     created_at: '2026-09-01T16:27:49+00:00'
     evidence:
-      phase: postflight
       worktree_fingerprint: 914d1045b8d5324c7d29fc7f93d5fae60fb5329fb507b885ddd0c50fe84229d9
       trust_tier: RUNTIME_ATTESTED
       source: runtime_executed
+      phase: postflight
   - id: V-0002
     task_id: T-0001
     name: test
@@ -1021,15 +1662,15 @@ tasks:
     revision: 2d1c8210ead1bd723c8ffbbd516a3c279a1d5789
     created_at: '2026-09-01T16:30:37+00:00'
     evidence:
-      reference: local:verification/V-0002.log
-      output_hash: sha256:7afc53a1537dbaa0ff7c2643a498acbf677c1c736c89e80e92325b693d34b29b
-      exit_code: 0
-      duration_seconds: 163.547
       worktree_fingerprint: c0609b2f49ef104bc696092b5872b7e764d0f76f83340403cb3c5815cdaca500
-      trust_tier: RUNTIME_ATTESTED
-      kind: command_result
-      source: runtime_executed
       check_name: test
+      reference: local:verification/V-0002.log
+      trust_tier: RUNTIME_ATTESTED
+      exit_code: 0
+      source: runtime_executed
+      output_hash: sha256:7afc53a1537dbaa0ff7c2643a498acbf677c1c736c89e80e92325b693d34b29b
+      kind: command_result
+      duration_seconds: 163.547
   - id: V-0003
     task_id: T-0001
     name: lint
@@ -1040,15 +1681,15 @@ tasks:
     revision: 2d1c8210ead1bd723c8ffbbd516a3c279a1d5789
     created_at: '2026-09-01T16:30:37+00:00'
     evidence:
-      reference: local:verification/V-0003.log
-      output_hash: sha256:82b3e6a6c090a57601d22943bd23fca9218d1031dbe5a7b754092f9a156b4f18
-      exit_code: 0
-      duration_seconds: 0.125
       worktree_fingerprint: c0609b2f49ef104bc696092b5872b7e764d0f76f83340403cb3c5815cdaca500
-      trust_tier: RUNTIME_ATTESTED
-      kind: command_result
-      source: runtime_executed
       check_name: lint
+      reference: local:verification/V-0003.log
+      trust_tier: RUNTIME_ATTESTED
+      exit_code: 0
+      source: runtime_executed
+      output_hash: sha256:82b3e6a6c090a57601d22943bd23fca9218d1031dbe5a7b754092f9a156b4f18
+      kind: command_result
+      duration_seconds: 0.125
   - id: V-0004
     task_id: T-0001
     name: policy:mutation-boundary
@@ -1059,10 +1700,10 @@ tasks:
     revision: 2d1c8210ead1bd723c8ffbbd516a3c279a1d5789
     created_at: '2026-09-01T16:32:32+00:00'
     evidence:
-      phase: postflight
       worktree_fingerprint: 51daafcb3bed5f2ea0fdd94af7ec5d77ec94100b6235fae3d24de85eba151ea0
       trust_tier: RUNTIME_ATTESTED
       source: runtime_executed
+      phase: postflight
   - id: V-0005
     task_id: T-0001
     name: test
@@ -1073,15 +1714,15 @@ tasks:
     revision: 2d1c8210ead1bd723c8ffbbd516a3c279a1d5789
     created_at: '2026-09-01T16:35:16+00:00'
     evidence:
-      reference: local:verification/V-0005.log
-      output_hash: sha256:e929f6ed3e3d4e2e6aca90b16c31b4ac2f14c3650c30643ff3a976f372b158f2
-      exit_code: 0
-      duration_seconds: 159.844
       worktree_fingerprint: 51daafcb3bed5f2ea0fdd94af7ec5d77ec94100b6235fae3d24de85eba151ea0
-      trust_tier: RUNTIME_ATTESTED
-      kind: command_result
-      source: runtime_executed
       check_name: test
+      reference: local:verification/V-0005.log
+      trust_tier: RUNTIME_ATTESTED
+      exit_code: 0
+      source: runtime_executed
+      output_hash: sha256:e929f6ed3e3d4e2e6aca90b16c31b4ac2f14c3650c30643ff3a976f372b158f2
+      kind: command_result
+      duration_seconds: 159.844
   - id: V-0006
     task_id: T-0001
     name: lint
@@ -1092,15 +1733,15 @@ tasks:
     revision: 2d1c8210ead1bd723c8ffbbd516a3c279a1d5789
     created_at: '2026-09-01T16:35:17+00:00'
     evidence:
-      reference: local:verification/V-0006.log
-      output_hash: sha256:82b3e6a6c090a57601d22943bd23fca9218d1031dbe5a7b754092f9a156b4f18
-      exit_code: 0
-      duration_seconds: 0.14
       worktree_fingerprint: 51daafcb3bed5f2ea0fdd94af7ec5d77ec94100b6235fae3d24de85eba151ea0
-      trust_tier: RUNTIME_ATTESTED
-      kind: command_result
-      source: runtime_executed
       check_name: lint
+      reference: local:verification/V-0006.log
+      trust_tier: RUNTIME_ATTESTED
+      exit_code: 0
+      source: runtime_executed
+      output_hash: sha256:82b3e6a6c090a57601d22943bd23fca9218d1031dbe5a7b754092f9a156b4f18
+      kind: command_result
+      duration_seconds: 0.14
   - id: V-0007
     task_id: T-0001
     name: policy:mutation-boundary
@@ -1111,9 +1752,404 @@ tasks:
     revision: 2d1c8210ead1bd723c8ffbbd516a3c279a1d5789
     created_at: '2026-09-01T16:36:01+00:00'
     evidence:
-      phase: ship_gate
       worktree_fingerprint: 51daafcb3bed5f2ea0fdd94af7ec5d77ec94100b6235fae3d24de85eba151ea0
       trust_tier: RUNTIME_ATTESTED
       source: runtime_executed
-generated_at: '2026-09-01T16:36:02+00:00'
+      phase: ship_gate
+- id: T-0002
+  intent: Harden USER_APPROVED at the runtime boundary so direct Python callers cannot
+    bypass the interactive operator gate that currently exists only in the CLI.
+  status: open
+  risk: high
+  context_budget: 12000
+  review_budget: 2
+  fix_budget: 2
+  review_rounds: 0
+  fix_cycles: 0
+  no_new_blocking_rounds: 0
+  baseline_snapshot: S-0003
+  baseline_git_rev: 3451a0fdd74999975e3c24adf643aba9fff73c30
+  graph_rev: 314
+  created_at: '2026-09-01T16:37:22+00:00'
+  updated_at: '2026-09-01T16:37:28+00:00'
+  payload:
+    authorized_forbidden:
+    - .github/**
+    - .psg/**
+    - README*.md
+    - artifacts/**
+    - benchmarks/**
+    - src/psg/installer.py
+    authorized_read_only:
+    - docs/acceptance.md
+    - pyproject.toml
+    - src/psg/convergence.py
+    - src/psg/mcp_server.py
+    - src/psg/portable.py
+    - src/psg/store.py
+    authorized_write:
+    - docs/architecture.md
+    - docs/trust-and-security.md
+    - skills/psg/references/runtime-operations.md
+    - src/psg/cli.py
+    - src/psg/runtime.py
+    - src/psg/trust.py
+    - tests/test_cli_mcp.py
+    - tests/test_convergence_snapshot.py
+    - tests/test_policy.py
+    - tests/test_task_boundary.py
+    builder_actor: codex
+    completion_boundary:
+      current_task_blockers: 0
+      evidence_fresh: true
+      fix_budget: 2
+      high_risk_review: true
+      mandatory_acceptance: pass_or_approved_waiver
+      mutation_guardrail: pass
+      required_verification: passing_fresh_trusted
+      review_budget: 2
+      stop_when_shippable: true
+    constraints:
+    - Move the existing small interactive gate into the trust/runtime boundary; do
+      not add authentication services, tokens, accounts, or cryptography.
+    - A caller must not be able to mint USER_APPROVED merely by passing a string or
+      internal-looking keyword.
+    - Keep the documented limitation that PSG cannot cryptographically distinguish
+      a human from an Agent granted the same full PTY and OS identity.
+    - Preserve existing public CLI syntax and ordinary CLAIMED/RUNTIME_ATTESTED behavior.
+    context_confidence: 0.877
+    context_node_ids:
+    - file:src/psg/cli.py
+    - file:src/psg/trust.py
+    - file:src/psg/runtime.py
+    - file:tests/test_policy.py
+    - file:tests/test_cli_mcp.py
+    - file:tests/test_task_boundary.py
+    - file:tests/test_convergence_snapshot.py
+    - T-0002
+    - file:docs/architecture.md
+    - file:docs/trust-and-security.md
+    - file:skills/psg/references/runtime-operations.md
+    - file:src/psg/store.py
+    - file:src/psg/config.py
+    - file:tests/conftest.py
+    - file:src/psg/installer.py
+    - file:src/psg/mcp_server.py
+    - file:benchmarks/agentic_ab.py
+    - file:src/psg/task_contract.py
+    - file:tests/test_index_router.py
+    - file:benchmarks/sequential_benchmark.py
+    - file:benchmarks/task_boundary_benchmark.py
+    - symbol:src/psg/runtime.py:PSG
+    - symbol:src/psg/cli.py:_mark
+    - T-0002-AC5
+    - symbol:src/psg/cli.py:_json
+    - symbol:src/psg/cli.py:main
+    - symbol:src/psg/cli.py:dispatch
+    - T-0002-AC3
+    - T-0002-AC4
+    - symbol:src/psg/cli.py:_checks
+    - symbol:src/psg/runtime.py:PSG.doctor
+    - symbol:src/psg/runtime.py:PSG.status
+    - symbol:src/psg/cli.py:ApprovalRefused
+    - symbol:src/psg/cli.py:build_parser
+    - symbol:src/psg/runtime.py:PSG._persist
+    - symbol:src/psg/trust.py:node_trust
+    - T-0002-AC1
+    - T-0002-AC2
+    - symbol:src/psg/runtime.py:PSG.index
+    - symbol:src/psg/runtime.py:PSG.state_sync
+    - symbol:tests/test_policy.py:make_diff
+    - symbol:src/psg/runtime.py:PSG.__init__
+    - T-0002-C4
+    - symbol:src/psg/runtime.py:PSG.node_get
+    - symbol:tests/test_task_boundary.py:make_ready
+    - symbol:src/psg/cli.py:_console_safe
+    - symbol:src/psg/cli.py:_human_output
+    - symbol:src/psg/trust.py:evidence_trust
+    - symbol:src/psg/cli.py:_pollutes_worktree
+    - symbol:src/psg/runtime.py:PSG.guardrails_get
+    - symbol:src/psg/runtime.py:PSG.handoff
+    - symbol:src/psg/runtime.py:PSG.set_enabled
+    - symbol:src/psg/trust.py:is_user_approved
+    - symbol:tests/test_convergence_snapshot.py:runtime_pass
+    - symbol:src/psg/runtime.py:PSG.debt_approve
+    - symbol:src/psg/runtime.py:PSG._seal_contract
+    - symbol:src/psg/runtime.py:PSG.ship_evaluate
+    - symbol:src/psg/runtime.py:PSG.task_contract
+    - symbol:tests/test_task_boundary.py:open_unscoped_task
+    - symbol:src/psg/runtime.py:PSG.verify
+    - symbol:tests/test_task_boundary.py:open_confident_task
+    - symbol:src/psg/runtime.py:PSG._boundary_node_ids
+    - symbol:src/psg/runtime.py:PSG._configured_checks
+    - symbol:src/psg/runtime.py:PSG.context_expand
+    - symbol:src/psg/runtime.py:PSG.decision_approve
+    - symbol:src/psg/runtime.py:PSG.initialize
+    - symbol:tests/test_cli_mcp.py:test_cli_status_is_json
+    - T-0002-C2
+    - symbol:src/psg/runtime.py:PSG._run_checks
+    - symbol:src/psg/runtime.py:PSG.fix_record
+    - symbol:tests/test_policy.py:test_frozen_file_is_blocked
+    - symbol:src/psg/runtime.py:PSG.context_build
+    - symbol:tests/test_cli_mcp.py:_approval_commands
+    - symbol:src/psg/runtime.py:PSG.task_scope_approve
+    - symbol:src/psg/runtime.py:PSG._project_verification
+    - symbol:src/psg/runtime.py:PSG.verify_commands
+    - symbol:src/psg/runtime.py:PSG.verification_record
+    - symbol:tests/test_cli_mcp.py:test_mcp_resources_are_discoverable
+    - symbol:src/psg/runtime.py:PSG.accept_portable_state
+    - symbol:src/psg/runtime.py:PSG.patch_validate
+    - symbol:src/psg/runtime.py:PSG.snapshot_restore
+    - symbol:src/psg/cli.py:require_interactive_user_approval
+    - symbol:src/psg/runtime.py:PSG.debt_review
+    - symbol:src/psg/runtime.py:PSG.edge_create
+    - symbol:tests/test_cli_mcp.py:test_dev_update_explicitly_tracks_main
+    - symbol:tests/test_cli_mcp.py:test_mcp_exposes_complete_tool_surface
+    - symbol:tests/test_policy.py:test_stale_git_revision_is_rejected
+    - symbol:tests/test_cli_mcp.py:test_cli_handoff_writes_markdown
+    - symbol:src/psg/runtime.py:PSG.issue_update
+    - symbol:src/psg/runtime.py:PSG.snapshot_create
+    - symbol:tests/test_policy.py:test_staged_rename_keeps_source_policy
+    - symbol:src/psg/runtime.py:PSG.patch_validate_proposed
+    - symbol:tests/test_cli_mcp.py:test_cli_global_on_off_controls_runtime
+    - symbol:src/psg/runtime.py:PSG.debt_record
+    - symbol:tests/test_cli_mcp.py:test_approval_refuses_a_piped_answer
+    - symbol:tests/test_cli_mcp.py:test_approval_requires_the_exact_word
+    - symbol:tests/test_cli_mcp.py:test_update_defaults_to_latest_stable_release
+    - symbol:tests/test_task_boundary.py:test_review_cannot_expand_task_contract
+    - symbol:tests/test_task_boundary.py:test_unknown_issue_relation_is_rejected
+    - T-0002-C3
+    - symbol:src/psg/runtime.py:PSG.criterion_set
+    - symbol:tests/test_cli_mcp.py:test_cli_status_guides_uninitialized_project
+    - symbol:tests/test_task_boundary.py:test_acceptance_major_blocks_current_task
+    - symbol:tests/test_task_boundary.py:test_follow_up_major_does_not_block_ship
+    - symbol:tests/test_cli_mcp.py:test_cli_status_is_human_readable_by_default
+    - symbol:tests/test_cli_mcp.py:test_dev_update_explicitly_tracks_main.runner
+    - symbol:tests/test_cli_mcp.py:test_live_mcp_git_backed_tools_answer_over_stdio.exercise
+    - symbol:tests/test_cli_mcp.py:test_mcp_instructions_state_the_review_boundary
+    - symbol:tests/test_cli_mcp.py:test_update_refreshes_runtime_then_integrations
+    - symbol:tests/test_convergence_snapshot.py:test_review_and_fix_budgets_stop_churn
+    - symbol:tests/test_policy.py:test_outside_write_scope_requests_expansion
+    - T-0002-C1
+    - symbol:tests/test_cli_mcp.py:test_init_repairs_missing_host_integration
+    - symbol:tests/test_policy.py:test_staged_change_cannot_bypass_final_policy
+    - symbol:tests/test_task_boundary.py:test_out_of_boundary_major_is_follow_up
+    - symbol:src/psg/runtime.py:PSG.node_policy_set
+    - symbol:tests/test_cli_mcp.py:test_cli_setup_installs_complete_skill_bundle
+    - symbol:tests/test_cli_mcp.py:test_mcp_tool_call_reads_shared_project_state
+    - symbol:tests/test_policy.py:test_claimed_decision_cannot_unlock_frozen_node
+    - symbol:tests/test_policy.py:test_frozen_python_symbol_blocks_only_its_hunk
+    - symbol:tests/test_task_boundary.py:test_task_contract_formalizes_every_boundary
+    - symbol:tests/test_cli_mcp.py:test_cli_update_requires_explicit_dev_channel
+    - symbol:tests/test_cli_mcp.py:test_live_mcp_git_backed_tools_answer_over_stdio
+    - symbol:tests/test_policy.py:test_architecture_lock_edge_blocks_symbol_change
+    - symbol:tests/test_policy.py:test_new_dependency_requires_task_justification
+    - symbol:tests/test_task_boundary.py:test_patch_caused_blocker_blocks_current_task
+    - symbol:tests/test_cli_mcp.py:test_cli_update_requires_explicit_dev_channel.update
+    - symbol:tests/test_cli_mcp.py:test_update_defaults_to_latest_stable_release.runner
+    - symbol:tests/test_policy.py:test_untracked_files_are_included_in_actual_diff
+    - symbol:tests/test_task_boundary.py:test_handoff_defaults_to_ignored_local_state
+    - symbol:tests/test_task_boundary.py:test_handoff_ignores_psg_managed_state_changes
+    - symbol:tests/test_task_boundary.py:test_handoff_written_into_the_worktree_warns
+    - symbol:tests/test_cli_mcp.py:test_update_refreshes_runtime_then_integrations.runner
+    - symbol:tests/test_cli_mcp.py:test_setup_autodetects_hosts_and_registers_native_mcp.fake_which
+    - symbol:tests/test_cli_mcp.py:test_setup_is_idempotent_and_replaces_a_stale_bundle
+    - symbol:tests/test_policy.py:test_governance_edit_is_not_hidden_as_runtime_state
+    - symbol:tests/test_task_boundary.py:test_default_handoff_never_changes_the_ship_gate
+    contract_hash: sha256:2618a999fb76164eefad32e99d19096d36c44c4d6e440cb96d345067ad6a194f
+    contract_state: sealed
+    contract_version: 1
+    dependency_justifications: []
+    forbidden:
+    - README*.md
+    - benchmarks/**
+    - artifacts/**
+    - .github/**
+    - src/psg/installer.py
+    - .psg/**
+    governance_baseline:
+      .psg/.gitignore: a7d8bdcefba82a95ebc021d87c629fdea21f13af953bf01e28b7cf8b0eeceb41
+      .psg/config.yaml: 62e14a38e58c105ecafd2ab23333b8450961f52b472796fc3c38767ad5daa8ec
+      .psg/policies.yaml: 227671c9d72980e62ca57b7bf3191ed3bfb889849662f881a5900c91fd91328f
+    non_goals:
+    - Add authenticated external CI attestation.
+    - Create a Host identity, user account, token, or cryptographic approval system.
+    - Change Task Boundary, routing, installer, benchmark, or release behavior.
+    - Modify package version or release artifacts.
+    read_only:
+    - src/psg/mcp_server.py
+    - src/psg/portable.py
+    - src/psg/store.py
+    - src/psg/convergence.py
+    - docs/acceptance.md
+    - pyproject.toml
+    requires_scope_approval: true
+    review_boundary:
+      blocking_relations:
+      - caused_by_patch
+      - violates_acceptance
+      - violates_project_constraint
+      blocking_severities:
+      - blocker
+      - major
+      follow_up_relations:
+      - future_improvement
+      - pre_existing
+      - unrelated
+      no_scope_expansion_by_review: true
+      requires_sufficient_evidence: true
+    scope_approval_reasons:
+    - high_risk_task
+    targets:
+    - src/psg/trust.py
+    - src/psg/runtime.py
+    - src/psg/cli.py
+    - tests/test_cli_mcp.py
+    - tests/test_convergence_snapshot.py
+    - tests/test_task_boundary.py
+    - tests/test_policy.py
+    - docs/trust-and-security.md
+    - docs/architecture.md
+    - skills/psg/references/runtime-operations.md
+    working_set:
+      forbidden:
+      - .github/**
+      - .psg/**
+      - README*.md
+      - artifacts/**
+      - benchmarks/**
+      - src/psg/installer.py
+      rationale:
+        .github/**: explicit forbidden scope
+        .psg/**: explicit forbidden scope
+        README*.md: explicit forbidden scope
+        artifacts/**: explicit forbidden scope
+        benchmarks/**: explicit forbidden scope
+        benchmarks/agentic_ab.py: dependency, reverse dependency, contract, or verification
+          context
+        benchmarks/sequential_benchmark.py: dependency, reverse dependency, contract,
+          or verification context
+        benchmarks/task_boundary_benchmark.py: dependency, reverse dependency, contract,
+          or verification context
+        docs/acceptance.md: explicit read-only scope
+        docs/architecture.md: explicit/target write scope
+        docs/trust-and-security.md: explicit/target write scope
+        pyproject.toml: explicit read-only scope
+        skills/psg/references/runtime-operations.md: explicit/target write scope
+        src/psg/__init__.py: dependency, reverse dependency, contract, or verification
+          context
+        src/psg/cli.py: explicit/target write scope
+        src/psg/config.py: dependency, reverse dependency, contract, or verification
+          context
+        src/psg/convergence.py: explicit read-only scope
+        src/psg/installer.py: mutable boundary (node:file:src/psg/installer.py)
+        src/psg/mcp_server.py: read-only boundary (node:file:src/psg/mcp_server.py)
+        src/psg/portable.py: read-only boundary (node:file:src/psg/portable.py)
+        src/psg/runtime.py: explicit/target write scope
+        src/psg/store.py: read-only boundary (node:file:src/psg/store.py)
+        src/psg/task_contract.py: dependency, reverse dependency, contract, or verification
+          context
+        src/psg/trust.py: explicit/target write scope
+        tests/conftest.py: dependency, reverse dependency, contract, or verification
+          context
+        tests/test_cli_mcp.py: explicit/target write scope
+        tests/test_convergence_snapshot.py: explicit/target write scope
+        tests/test_index_router.py: dependency, reverse dependency, contract, or verification
+          context
+        tests/test_policy.py: explicit/target write scope
+        tests/test_task_boundary.py: explicit/target write scope
+        tests/test_task_boundary_benchmark.py: dependency, reverse dependency, contract,
+          or verification context
+      read:
+      - benchmarks/agentic_ab.py
+      - benchmarks/sequential_benchmark.py
+      - benchmarks/task_boundary_benchmark.py
+      - src/psg/__init__.py
+      - src/psg/config.py
+      - src/psg/task_contract.py
+      - tests/conftest.py
+      - tests/test_index_router.py
+      - tests/test_task_boundary_benchmark.py
+      read_only:
+      - docs/acceptance.md
+      - pyproject.toml
+      - src/psg/convergence.py
+      - src/psg/mcp_server.py
+      - src/psg/portable.py
+      - src/psg/store.py
+      write:
+      - docs/architecture.md
+      - docs/trust-and-security.md
+      - skills/psg/references/runtime-operations.md
+      - src/psg/cli.py
+      - src/psg/runtime.py
+      - src/psg/trust.py
+      - tests/test_cli_mcp.py
+      - tests/test_convergence_snapshot.py
+      - tests/test_policy.py
+      - tests/test_task_boundary.py
+    write:
+    - src/psg/trust.py
+    - src/psg/runtime.py
+    - src/psg/cli.py
+    - tests/test_cli_mcp.py
+    - tests/test_convergence_snapshot.py
+    - tests/test_task_boundary.py
+    - tests/test_policy.py
+    - docs/trust-and-security.md
+    - docs/architecture.md
+    - skills/psg/references/runtime-operations.md
+  criteria:
+  - id: T-0002-AC1
+    task_id: T-0002
+    text: Every public runtime path that directly mints or accepts USER_APPROVED authority
+      requires interactive operator approval inside the runtime boundary.
+    mandatory: true
+    status: pending
+    evidence: {}
+  - id: T-0002-AC2
+    task_id: T-0002
+    text: Direct non-TTY calls to task_scope_approve, decision_approve, debt_approve,
+      accept_portable_state, and any _trust_tier=USER_APPROVED path fail closed.
+    mandatory: true
+    status: pending
+    evidence: {}
+  - id: T-0002-AC3
+    task_id: T-0002
+    text: The CLI delegates approval to the runtime without double prompting, while
+      all existing user-owned approval commands remain functional.
+    mandatory: true
+    status: pending
+    evidence: {}
+  - id: T-0002-AC4
+    task_id: T-0002
+    text: Adversarial tests cover direct runtime denial, caller-supplied USER_APPROVED
+      denial, and a simulated interactive APPROVE success path.
+    mandatory: true
+    status: pending
+    evidence: {}
+  - id: T-0002-AC5
+    task_id: T-0002
+    text: Trust documentation, lint, and the full test suite pass with no weakening
+      of MCP or existing governance boundaries.
+    mandatory: true
+    status: pending
+    evidence: {}
+  issues: []
+  verifications:
+  - id: V-0008
+    task_id: T-0002
+    name: policy:mutation-boundary
+    kind: policy
+    command: null
+    result: pass
+    required: true
+    revision: 3451a0fdd74999975e3c24adf643aba9fff73c30
+    created_at: '2026-09-02T00:39:59+00:00'
+    evidence:
+      worktree_fingerprint: 8abbab1bc1ad12ce61096e9b0aa9233b2887f5ad96dc4ddfec024d1d2943d4f7
+      trust_tier: RUNTIME_ATTESTED
+      source: runtime_executed
+      phase: postflight
+generated_at: '2026-09-02T00:39:59+00:00'
 config_hash: 62e14a38e58c105ecafd2ab23333b8450961f52b472796fc3c38767ad5daa8ec

@@ -1,7 +1,15 @@
 from __future__ import annotations
 
+import sys
+
 from psg.runtime import PSG
 from psg.trust import USER_APPROVED
+
+
+def allow_operator_approval(monkeypatch) -> None:
+    monkeypatch.setattr(sys.stdin, "isatty", lambda: True, raising=False)
+    monkeypatch.setattr(sys.stdout, "isatty", lambda: True, raising=False)
+    monkeypatch.setattr("builtins.input", lambda *_: "APPROVE")
 
 
 def make_diff(path: str, old: str, new: str) -> str:
@@ -88,7 +96,9 @@ def test_untracked_files_are_included_in_actual_diff(task: dict, graph: PSG) -> 
     assert "new_module.py" in result["required_scope_expansion"]
 
 
-def test_unfreezing_requires_override_and_recorded_decision(graph: PSG) -> None:
+def test_unfreezing_requires_override_and_recorded_decision(
+    graph: PSG, monkeypatch
+) -> None:
     graph.node_policy_set("file:src/backend.py", "frozen", "Approved architecture")
     try:
         graph.node_policy_set(
@@ -103,6 +113,7 @@ def test_unfreezing_requires_override_and_recorded_decision(graph: PSG) -> None:
         statement="Allow backend revision",
         rationale=["A new requirement needs it"],
     )
+    allow_operator_approval(monkeypatch)
     graph.decision_approve("D-unfreeze")
     updated = graph.node_policy_set(
         "file:src/backend.py",
@@ -162,7 +173,9 @@ def test_frozen_python_symbol_blocks_only_its_hunk(graph: PSG, repo) -> None:
     assert violation["symbols"][0]["id"] == "symbol:src/backend.py:locked_api"
 
 
-def test_architecture_lock_edge_blocks_symbol_change(graph: PSG, repo) -> None:
+def test_architecture_lock_edge_blocks_symbol_change(
+    graph: PSG, repo, monkeypatch
+) -> None:
     graph.decision_record(
         decision_id="ARCH-0001",
         statement="Stable backend algorithm",
@@ -170,6 +183,7 @@ def test_architecture_lock_edge_blocks_symbol_change(graph: PSG, repo) -> None:
         scope=["symbol:src/backend.py:locked_api"],
         mutation_effect="frozen",
     )
+    allow_operator_approval(monkeypatch)
     graph.decision_approve("ARCH-0001")
     opened = graph.task_open(
         intent="Try to alter locked architecture",

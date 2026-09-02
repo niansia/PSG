@@ -24,7 +24,11 @@ Ordinary MCP may propose Decisions and Debt, report verification claims, record 
 - approve a broad inferred task scope; or
 - attest that a high-risk review is independently performed.
 
-The corresponding local CLI actions require an interactive terminal and explicit confirmation. They reject non-interactive and piped input. An Agent should present the proposed action and wait for the user rather than invoking an approval command for itself.
+The interactive gate is enforced by the runtime operation itself, below the CLI. The CLI delegates to that boundary instead of minting authority first, so importing `psg.runtime` and calling an approval method directly reaches the same terminal check. Non-interactive and piped input are rejected before governance state changes. An Agent should present the proposed action and wait for the user rather than invoking an approval command or runtime method for itself.
+
+Caller-supplied `_trust_tier=USER_APPROVED` is not a capability. Every public runtime path that accepts it re-enters the same operator gate; caller-supplied `RUNTIME_ATTESTED` and `EXTERNAL_ATTESTED` are rejected because those tiers require runtime execution or an authenticated adapter. A small opaque approval object is used only to prevent a single approved runtime operation from prompting twice while it applies its own nested mutation effect.
+
+This still is not cryptographic proof that a human pressed the key. If a Host grants an Agent a full PTY under the same OS identity, that Host has also granted the ability to drive this terminal interaction. PSG documents that as the outer trust boundary rather than claiming to solve it inside a local Python library.
 
 ## Verification command boundary
 

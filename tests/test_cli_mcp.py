@@ -12,6 +12,13 @@ from psg.cli import _console_safe, main
 from psg.config import discover_root
 from psg.installer import setup_skill, uninstall_installation, update_installation
 from psg.mcp_server import mcp
+from psg.runtime import PSG
+from psg.trust import (
+    EXTERNAL_ATTESTED,
+    RUNTIME_ATTESTED,
+    USER_APPROVED,
+    ApprovalRefused,
+)
 
 
 def test_cli_status_is_json(graph, capsys) -> None:
@@ -427,16 +434,68 @@ def test_mcp_decision_is_proposed_and_does_not_apply_policy(graph, monkeypatch) 
     assert structured["approval_required"] is True
 
 
-def _approval_commands(root: str, task_id: str) -> list[tuple[str, list[str]]]:
+def _seed_approval_targets(graph, task: dict) -> dict[str, str]:
+    graph.decision_record(
+        decision_id="D-APPROVAL",
+        statement="Keep the application boundary stable",
+        rationale=["Approval test fixture"],
+        scope=["file:src/app.py"],
+        mutation_effect="frozen",
+    )
+    debt = graph.debt_record(
+        task_id=task["id"],
+        what="Bounded fixture debt",
+        why="Exercise the approval path",
+        ceiling="One fixture",
+        revisit_trigger="Fixture review",
+    )
+    review_debt = graph.debt_record(
+        task_id=task["id"],
+        what="Accepted fixture debt",
+        why="Exercise the debt-review path",
+        ceiling="One fixture",
+        revisit_trigger="Fixture review",
+    )
+    accepted = graph.store.get_node(review_debt["id"])
+    assert accepted is not None
+    accepted["status"] = "accepted"
+    accepted["maturity"] = "accepted"
+    accepted["payload"]["trust_tier"] = USER_APPROVED
+    graph.store.upsert_node(accepted)
+    issue = graph.issue_report(
+        task_id=task["id"],
+        severity="minor",
+        relation_to_task="future_improvement",
+        claim="Fixture follow-up",
+        evidence={"kind": "test", "reference": "fixture"},
+    )
+    graph._persist()
+    return {
+        "decision": "D-APPROVAL",
+        "debt": debt["id"],
+        "review_debt": review_debt["id"],
+        "issue": issue["id"],
+    }
+
+
+def _approval_commands(
+    root: str, task_id: str, targets: dict[str, str]
+) -> list[tuple[str, list[str]]]:
     """Every CLI entry point that can mint USER_APPROVED authority."""
     return [
         ("state accept", ["--root", root, "state", "accept", "--reason", "r"]),
-        ("decision approve", ["--root", root, "decision", "approve", "D-0001"]),
+        (
+            "decision approve",
+            ["--root", root, "decision", "approve", targets["decision"]],
+        ),
         (
             "task approve-scope",
             ["--root", root, "task", "approve-scope", task_id, "--reason", "r"],
         ),
-        ("debt approve", ["--root", root, "debt", "approve", "DEBT-0001"]),
+        (
+            "debt approve",
+            ["--root", root, "debt", "approve", targets["debt"]],
+        ),
         (
             "task criterion",
             [
@@ -446,7 +505,7 @@ def _approval_commands(root: str, task_id: str) -> list[tuple[str, list[str]]]:
                 "criterion",
                 task_id,
                 f"{task_id}-AC1",
-                "pass",
+                "fail",
                 "--user-approved",
             ],
         ),
@@ -479,11 +538,26 @@ def _approval_commands(root: str, task_id: str) -> list[tuple[str, list[str]]]:
         ),
         (
             "issue update",
-            ["--root", root, "issue", "update", "I-0001", "fixed", "--user-approved"],
+            [
+                "--root",
+                root,
+                "issue",
+                "update",
+                targets["issue"],
+                "fixed",
+                "--user-approved",
+            ],
         ),
         (
             "debt review",
-            ["--root", root, "debt", "review", "DEBT-0001", "--user-approved"],
+            [
+                "--root",
+                root,
+                "debt",
+                "review",
+                targets["review_debt"],
+                "--user-approved",
+            ],
         ),
     ]
 
@@ -492,9 +566,10 @@ def test_every_user_approved_cli_path_refuses_a_non_interactive_caller(
     graph, task, capsys, monkeypatch
 ) -> None:
     """A coding agent runs PSG as a captured subprocess; that must never mint authority."""
+    targets = _seed_approval_targets(graph, task)
     monkeypatch.setattr(sys.stdin, "isatty", lambda: False, raising=False)
     monkeypatch.setattr(sys.stdout, "isatty", lambda: True, raising=False)
-    for label, argv in _approval_commands(str(graph.root), task["id"]):
+    for label, argv in _approval_commands(str(graph.root), task["id"], targets):
         assert main(argv) == 2, f"{label} was not refused"
         captured = capsys.readouterr()
         assert "interactive terminal" in captured.err, label
@@ -574,3 +649,66 @@ def test_interactive_approval_shows_the_authority_it_grants(
     assert (
         graph.store.get_task(task["id"])["payload"]["scope_approval"]["reason"] == "r"
     )
+
+
+def test_direct_runtime_approval_paths_refuse_non_tty(
+    graph, task, monkeypatch
+) -> None:
+    targets = _seed_approval_targets(graph, task)
+    monkeypatch.setattr(sys.stdin, "isatty", lambda: False, raising=False)
+    monkeypatch.setattr(sys.stdout, "isatty", lambda: True, raising=False)
+
+    calls = [
+        lambda: graph.task_scope_approve(task["id"], "Reviewed boundary"),
+        lambda: graph.decision_approve(targets["decision"]),
+        lambda: graph.debt_approve(targets["debt"]),
+        lambda: PSG.accept_portable_state(graph.root, reason="Reviewed state"),
+    ]
+    for call in calls:
+        with pytest.raises(ApprovalRefused, match="interactive terminal"):
+            call()
+
+
+def test_runtime_rejects_caller_supplied_user_approved(graph, task, monkeypatch) -> None:
+    monkeypatch.setattr(sys.stdin, "isatty", lambda: False, raising=False)
+    monkeypatch.setattr(sys.stdout, "isatty", lambda: True, raising=False)
+
+    with pytest.raises(ApprovalRefused, match="interactive terminal"):
+        graph.verification_record(
+            task_id=task["id"],
+            name="claimed-pass",
+            result="pass",
+            kind="test",
+            command="claimed",
+            required=True,
+            source="user_asserted",
+            evidence={"reference": "trust-me"},
+            _trust_tier=USER_APPROVED,
+        )
+    assert not graph.store.list_verifications(task["id"])
+
+
+@pytest.mark.parametrize("trust_tier", [RUNTIME_ATTESTED, EXTERNAL_ATTESTED])
+def test_runtime_rejects_caller_supplied_attestation(graph, trust_tier) -> None:
+    with pytest.raises(ApprovalRefused, match="cannot be supplied"):
+        graph.node_create(
+            node_id=f"claimed:{trust_tier}",
+            node_type="Constraint",
+            title="Caller-supplied authority",
+            payload={},
+            _trust_tier=trust_tier,
+        )
+    assert graph.store.get_node(f"claimed:{trust_tier}") is None
+
+
+def test_direct_runtime_interactive_approval_succeeds(
+    graph, task, capsys, monkeypatch
+) -> None:
+    monkeypatch.setattr(sys.stdin, "isatty", lambda: True, raising=False)
+    monkeypatch.setattr(sys.stdout, "isatty", lambda: True, raising=False)
+    monkeypatch.setattr("builtins.input", lambda *_: "APPROVE")
+
+    approved = graph.task_scope_approve(task["id"], "Reviewed boundary")
+
+    assert approved["scope_approved"] is True
+    assert "Write authority" in capsys.readouterr().out
