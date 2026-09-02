@@ -85,7 +85,7 @@ SHIPPABLE
 
 > **證據狀態：Superseded。**
 
-**保留這次測試是為了透明揭露，但它不是目前 PSG 版本的證據。當時 Codex 載入的 PSG Skill 比受測 Runtime 更舊，定位邏輯之後也已改變，因此這些數字不代表目前版本的 PSG OFF/ON 效能。**
+**保留這次測試是為了透明揭露，但它不是目前版本效能的證據。當時 Codex 載入的 PSG Skill 比受測 Runtime 更舊，檢索整合之後也已改變。**
 
 這次歷史測試包含 10 組配對的 Codex CLI 任務，使用相同模型、prompt 與 repository baseline。
 
@@ -95,54 +95,8 @@ SHIPPABLE
 | 非目標檔案修改 | 10 | **2** |
 | Regression | 0 | 0 |
 | 錯誤的 `SHIPPABLE` | 0 | 0 |
-| Input token | 1.98M | 3.54M |
-| Wall time | 763 秒 | 1,084 秒 |
 
-**PSG 讓 Agent 更貼近任務邊界，但在這次 benchmark 中並沒有節省 token。它多使用了 79% 的 input token，wall time 也增加 42%。**
-
-### 為什麼 PSG 使用更多 token？
-
-這個 benchmark 測量的是小型、互相獨立、每次都冷啟動的 coding task。每一組都從全新的 worktree 開始，因此 PSG 每次都必須付出 Task Contract、routing、verification 與 ship gate 的成本。
-
-所以它量到了 PSG governance 的成本，卻沒有量到 PSG 其中一項主要的長期效益：在連續任務、模型切換與多輪 review 之間重用持久專案狀態，而不是反覆從 chat history 重建理解。
-
-這次測試中的自然語言定位也過於寬廣。所有正確目標都有找到，但推導出的寫入邊界中位數是七個檔案，導致十個 ON 任務有九個需要範圍批准。這是精確度問題，不是放寬邊界的理由；目前版本已將檢索相關性與寫入權限分離，仍需重新進行公平的 A/B 測試。
-
-### 為什麼「有 routing」不等於「token 一定會降」
-
-只有當 routed context **取代**了冗餘的 repository 閱讀時，PSG 才會真的減少模型脈絡。在保留下來的 trace 中，agent 有時吃下了 PSG 的 routed context，卻仍然照舊做傳統探索：列舉整個 repository、把 PSG 的 portable state 或設定當成一般脈絡讀取，以及在相關 symbol 已經被定位之後，仍重新讀取整份原始碼檔案。
-
-這種情況下，成本是相加而不是替代：
-
-```text
-PSG routing + 傳統的大範圍探索        ← trace 顯示的實況
-PSG routing + 必要時才做的針對性補讀   ← 應該要是這樣
-```
-
-現在的 Skill 把 PSG 視為主要的檢索路徑：從 Task Contract 與 routed symbol 出發，讀取最小必要的程式碼區域，只有在現有證據不足以安全完成改動時才擴大閱讀。整檔讀取仍然是被允許的退路，因為正確性優先於 token 節省。
-
-**這項整合修正對 token 的影響尚未重新量測，因此 PSG 不宣稱它帶來了 token 下降。**
-
-因此目前結果應解讀為：
-
-> **更好的範圍紀律，以及可量測的額外成本。**
-
-**PSG 目前不宣稱這個 benchmark 證明了端到端 token 節省。**
-
-### 證據狀態
-
-已由收錄的受控與確定性測試證明：
-
-- ✓ Task boundary enforcement
-- ✓ 在這次 A/B 測試中減少非目標檔案修改
-- ✓ 這個小型測試沒有觀察到正確性退步
-- ✓ 以證據為依據的 ship gate
-
-尚未證明：
-
-- 端到端 token 節省
-- 真實世界的長期效益
-- 能泛化到大型 repository 與不同模型
+這次歷史測試顯示出**更好的任務邊界紀律，但伴隨可量測的 token 與延遲成本**。由於它已被取代，因此不構成目前版本的效能證據；PSG 目前不據此宣稱能節省 token 或時間。
 
 完整 protocol、原始結果與限制請見[Benchmark 文件](benchmarks/README.md)。
 
