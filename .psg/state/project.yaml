@@ -1,5 +1,5 @@
 version: 1
-graph_revision: 345
+graph_revision: 349
 nodes:
 - id: T-0001-C1
   type: Constraint
@@ -650,12 +650,12 @@ nodes:
   type: Task
   title: Rebuild the existing v1.1.2 wheel and Skill archive so release artifacts
     exactly match the hardened runtime and Skill source.
-  status: shippable
-  maturity: accepted
+  status: blocked
+  maturity: working
   policy: mutable
   revision: 0eec98cfac2f11c1e01b5d6796fb7097e903f3e5
   confidence: 1.0
-  updated_at: '2026-09-02T00:48:42+00:00'
+  updated_at: '2026-09-02T00:49:13+00:00'
   source:
     kind: psg_runtime
   provenance:
@@ -668,8 +668,8 @@ nodes:
       exactly match the hardened runtime and Skill source.
     risk: medium
     ship_gate:
-      recommendation: SHIP
-      status: SHIPPABLE
+      recommendation: TARGETED_FIX
+      status: BLOCKED
 - id: V-0001
   type: Verification
   title: policy:mutation-boundary
@@ -694,10 +694,10 @@ nodes:
     required: true
     revision: 2d1c8210ead1bd723c8ffbbd516a3c279a1d5789
     evidence:
-      phase: postflight
       trust_tier: RUNTIME_ATTESTED
       worktree_fingerprint: 914d1045b8d5324c7d29fc7f93d5fae60fb5329fb507b885ddd0c50fe84229d9
       source: runtime_executed
+      phase: postflight
 - id: V-0002
   type: Verification
   title: test
@@ -722,15 +722,15 @@ nodes:
     required: true
     revision: 2d1c8210ead1bd723c8ffbbd516a3c279a1d5789
     evidence:
-      exit_code: 0
-      reference: local:verification/V-0002.log
-      output_hash: sha256:7afc53a1537dbaa0ff7c2643a498acbf677c1c736c89e80e92325b693d34b29b
-      duration_seconds: 163.547
-      kind: command_result
       trust_tier: RUNTIME_ATTESTED
+      check_name: test
+      output_hash: sha256:7afc53a1537dbaa0ff7c2643a498acbf677c1c736c89e80e92325b693d34b29b
+      kind: command_result
       worktree_fingerprint: c0609b2f49ef104bc696092b5872b7e764d0f76f83340403cb3c5815cdaca500
       source: runtime_executed
-      check_name: test
+      reference: local:verification/V-0002.log
+      duration_seconds: 163.547
+      exit_code: 0
 - id: V-0003
   type: Verification
   title: lint
@@ -755,15 +755,15 @@ nodes:
     required: true
     revision: 2d1c8210ead1bd723c8ffbbd516a3c279a1d5789
     evidence:
-      exit_code: 0
-      reference: local:verification/V-0003.log
-      output_hash: sha256:82b3e6a6c090a57601d22943bd23fca9218d1031dbe5a7b754092f9a156b4f18
-      duration_seconds: 0.125
-      kind: command_result
       trust_tier: RUNTIME_ATTESTED
+      check_name: lint
+      output_hash: sha256:82b3e6a6c090a57601d22943bd23fca9218d1031dbe5a7b754092f9a156b4f18
+      kind: command_result
       worktree_fingerprint: c0609b2f49ef104bc696092b5872b7e764d0f76f83340403cb3c5815cdaca500
       source: runtime_executed
-      check_name: lint
+      reference: local:verification/V-0003.log
+      duration_seconds: 0.125
+      exit_code: 0
 - id: V-0004
   type: Verification
   title: policy:mutation-boundary
@@ -788,10 +788,10 @@ nodes:
     required: true
     revision: 2d1c8210ead1bd723c8ffbbd516a3c279a1d5789
     evidence:
-      phase: postflight
       trust_tier: RUNTIME_ATTESTED
       worktree_fingerprint: 51daafcb3bed5f2ea0fdd94af7ec5d77ec94100b6235fae3d24de85eba151ea0
       source: runtime_executed
+      phase: postflight
 - id: V-0005
   type: Verification
   title: test
@@ -816,15 +816,15 @@ nodes:
     required: true
     revision: 2d1c8210ead1bd723c8ffbbd516a3c279a1d5789
     evidence:
-      exit_code: 0
-      reference: local:verification/V-0005.log
-      output_hash: sha256:e929f6ed3e3d4e2e6aca90b16c31b4ac2f14c3650c30643ff3a976f372b158f2
-      duration_seconds: 159.844
-      kind: command_result
       trust_tier: RUNTIME_ATTESTED
+      check_name: test
+      output_hash: sha256:e929f6ed3e3d4e2e6aca90b16c31b4ac2f14c3650c30643ff3a976f372b158f2
+      kind: command_result
       worktree_fingerprint: 51daafcb3bed5f2ea0fdd94af7ec5d77ec94100b6235fae3d24de85eba151ea0
       source: runtime_executed
-      check_name: test
+      reference: local:verification/V-0005.log
+      duration_seconds: 159.844
+      exit_code: 0
 - id: V-0006
   type: Verification
   title: lint
@@ -849,15 +849,15 @@ nodes:
     required: true
     revision: 2d1c8210ead1bd723c8ffbbd516a3c279a1d5789
     evidence:
-      exit_code: 0
-      reference: local:verification/V-0006.log
-      output_hash: sha256:82b3e6a6c090a57601d22943bd23fca9218d1031dbe5a7b754092f9a156b4f18
-      duration_seconds: 0.14
-      kind: command_result
       trust_tier: RUNTIME_ATTESTED
+      check_name: lint
+      output_hash: sha256:82b3e6a6c090a57601d22943bd23fca9218d1031dbe5a7b754092f9a156b4f18
+      kind: command_result
       worktree_fingerprint: 51daafcb3bed5f2ea0fdd94af7ec5d77ec94100b6235fae3d24de85eba151ea0
       source: runtime_executed
-      check_name: lint
+      reference: local:verification/V-0006.log
+      duration_seconds: 0.14
+      exit_code: 0
 - id: V-0007
   type: Verification
   title: policy:mutation-boundary
@@ -882,10 +882,10 @@ nodes:
     required: true
     revision: 2d1c8210ead1bd723c8ffbbd516a3c279a1d5789
     evidence:
-      phase: ship_gate
       trust_tier: RUNTIME_ATTESTED
       worktree_fingerprint: 51daafcb3bed5f2ea0fdd94af7ec5d77ec94100b6235fae3d24de85eba151ea0
       source: runtime_executed
+      phase: ship_gate
 - id: V-0008
   type: Verification
   title: policy:mutation-boundary
@@ -910,10 +910,10 @@ nodes:
     required: true
     revision: 3451a0fdd74999975e3c24adf643aba9fff73c30
     evidence:
-      phase: postflight
       trust_tier: RUNTIME_ATTESTED
       worktree_fingerprint: 8abbab1bc1ad12ce61096e9b0aa9233b2887f5ad96dc4ddfec024d1d2943d4f7
       source: runtime_executed
+      phase: postflight
 - id: V-0009
   type: Verification
   title: policy:mutation-boundary
@@ -938,10 +938,10 @@ nodes:
     required: true
     revision: 8a94a91eb95b9d7ca9e87c66c6f7cfe492a21940
     evidence:
-      phase: postflight
       trust_tier: RUNTIME_ATTESTED
       worktree_fingerprint: 1288ee37e8a99613eed61f6f23c818ebf76d3b9f9580cb22d2235816716bbb0d
       source: runtime_executed
+      phase: postflight
 - id: V-0010
   type: Verification
   title: test
@@ -966,15 +966,15 @@ nodes:
     required: true
     revision: 8a94a91eb95b9d7ca9e87c66c6f7cfe492a21940
     evidence:
-      exit_code: 1
-      reference: local:verification/V-0010.log
-      output_hash: sha256:6b190f049cf4e20a744979bdc4226aa02347861e2e36621be1335e4284cbec57
-      duration_seconds: 137.125
-      kind: command_result
       trust_tier: RUNTIME_ATTESTED
+      check_name: test
+      output_hash: sha256:6b190f049cf4e20a744979bdc4226aa02347861e2e36621be1335e4284cbec57
+      kind: command_result
       worktree_fingerprint: 1288ee37e8a99613eed61f6f23c818ebf76d3b9f9580cb22d2235816716bbb0d
       source: runtime_executed
-      check_name: test
+      reference: local:verification/V-0010.log
+      duration_seconds: 137.125
+      exit_code: 1
 - id: V-0011
   type: Verification
   title: lint
@@ -999,15 +999,15 @@ nodes:
     required: true
     revision: 8a94a91eb95b9d7ca9e87c66c6f7cfe492a21940
     evidence:
-      exit_code: 0
-      reference: local:verification/V-0011.log
-      output_hash: sha256:82b3e6a6c090a57601d22943bd23fca9218d1031dbe5a7b754092f9a156b4f18
-      duration_seconds: 0.157
-      kind: command_result
       trust_tier: RUNTIME_ATTESTED
+      check_name: lint
+      output_hash: sha256:82b3e6a6c090a57601d22943bd23fca9218d1031dbe5a7b754092f9a156b4f18
+      kind: command_result
       worktree_fingerprint: 1288ee37e8a99613eed61f6f23c818ebf76d3b9f9580cb22d2235816716bbb0d
       source: runtime_executed
-      check_name: lint
+      reference: local:verification/V-0011.log
+      duration_seconds: 0.157
+      exit_code: 0
 - id: V-0012
   type: Verification
   title: policy:mutation-boundary
@@ -1032,10 +1032,10 @@ nodes:
     required: true
     revision: 0eec98cfac2f11c1e01b5d6796fb7097e903f3e5
     evidence:
-      phase: postflight
       trust_tier: RUNTIME_ATTESTED
       worktree_fingerprint: a51675cf455609370b90932abfad5cd2315deadb753cff09f5793fd2c9e6e758
       source: runtime_executed
+      phase: postflight
 - id: V-0013
   type: Verification
   title: test
@@ -1060,15 +1060,15 @@ nodes:
     required: true
     revision: 0eec98cfac2f11c1e01b5d6796fb7097e903f3e5
     evidence:
-      exit_code: 0
-      reference: local:verification/V-0013.log
-      output_hash: sha256:7e8e721628b806eb63c9006e4d3352c9fa9480cb3ced319603cfefb394bac51d
-      duration_seconds: 144.891
-      kind: command_result
       trust_tier: RUNTIME_ATTESTED
+      check_name: test
+      output_hash: sha256:7e8e721628b806eb63c9006e4d3352c9fa9480cb3ced319603cfefb394bac51d
+      kind: command_result
       worktree_fingerprint: a51675cf455609370b90932abfad5cd2315deadb753cff09f5793fd2c9e6e758
       source: runtime_executed
-      check_name: test
+      reference: local:verification/V-0013.log
+      duration_seconds: 144.891
+      exit_code: 0
 - id: V-0014
   type: Verification
   title: lint
@@ -1093,15 +1093,15 @@ nodes:
     required: true
     revision: 0eec98cfac2f11c1e01b5d6796fb7097e903f3e5
     evidence:
-      exit_code: 0
-      reference: local:verification/V-0014.log
-      output_hash: sha256:82b3e6a6c090a57601d22943bd23fca9218d1031dbe5a7b754092f9a156b4f18
-      duration_seconds: 0.125
-      kind: command_result
       trust_tier: RUNTIME_ATTESTED
+      check_name: lint
+      output_hash: sha256:82b3e6a6c090a57601d22943bd23fca9218d1031dbe5a7b754092f9a156b4f18
+      kind: command_result
       worktree_fingerprint: a51675cf455609370b90932abfad5cd2315deadb753cff09f5793fd2c9e6e758
       source: runtime_executed
-      check_name: lint
+      reference: local:verification/V-0014.log
+      duration_seconds: 0.125
+      exit_code: 0
 - id: V-0015
   type: Verification
   title: policy:mutation-boundary
@@ -1126,10 +1126,10 @@ nodes:
     required: true
     revision: 0eec98cfac2f11c1e01b5d6796fb7097e903f3e5
     evidence:
-      phase: ship_gate
       trust_tier: RUNTIME_ATTESTED
       worktree_fingerprint: a51675cf455609370b90932abfad5cd2315deadb753cff09f5793fd2c9e6e758
       source: runtime_executed
+      phase: ship_gate
 - id: V-0016
   type: Verification
   title: policy:mutation-boundary
@@ -1154,10 +1154,94 @@ nodes:
     required: true
     revision: 0eec98cfac2f11c1e01b5d6796fb7097e903f3e5
     evidence:
-      phase: ship_gate
       trust_tier: RUNTIME_ATTESTED
       worktree_fingerprint: a51675cf455609370b90932abfad5cd2315deadb753cff09f5793fd2c9e6e758
       source: runtime_executed
+      phase: ship_gate
+- id: V-0017
+  type: Verification
+  title: policy:mutation-boundary
+  status: fail
+  maturity: working
+  policy: mutable
+  revision: 8c7af30e54b7d354d7ceaf67595e6b4ff6e16834
+  confidence: 1.0
+  updated_at: '2026-09-02T00:49:11+00:00'
+  source:
+    kind: runtime_executed
+    task_id: T-0003
+  provenance:
+  - runtime_attested
+  payload:
+    id: V-0017
+    task_id: T-0003
+    name: policy:mutation-boundary
+    kind: policy
+    command: null
+    result: fail
+    required: true
+    revision: 8c7af30e54b7d354d7ceaf67595e6b4ff6e16834
+    evidence:
+      trust_tier: RUNTIME_ATTESTED
+      worktree_fingerprint: 5899025b1ae96972c3c29d673ebd4447c044af83dd7c99fc7f9b9cb3c163e6c3
+      source: runtime_executed
+      phase: postflight
+- id: V-0018
+  type: Verification
+  title: policy:mutation-boundary
+  status: fail
+  maturity: working
+  policy: mutable
+  revision: 8c7af30e54b7d354d7ceaf67595e6b4ff6e16834
+  confidence: 1.0
+  updated_at: '2026-09-02T00:49:12+00:00'
+  source:
+    kind: runtime_executed
+    task_id: T-0002
+  provenance:
+  - runtime_attested
+  payload:
+    id: V-0018
+    task_id: T-0002
+    name: policy:mutation-boundary
+    kind: policy
+    command: null
+    result: fail
+    required: true
+    revision: 8c7af30e54b7d354d7ceaf67595e6b4ff6e16834
+    evidence:
+      trust_tier: RUNTIME_ATTESTED
+      worktree_fingerprint: 6060cbd3193859fdace7405acc951d40962c141962513c6a53752ef02914a32c
+      source: runtime_executed
+      phase: postflight
+- id: V-0019
+  type: Verification
+  title: policy:mutation-boundary
+  status: fail
+  maturity: working
+  policy: mutable
+  revision: 8c7af30e54b7d354d7ceaf67595e6b4ff6e16834
+  confidence: 1.0
+  updated_at: '2026-09-02T00:49:12+00:00'
+  source:
+    kind: runtime_executed
+    task_id: T-0004
+  provenance:
+  - runtime_attested
+  payload:
+    id: V-0019
+    task_id: T-0004
+    name: policy:mutation-boundary
+    kind: policy
+    command: null
+    result: fail
+    required: true
+    revision: 8c7af30e54b7d354d7ceaf67595e6b4ff6e16834
+    evidence:
+      trust_tier: RUNTIME_ATTESTED
+      worktree_fingerprint: 6060cbd3193859fdace7405acc951d40962c141962513c6a53752ef02914a32c
+      source: runtime_executed
+      phase: ship_gate
 edges:
 - src: I-0001
   type: introduced-by
@@ -1523,6 +1607,13 @@ edges:
   provenance: runtime_projection
   revision: 3451a0fdd74999975e3c24adf643aba9fff73c30
   created_at: '2026-09-02T00:39:59+00:00'
+- src: T-0002
+  type: verified-by
+  dst: V-0018
+  confidence: 1.0
+  provenance: runtime_projection
+  revision: 8c7af30e54b7d354d7ceaf67595e6b4ff6e16834
+  created_at: '2026-09-02T00:49:12+00:00'
 - src: T-0002-AC1
   type: targets
   dst: file:docs/architecture.md
@@ -1929,6 +2020,13 @@ edges:
   provenance: runtime_projection
   revision: 8a94a91eb95b9d7ca9e87c66c6f7cfe492a21940
   created_at: '2026-09-02T00:43:47+00:00'
+- src: T-0003
+  type: verified-by
+  dst: V-0017
+  confidence: 1.0
+  provenance: runtime_projection
+  revision: 8c7af30e54b7d354d7ceaf67595e6b4ff6e16834
+  created_at: '2026-09-02T00:49:11+00:00'
 - src: T-0003-AC1
   type: targets
   dst: file:benchmarks/agentic_ab.py
@@ -2034,6 +2132,13 @@ edges:
   provenance: runtime_projection
   revision: 0eec98cfac2f11c1e01b5d6796fb7097e903f3e5
   created_at: '2026-09-02T00:48:42+00:00'
+- src: T-0004
+  type: verified-by
+  dst: V-0019
+  confidence: 1.0
+  provenance: runtime_projection
+  revision: 8c7af30e54b7d354d7ceaf67595e6b4ff6e16834
+  created_at: '2026-09-02T00:49:12+00:00'
 - src: T-0004-AC1
   type: targets
   dst: file:artifacts/psg-skill-v1.1.2.zip
@@ -2356,10 +2461,10 @@ tasks:
     revision: 2d1c8210ead1bd723c8ffbbd516a3c279a1d5789
     created_at: '2026-09-01T16:27:49+00:00'
     evidence:
-      phase: postflight
       trust_tier: RUNTIME_ATTESTED
       worktree_fingerprint: 914d1045b8d5324c7d29fc7f93d5fae60fb5329fb507b885ddd0c50fe84229d9
       source: runtime_executed
+      phase: postflight
   - id: V-0002
     task_id: T-0001
     name: test
@@ -2370,15 +2475,15 @@ tasks:
     revision: 2d1c8210ead1bd723c8ffbbd516a3c279a1d5789
     created_at: '2026-09-01T16:30:37+00:00'
     evidence:
-      exit_code: 0
-      reference: local:verification/V-0002.log
-      output_hash: sha256:7afc53a1537dbaa0ff7c2643a498acbf677c1c736c89e80e92325b693d34b29b
-      duration_seconds: 163.547
-      kind: command_result
       trust_tier: RUNTIME_ATTESTED
+      check_name: test
+      output_hash: sha256:7afc53a1537dbaa0ff7c2643a498acbf677c1c736c89e80e92325b693d34b29b
+      kind: command_result
       worktree_fingerprint: c0609b2f49ef104bc696092b5872b7e764d0f76f83340403cb3c5815cdaca500
       source: runtime_executed
-      check_name: test
+      reference: local:verification/V-0002.log
+      duration_seconds: 163.547
+      exit_code: 0
   - id: V-0003
     task_id: T-0001
     name: lint
@@ -2389,15 +2494,15 @@ tasks:
     revision: 2d1c8210ead1bd723c8ffbbd516a3c279a1d5789
     created_at: '2026-09-01T16:30:37+00:00'
     evidence:
-      exit_code: 0
-      reference: local:verification/V-0003.log
-      output_hash: sha256:82b3e6a6c090a57601d22943bd23fca9218d1031dbe5a7b754092f9a156b4f18
-      duration_seconds: 0.125
-      kind: command_result
       trust_tier: RUNTIME_ATTESTED
+      check_name: lint
+      output_hash: sha256:82b3e6a6c090a57601d22943bd23fca9218d1031dbe5a7b754092f9a156b4f18
+      kind: command_result
       worktree_fingerprint: c0609b2f49ef104bc696092b5872b7e764d0f76f83340403cb3c5815cdaca500
       source: runtime_executed
-      check_name: lint
+      reference: local:verification/V-0003.log
+      duration_seconds: 0.125
+      exit_code: 0
   - id: V-0004
     task_id: T-0001
     name: policy:mutation-boundary
@@ -2408,10 +2513,10 @@ tasks:
     revision: 2d1c8210ead1bd723c8ffbbd516a3c279a1d5789
     created_at: '2026-09-01T16:32:32+00:00'
     evidence:
-      phase: postflight
       trust_tier: RUNTIME_ATTESTED
       worktree_fingerprint: 51daafcb3bed5f2ea0fdd94af7ec5d77ec94100b6235fae3d24de85eba151ea0
       source: runtime_executed
+      phase: postflight
   - id: V-0005
     task_id: T-0001
     name: test
@@ -2422,15 +2527,15 @@ tasks:
     revision: 2d1c8210ead1bd723c8ffbbd516a3c279a1d5789
     created_at: '2026-09-01T16:35:16+00:00'
     evidence:
-      exit_code: 0
-      reference: local:verification/V-0005.log
-      output_hash: sha256:e929f6ed3e3d4e2e6aca90b16c31b4ac2f14c3650c30643ff3a976f372b158f2
-      duration_seconds: 159.844
-      kind: command_result
       trust_tier: RUNTIME_ATTESTED
+      check_name: test
+      output_hash: sha256:e929f6ed3e3d4e2e6aca90b16c31b4ac2f14c3650c30643ff3a976f372b158f2
+      kind: command_result
       worktree_fingerprint: 51daafcb3bed5f2ea0fdd94af7ec5d77ec94100b6235fae3d24de85eba151ea0
       source: runtime_executed
-      check_name: test
+      reference: local:verification/V-0005.log
+      duration_seconds: 159.844
+      exit_code: 0
   - id: V-0006
     task_id: T-0001
     name: lint
@@ -2441,15 +2546,15 @@ tasks:
     revision: 2d1c8210ead1bd723c8ffbbd516a3c279a1d5789
     created_at: '2026-09-01T16:35:17+00:00'
     evidence:
-      exit_code: 0
-      reference: local:verification/V-0006.log
-      output_hash: sha256:82b3e6a6c090a57601d22943bd23fca9218d1031dbe5a7b754092f9a156b4f18
-      duration_seconds: 0.14
-      kind: command_result
       trust_tier: RUNTIME_ATTESTED
+      check_name: lint
+      output_hash: sha256:82b3e6a6c090a57601d22943bd23fca9218d1031dbe5a7b754092f9a156b4f18
+      kind: command_result
       worktree_fingerprint: 51daafcb3bed5f2ea0fdd94af7ec5d77ec94100b6235fae3d24de85eba151ea0
       source: runtime_executed
-      check_name: lint
+      reference: local:verification/V-0006.log
+      duration_seconds: 0.14
+      exit_code: 0
   - id: V-0007
     task_id: T-0001
     name: policy:mutation-boundary
@@ -2460,10 +2565,10 @@ tasks:
     revision: 2d1c8210ead1bd723c8ffbbd516a3c279a1d5789
     created_at: '2026-09-01T16:36:01+00:00'
     evidence:
-      phase: ship_gate
       trust_tier: RUNTIME_ATTESTED
       worktree_fingerprint: 51daafcb3bed5f2ea0fdd94af7ec5d77ec94100b6235fae3d24de85eba151ea0
       source: runtime_executed
+      phase: ship_gate
 - id: T-0002
   intent: Harden USER_APPROVED at the runtime boundary so direct Python callers cannot
     bypass the interactive operator gate that currently exists only in the CLI.
@@ -2855,10 +2960,24 @@ tasks:
     revision: 3451a0fdd74999975e3c24adf643aba9fff73c30
     created_at: '2026-09-02T00:39:59+00:00'
     evidence:
-      phase: postflight
       trust_tier: RUNTIME_ATTESTED
       worktree_fingerprint: 8abbab1bc1ad12ce61096e9b0aa9233b2887f5ad96dc4ddfec024d1d2943d4f7
       source: runtime_executed
+      phase: postflight
+  - id: V-0018
+    task_id: T-0002
+    name: policy:mutation-boundary
+    kind: policy
+    command: null
+    result: fail
+    required: true
+    revision: 8c7af30e54b7d354d7ceaf67595e6b4ff6e16834
+    created_at: '2026-09-02T00:49:12+00:00'
+    evidence:
+      trust_tier: RUNTIME_ATTESTED
+      worktree_fingerprint: 6060cbd3193859fdace7405acc951d40962c141962513c6a53752ef02914a32c
+      source: runtime_executed
+      phase: postflight
 - id: T-0003
   intent: Migrate the two legacy test fixtures and the agentic benchmark fixture to
     the runtime-enforced USER_APPROVED boundary without weakening production behavior.
@@ -3081,10 +3200,10 @@ tasks:
     revision: 8a94a91eb95b9d7ca9e87c66c6f7cfe492a21940
     created_at: '2026-09-02T00:41:22+00:00'
     evidence:
-      phase: postflight
       trust_tier: RUNTIME_ATTESTED
       worktree_fingerprint: 1288ee37e8a99613eed61f6f23c818ebf76d3b9f9580cb22d2235816716bbb0d
       source: runtime_executed
+      phase: postflight
   - id: V-0010
     task_id: T-0003
     name: test
@@ -3095,15 +3214,15 @@ tasks:
     revision: 8a94a91eb95b9d7ca9e87c66c6f7cfe492a21940
     created_at: '2026-09-02T00:43:46+00:00'
     evidence:
-      exit_code: 1
-      reference: local:verification/V-0010.log
-      output_hash: sha256:6b190f049cf4e20a744979bdc4226aa02347861e2e36621be1335e4284cbec57
-      duration_seconds: 137.125
-      kind: command_result
       trust_tier: RUNTIME_ATTESTED
+      check_name: test
+      output_hash: sha256:6b190f049cf4e20a744979bdc4226aa02347861e2e36621be1335e4284cbec57
+      kind: command_result
       worktree_fingerprint: 1288ee37e8a99613eed61f6f23c818ebf76d3b9f9580cb22d2235816716bbb0d
       source: runtime_executed
-      check_name: test
+      reference: local:verification/V-0010.log
+      duration_seconds: 137.125
+      exit_code: 1
   - id: V-0011
     task_id: T-0003
     name: lint
@@ -3114,19 +3233,33 @@ tasks:
     revision: 8a94a91eb95b9d7ca9e87c66c6f7cfe492a21940
     created_at: '2026-09-02T00:43:46+00:00'
     evidence:
-      exit_code: 0
-      reference: local:verification/V-0011.log
-      output_hash: sha256:82b3e6a6c090a57601d22943bd23fca9218d1031dbe5a7b754092f9a156b4f18
-      duration_seconds: 0.157
-      kind: command_result
       trust_tier: RUNTIME_ATTESTED
+      check_name: lint
+      output_hash: sha256:82b3e6a6c090a57601d22943bd23fca9218d1031dbe5a7b754092f9a156b4f18
+      kind: command_result
       worktree_fingerprint: 1288ee37e8a99613eed61f6f23c818ebf76d3b9f9580cb22d2235816716bbb0d
       source: runtime_executed
-      check_name: lint
+      reference: local:verification/V-0011.log
+      duration_seconds: 0.157
+      exit_code: 0
+  - id: V-0017
+    task_id: T-0003
+    name: policy:mutation-boundary
+    kind: policy
+    command: null
+    result: fail
+    required: true
+    revision: 8c7af30e54b7d354d7ceaf67595e6b4ff6e16834
+    created_at: '2026-09-02T00:49:11+00:00'
+    evidence:
+      trust_tier: RUNTIME_ATTESTED
+      worktree_fingerprint: 5899025b1ae96972c3c29d673ebd4447c044af83dd7c99fc7f9b9cb3c163e6c3
+      source: runtime_executed
+      phase: postflight
 - id: T-0004
   intent: Rebuild the existing v1.1.2 wheel and Skill archive so release artifacts
     exactly match the hardened runtime and Skill source.
-  status: shippable
+  status: blocked
   risk: medium
   context_budget: 12000
   review_budget: 1
@@ -3136,9 +3269,9 @@ tasks:
   no_new_blocking_rounds: 1
   baseline_snapshot: S-0005
   baseline_git_rev: 0eec98cfac2f11c1e01b5d6796fb7097e903f3e5
-  graph_rev: 344
+  graph_rev: 348
   created_at: '2026-09-02T00:44:52+00:00'
-  updated_at: '2026-09-02T00:48:42+00:00'
+  updated_at: '2026-09-02T00:49:13+00:00'
   payload:
     authorized_forbidden:
     - .github/**
@@ -3351,10 +3484,10 @@ tasks:
     revision: 0eec98cfac2f11c1e01b5d6796fb7097e903f3e5
     created_at: '2026-09-02T00:45:51+00:00'
     evidence:
-      phase: postflight
       trust_tier: RUNTIME_ATTESTED
       worktree_fingerprint: a51675cf455609370b90932abfad5cd2315deadb753cff09f5793fd2c9e6e758
       source: runtime_executed
+      phase: postflight
   - id: V-0013
     task_id: T-0004
     name: test
@@ -3365,15 +3498,15 @@ tasks:
     revision: 0eec98cfac2f11c1e01b5d6796fb7097e903f3e5
     created_at: '2026-09-02T00:48:16+00:00'
     evidence:
-      exit_code: 0
-      reference: local:verification/V-0013.log
-      output_hash: sha256:7e8e721628b806eb63c9006e4d3352c9fa9480cb3ced319603cfefb394bac51d
-      duration_seconds: 144.891
-      kind: command_result
       trust_tier: RUNTIME_ATTESTED
+      check_name: test
+      output_hash: sha256:7e8e721628b806eb63c9006e4d3352c9fa9480cb3ced319603cfefb394bac51d
+      kind: command_result
       worktree_fingerprint: a51675cf455609370b90932abfad5cd2315deadb753cff09f5793fd2c9e6e758
       source: runtime_executed
-      check_name: test
+      reference: local:verification/V-0013.log
+      duration_seconds: 144.891
+      exit_code: 0
   - id: V-0014
     task_id: T-0004
     name: lint
@@ -3384,15 +3517,15 @@ tasks:
     revision: 0eec98cfac2f11c1e01b5d6796fb7097e903f3e5
     created_at: '2026-09-02T00:48:16+00:00'
     evidence:
-      exit_code: 0
-      reference: local:verification/V-0014.log
-      output_hash: sha256:82b3e6a6c090a57601d22943bd23fca9218d1031dbe5a7b754092f9a156b4f18
-      duration_seconds: 0.125
-      kind: command_result
       trust_tier: RUNTIME_ATTESTED
+      check_name: lint
+      output_hash: sha256:82b3e6a6c090a57601d22943bd23fca9218d1031dbe5a7b754092f9a156b4f18
+      kind: command_result
       worktree_fingerprint: a51675cf455609370b90932abfad5cd2315deadb753cff09f5793fd2c9e6e758
       source: runtime_executed
-      check_name: lint
+      reference: local:verification/V-0014.log
+      duration_seconds: 0.125
+      exit_code: 0
   - id: V-0015
     task_id: T-0004
     name: policy:mutation-boundary
@@ -3403,10 +3536,10 @@ tasks:
     revision: 0eec98cfac2f11c1e01b5d6796fb7097e903f3e5
     created_at: '2026-09-02T00:48:28+00:00'
     evidence:
-      phase: ship_gate
       trust_tier: RUNTIME_ATTESTED
       worktree_fingerprint: a51675cf455609370b90932abfad5cd2315deadb753cff09f5793fd2c9e6e758
       source: runtime_executed
+      phase: ship_gate
   - id: V-0016
     task_id: T-0004
     name: policy:mutation-boundary
@@ -3417,9 +3550,23 @@ tasks:
     revision: 0eec98cfac2f11c1e01b5d6796fb7097e903f3e5
     created_at: '2026-09-02T00:48:42+00:00'
     evidence:
-      phase: ship_gate
       trust_tier: RUNTIME_ATTESTED
       worktree_fingerprint: a51675cf455609370b90932abfad5cd2315deadb753cff09f5793fd2c9e6e758
       source: runtime_executed
-generated_at: '2026-09-02T00:48:42+00:00'
+      phase: ship_gate
+  - id: V-0019
+    task_id: T-0004
+    name: policy:mutation-boundary
+    kind: policy
+    command: null
+    result: fail
+    required: true
+    revision: 8c7af30e54b7d354d7ceaf67595e6b4ff6e16834
+    created_at: '2026-09-02T00:49:12+00:00'
+    evidence:
+      trust_tier: RUNTIME_ATTESTED
+      worktree_fingerprint: 6060cbd3193859fdace7405acc951d40962c141962513c6a53752ef02914a32c
+      source: runtime_executed
+      phase: ship_gate
+generated_at: '2026-09-02T00:49:13+00:00'
 config_hash: 62e14a38e58c105ecafd2ab23333b8450961f52b472796fc3c38767ad5daa8ec
