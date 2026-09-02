@@ -1,0 +1,80 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 480" width="100%" role="img" aria-labelledby="title description">
+  <title id="title">PSG task workflow</title>
+  <desc id="description">A seven-stage path from a user request through a Task Contract, project state, implementation, verification, and bounded review to a shippable result.</desc>
+
+  <defs>
+    <marker id="arrow" viewBox="0 0 12 12" refX="10" refY="6" markerWidth="12" markerHeight="12" orient="auto" markerUnits="userSpaceOnUse">
+      <path d="M2 2l8 4-8 4z" fill="#96A2B4"/>
+    </marker>
+  </defs>
+
+  <rect x="1" y="1" width="1278" height="478" rx="24" fill="#0B0E13" stroke="#29313D" stroke-width="2"/>
+
+  <!-- The route is intentionally serpentine so every label remains legible at README width. -->
+  <g fill="none" stroke="#647086" stroke-width="3" stroke-linecap="round" marker-end="url(#arrow)">
+    <path d="M238 130h54"/>
+    <path d="M522 130h54"/>
+    <path d="M826 130h54"/>
+    <path d="M1118 130h32c22 0 40 18 40 40v140c0 22-18 40-40 40h-46"/>
+    <path d="M818 350h-66"/>
+    <path d="M482 350h-70"/>
+  </g>
+
+  <!-- 01: request -->
+  <g transform="translate(42 76)">
+    <rect width="196" height="108" rx="14" fill="#111720" stroke="#314052" stroke-width="2"/>
+    <rect width="8" height="108" rx="4" fill="#79BCEB"/>
+    <text x="28" y="38" fill="#79BCEB" font-family="Inter, ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="18" font-weight="700">01</text>
+    <text x="28" y="75" fill="#F7F8FA" font-family="Inter, ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="23" font-weight="650">User request</text>
+  </g>
+
+  <!-- 02: contract -->
+  <g transform="translate(292 76)">
+    <rect width="230" height="108" rx="14" fill="#171A20" stroke="#E9E3D8" stroke-width="2"/>
+    <rect width="8" height="108" rx="4" fill="#F4C75A"/>
+    <text x="28" y="38" fill="#F4C75A" font-family="Inter, ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="18" font-weight="700">02</text>
+    <text x="28" y="75" fill="#F7F8FA" font-family="Inter, ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="23" font-weight="700">Task Contract</text>
+  </g>
+
+  <!-- 03: durable state -->
+  <g transform="translate(576 76)">
+    <rect width="250" height="108" rx="14" fill="#111720" stroke="#314052" stroke-width="2"/>
+    <rect width="8" height="108" rx="4" fill="#91D4B2"/>
+    <text x="28" y="38" fill="#91D4B2" font-family="Inter, ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="18" font-weight="700">03</text>
+    <text x="28" y="72" fill="#F7F8FA" font-family="Inter, ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="22" font-weight="650">Relevant project</text>
+    <text x="28" y="98" fill="#F7F8FA" font-family="Inter, ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="22" font-weight="650">state</text>
+  </g>
+
+  <!-- 04: execution -->
+  <g transform="translate(880 76)">
+    <rect width="238" height="108" rx="14" fill="#111720" stroke="#314052" stroke-width="2"/>
+    <rect width="8" height="108" rx="4" fill="#FF9563"/>
+    <text x="28" y="38" fill="#FF9563" font-family="Inter, ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="18" font-weight="700">04</text>
+    <text x="28" y="75" fill="#F7F8FA" font-family="Inter, ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="23" font-weight="650">Coding agent</text>
+  </g>
+
+  <!-- 05: deterministic evidence -->
+  <g transform="translate(818 296)">
+    <rect width="286" height="108" rx="14" fill="#111720" stroke="#314052" stroke-width="2"/>
+    <rect x="278" width="8" height="108" rx="4" fill="#79BCEB"/>
+    <text x="24" y="37" fill="#79BCEB" font-family="Inter, ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="18" font-weight="700">05</text>
+    <text x="24" y="68" fill="#F7F8FA" font-family="Inter, ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="20" font-weight="650">Git diff + deterministic</text>
+    <text x="24" y="94" fill="#F7F8FA" font-family="Inter, ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="20" font-weight="650">verification</text>
+  </g>
+
+  <!-- 06: bounded convergence -->
+  <g transform="translate(482 296)">
+    <rect width="270" height="108" rx="14" fill="#111720" stroke="#314052" stroke-width="2"/>
+    <rect x="262" width="8" height="108" rx="4" fill="#FF9563"/>
+    <text x="24" y="38" fill="#FF9563" font-family="Inter, ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="18" font-weight="700">06</text>
+    <text x="24" y="75" fill="#F7F8FA" font-family="Inter, ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="23" font-weight="650">Bounded review</text>
+  </g>
+
+  <!-- 07: completion boundary -->
+  <g transform="translate(112 286)">
+    <rect width="300" height="128" rx="16" fill="#16241E" stroke="#91D4B2" stroke-width="3"/>
+    <rect x="292" width="8" height="128" rx="4" fill="#91D4B2"/>
+    <text x="28" y="43" fill="#91D4B2" font-family="Inter, ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="18" font-weight="750">07</text>
+    <text x="28" y="91" fill="#F7F8FA" font-family="Inter, ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="34" font-weight="780" letter-spacing="1">SHIPPABLE</text>
+  </g>
+</svg>

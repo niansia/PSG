@@ -129,21 +129,7 @@ SHIPPABLE
 
 ## 仕組み
 
-```text
-ユーザーの依頼
-     ↓
-Task Contract
-     ↓
-関連するプロジェクト状態
-     ↓
-Coding agent
-     ↓
-Git diff + 決定論的な検証
-     ↓
-境界付き review
-     ↓
-SHIPPABLE
-```
+![PSG の流れ：ユーザーの依頼、Task Contract、関連するプロジェクト状態、Coding agent、決定論的な検証、境界付き review を経て SHIPPABLE へ](docs/assets/psg-flow.svg)
 
 実装内容の source of truth は引き続き Git です。PSG が保存するのは永続的な決定とタスク状態であり、会話全体ではありません。必要なら context は広げられますが、書き込み権限まで暗黙に広がることはありません。
 

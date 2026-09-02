@@ -19,6 +19,12 @@ The friendly rounded form is intentional. PSG handles strict governance, but the
 
 The original `assets/psg-concept.png` remains the exploratory concept artwork. It is not the primary README hero.
 
+## Workflow diagram
+
+`assets/psg-flow.svg` is the shared source of truth for the workflow shown in every localized README. Its numbered serpentine route preserves readable labels at repository-page width while making the direction from request to `SHIPPABLE` explicit.
+
+Keep all seven stages in the same order. Localized READMEs should provide localized alternative text and reference this one asset rather than copying or translating the SVG. Preserve the dark canvas, semantic brand accents, visible arrows, and high-contrast type. Do not add gradients, animation, raster artwork, or decorative nodes that do not represent a workflow stage.
+
 ## Palette
 
 | Role | Approximate color |

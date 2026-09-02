@@ -129,21 +129,7 @@ See the [benchmark protocol, raw results, and disclosed limitations](benchmarks/
 
 ## How it works
 
-```text
-User request
-     ↓
-Task Contract
-     ↓
-Relevant project state
-     ↓
-Coding agent
-     ↓
-Git diff + deterministic verification
-     ↓
-Bounded review
-     ↓
-SHIPPABLE
-```
+![PSG workflow: user request, Task Contract, relevant project state, coding agent, deterministic verification, bounded review, and SHIPPABLE](docs/assets/psg-flow.svg)
 
 Git remains the implementation source of truth. PSG stores durable decisions and task state instead of full conversations. Context may expand when needed; write authority does not silently expand with it.
 

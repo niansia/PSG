@@ -129,21 +129,7 @@ SHIPPABLE
 
 ## 運作方式
 
-```text
-使用者需求
-     ↓
-Task Contract
-     ↓
-相關專案狀態
-     ↓
-Coding agent
-     ↓
-Git diff + 確定性驗證
-     ↓
-有邊界的 review
-     ↓
-SHIPPABLE
-```
+![PSG 流程：從使用者需求、Task Contract、相關專案狀態、Coding agent、確定性驗證與有邊界的 review，走到 SHIPPABLE](docs/assets/psg-flow.svg)
 
 Git 仍然是實作內容的 source of truth。PSG 保存持久的決策與任務狀態，而不是完整對話。需要時可以擴大 context，但寫入權限不會跟著默默擴張。
 
