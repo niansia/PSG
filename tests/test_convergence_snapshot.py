@@ -269,9 +269,7 @@ def test_high_risk_review_requires_a_different_actor(graph, monkeypatch) -> None
     assert independent["independent_review_satisfied"] is True
 
 
-def test_accepted_debt_is_not_reopened_before_trigger(
-    graph, task, monkeypatch
-) -> None:
+def test_accepted_debt_is_not_reopened_before_trigger(graph, task, monkeypatch) -> None:
     debt = graph.debt_record(
         task_id=task["id"],
         what="Keep a linear scan for v1",

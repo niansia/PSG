@@ -1637,9 +1637,7 @@ class PSG:
                 "Debt": debt_id,
                 "What": node.get("title", "(unknown)"),
                 "Ceiling": node.get("payload", {}).get("ceiling", ""),
-                "Revisit trigger": node.get("payload", {}).get(
-                    "revisit_trigger", ""
-                ),
+                "Revisit trigger": node.get("payload", {}).get("revisit_trigger", ""),
             },
         )
         node["status"] = "accepted"

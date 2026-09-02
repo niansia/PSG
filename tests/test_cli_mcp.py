@@ -651,9 +651,7 @@ def test_interactive_approval_shows_the_authority_it_grants(
     )
 
 
-def test_direct_runtime_approval_paths_refuse_non_tty(
-    graph, task, monkeypatch
-) -> None:
+def test_direct_runtime_approval_paths_refuse_non_tty(graph, task, monkeypatch) -> None:
     targets = _seed_approval_targets(graph, task)
     monkeypatch.setattr(sys.stdin, "isatty", lambda: False, raising=False)
     monkeypatch.setattr(sys.stdout, "isatty", lambda: True, raising=False)
@@ -669,7 +667,9 @@ def test_direct_runtime_approval_paths_refuse_non_tty(
             call()
 
 
-def test_runtime_rejects_caller_supplied_user_approved(graph, task, monkeypatch) -> None:
+def test_runtime_rejects_caller_supplied_user_approved(
+    graph, task, monkeypatch
+) -> None:
     monkeypatch.setattr(sys.stdin, "isatty", lambda: False, raising=False)
     monkeypatch.setattr(sys.stdout, "isatty", lambda: True, raising=False)
 
