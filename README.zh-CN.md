@@ -81,6 +81,10 @@ SHIPPABLE
 
 一般性 review 到此停止。
 
+## 短任务与长期项目
+
+![PSG 总览：短任务的固定治理成本、可复用的长期项目状态，以及有边界的运行流程](docs/assets/psg-overview-zh-CN.png)
+
 ## 历史 A/B 结果（已被取代）
 
 > **证据状态：Superseded。**

@@ -81,6 +81,10 @@ SHIPPABLE
 
 General review stops there.
 
+## Short tasks and long-horizon projects
+
+![PSG overview showing short-task overhead, reusable long-horizon project state, and the bounded workflow](docs/assets/psg-overview-en.png)
+
 ## Historical A/B result — superseded
 
 > **Evidence status: Superseded.**
