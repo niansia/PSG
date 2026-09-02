@@ -18,9 +18,10 @@ baseline commit, and two separate clean Git worktrees:
 - **OFF** — PSG is installed but disabled for the project.
 - **ON** — PSG is enabled with a predeclared Task Contract and runtime enforcement.
 
-Both conditions get identical sandbox permissions and an identical MCP configuration
-(`--ignore-user-config`, with `PSG_PROJECT_ROOT` pinned to the worktree), so the only
-difference between them is PSG itself.
+Both conditions received identical sandbox permissions and an identical MCP configuration
+(`--ignore-user-config`, with `PSG_PROJECT_ROOT` pinned to the worktree). That comparison
+isolated project-level enablement, but it was not a clean no-PSG tooling baseline: the OFF
+condition still had the PSG MCP server registered and exposed to the agent.
 
 Success is decided by a **hidden test** the agent never sees, plus the pre-existing
 visible test suite to catch regressions. Task success is the primary metric; token and
@@ -56,6 +57,43 @@ Codex loaded a globally installed pre-v1.1.1 Skill rather than the one in the ch
 test, and localization has since been rewritten, so its numbers describe different software.
 The data and traces are kept and labelled rather than deleted; see the README for the full
 explanation. A re-run is required before PSG makes any OFF-versus-ON claim.
+
+### Superseded raw result
+
+These measurements remain here and in `results/agentic-ab-latest.json` for transparency.
+They are historical observations, not current-version performance evidence.
+
+| Metric | PSG OFF | PSG ON |
+| --- | ---: | ---: |
+| Task success | 9 / 10 | 10 / 10 |
+| Non-target edits | 10 | 2 |
+| Regressions | 0 | 0 |
+| False `SHIPPABLE` | 0 | 0 |
+| Raw input tokens | 1,984,624 | 3,543,483 |
+| Cached input tokens | 1,786,112 | 3,274,112 |
+| Output tokens | 17,840 | 24,627 |
+| Wall time | 762.558 s | 1,083.603 s |
+
+The raw input-token difference rounds to **+79%**, and the wall-time difference rounds to
+**+42%**. Those ratios are retained as part of the superseded record, not as claims about
+the current release.
+
+### Additional limitations identified from the preserved traces
+
+- The OFF condition still had the PSG MCP server registered, so it was not a clean no-PSG
+  tooling baseline.
+- Trace accounting suggests repeated Skill instructions and MCP tool definitions across
+  agent turns were a major contributor to raw input-token volume.
+- PSG ON introduced more interaction rounds, multiplying this fixed per-turn context cost.
+- This interpretation is a trace-based estimate, not a re-measured causal result.
+- Most input tokens in both conditions were cached. Raw input-token ratios therefore must
+  not be interpreted directly as monetary-cost ratios.
+- The retrieval integration has changed since this run, but its token and latency impact
+  has not been re-measured.
+
+Reducing repeated tool-surface definitions and unnecessary interaction round trips is a
+**future optimization only**. It has not been implemented or measured by this result; PSG
+makes no current claim of token, latency, or monetary-cost savings.
 
 Every run now begins by verifying its own provenance and aborts if it cannot:
 

@@ -85,7 +85,7 @@ General review stops there.
 
 > **Evidence status: Superseded.**
 
-**This run is preserved for transparency, but it is not evidence for the current PSG release. Codex loaded an older installed PSG Skill than the runtime under test, and localization has since changed. No current-version OFF-versus-ON performance claim is made from these numbers.**
+**This run is preserved for transparency, but it is not evidence of current-version performance. Codex loaded an older installed PSG Skill than the runtime under test, and the retrieval integration has since changed.**
 
 The historical run contains 10 matched Codex CLI task pairs using the same model, prompt, and repository baseline.
 
@@ -95,54 +95,8 @@ The historical run contains 10 matched Codex CLI task pairs using the same model
 | Non-target edits | 10 | **2** |
 | Regressions | 0 | 0 |
 | False `SHIPPABLE` | 0 | 0 |
-| Input tokens | 1.98M | 3.54M |
-| Wall time | 763 s | 1,084 s |
 
-**PSG kept the agent closer to the task boundary, but it did not save tokens in this benchmark. It used 79% more input tokens and 42% more wall time.**
-
-### Why did PSG use more tokens?
-
-This benchmark measures small, independent, cold-start coding tasks. Each pair starts from a fresh worktree, so PSG pays its task-contract, routing, verification, and ship-gate overhead every time.
-
-That benchmark therefore measures the cost of PSG governance, but it does not measure one of PSG's main long-horizon benefits: reusing durable project state across many sequential tasks, model switches, and review cycles instead of repeatedly rebuilding project understanding from chat history.
-
-PSG also localized natural-language requests too broadly in this measured run. Every correct target was found, but the median derived write boundary contained seven files, causing nine of ten ON tasks to require scope approval. This was a precision problem, not a reason to weaken the boundary; current localization separates retrieval relevance from write authority and requires a fresh A/B run.
-
-### Why routing alone does not guarantee lower token use
-
-PSG only reduces model context when routed context *replaces* redundant repository reading. In the preserved traces the agent sometimes consumed PSG's routed context and then still performed traditional exploration anyway: enumerating the repository, reading PSG portable state or configuration as ordinary context, and rereading complete source files after a relevant symbol had already been localized.
-
-When that happens the costs are additive rather than substitutive:
-
-```text
-PSG routing + traditional broad exploration        ← what the traces show
-PSG routing + targeted fallback only when needed   ← what it should be
-```
-
-The Skill now treats PSG as the primary retrieval path: start from the Task Contract and routed symbols, read the smallest sufficient code region, and broaden only when the available evidence is insufficient for a safe change. Full-file reads remain an allowed fallback, because correctness outranks token economy.
-
-**The token impact of this integration change has not yet been re-measured, so PSG claims no token reduction from it.**
-
-The result should therefore be read as:
-
-> **Better scope discipline, with measurable overhead.**
-
-**PSG does not currently claim end-to-end token savings from this benchmark.**
-
-### Evidence status
-
-Demonstrated in the included controlled and deterministic runs:
-
-- ✓ Task-boundary enforcement
-- ✓ Fewer non-target edits in the measured A/B run
-- ✓ No observed correctness regression in this small run
-- ✓ Evidence-based ship gate
-
-Not yet demonstrated:
-
-- End-to-end token savings
-- Real-world long-horizon savings
-- Generalization across large repositories and models
+The historical result showed **better task-boundary discipline, but with measurable token and latency overhead**. Because the run is superseded, it is not evidence of current-version performance. PSG currently claims no token or time savings from it.
 
 See the [benchmark protocol, raw results, and disclosed limitations](benchmarks/README.md).
 
