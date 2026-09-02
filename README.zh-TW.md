@@ -81,6 +81,10 @@ SHIPPABLE
 
 一般性 review 到此停止。
 
+## 短任務與長期專案
+
+![PSG 總覽：短任務的固定治理成本、可重用的長期專案狀態，以及有邊界的運作流程](docs/assets/psg-overview-zh-TW.png)
+
 ## 歷史 A/B 結果（已被取代）
 
 > **證據狀態：Superseded。**
