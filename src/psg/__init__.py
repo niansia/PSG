@@ -3,4 +3,4 @@
 from .runtime import PSG
 
 __all__ = ["PSG"]
-__version__ = "1.1.3"
+__version__ = "1.1.4"

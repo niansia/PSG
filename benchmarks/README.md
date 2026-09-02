@@ -65,6 +65,10 @@ Every run now begins by verifying its own provenance and aborts if it cannot:
 - the commit, runtime version, Skill SHA-256, worktree cleanliness, and Codex CLI version are
   recorded in the result under `provenance`.
 
+These checks postdate the superseded result, so `results/agentic-ab-latest.json` has no
+`provenance` block, and its per-run field is still named `out_of_scope_edits` rather than
+`non_target_edits`. Both are expected for a file produced by the older harness.
+
 This is PSG's own rule applied to PSG: evidence must be bound to the thing it claims to verify.
 
 A **non-target edit** is any change outside the single reference target file. Editing the shared

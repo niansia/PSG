@@ -17,13 +17,13 @@ PSG gives coding agents a persistent task boundary and project state instead of 
 ### Windows
 
 ```powershell
-python -m pip install "psg-runtime[mcp] @ git+https://github.com/niansia/PSG.git@v1.1.3"; psg setup
+python -m pip install "psg-runtime[mcp] @ git+https://github.com/niansia/PSG.git@v1.1.4"; psg setup
 ```
 
 ### macOS / Linux
 
 ```bash
-python3 -m pip install "psg-runtime[mcp] @ git+https://github.com/niansia/PSG.git@v1.1.3" && psg setup
+python3 -m pip install "psg-runtime[mcp] @ git+https://github.com/niansia/PSG.git@v1.1.4" && psg setup
 ```
 
 Then, inside a Git project:
@@ -107,6 +107,21 @@ This benchmark measures small, independent, cold-start coding tasks. Each pair s
 That benchmark therefore measures the cost of PSG governance, but it does not measure one of PSG's main long-horizon benefits: reusing durable project state across many sequential tasks, model switches, and review cycles instead of repeatedly rebuilding project understanding from chat history.
 
 PSG also localized natural-language requests too broadly in this measured run. Every correct target was found, but the median derived write boundary contained seven files, causing nine of ten ON tasks to require scope approval. This was a precision problem, not a reason to weaken the boundary; current localization separates retrieval relevance from write authority and requires a fresh A/B run.
+
+### Why routing alone does not guarantee lower token use
+
+PSG only reduces model context when routed context *replaces* redundant repository reading. In the preserved traces the agent sometimes consumed PSG's routed context and then still performed traditional exploration anyway: enumerating the repository, reading PSG portable state or configuration as ordinary context, and rereading complete source files after a relevant symbol had already been localized.
+
+When that happens the costs are additive rather than substitutive:
+
+```text
+PSG routing + traditional broad exploration        ← what the traces show
+PSG routing + targeted fallback only when needed   ← what it should be
+```
+
+The Skill now treats PSG as the primary retrieval path: start from the Task Contract and routed symbols, read the smallest sufficient code region, and broaden only when the available evidence is insufficient for a safe change. Full-file reads remain an allowed fallback, because correctness outranks token economy.
+
+**The token impact of this integration change has not yet been re-measured, so PSG claims no token reduction from it.**
 
 The result should therefore be read as:
 

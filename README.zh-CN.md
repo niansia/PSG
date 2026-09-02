@@ -17,13 +17,13 @@ PSG 为 coding agent 提供持久的任务边界与项目状态，不再让每�
 ### Windows
 
 ```powershell
-python -m pip install "psg-runtime[mcp] @ git+https://github.com/niansia/PSG.git@v1.1.3"; psg setup
+python -m pip install "psg-runtime[mcp] @ git+https://github.com/niansia/PSG.git@v1.1.4"; psg setup
 ```
 
 ### macOS / Linux
 
 ```bash
-python3 -m pip install "psg-runtime[mcp] @ git+https://github.com/niansia/PSG.git@v1.1.3" && psg setup
+python3 -m pip install "psg-runtime[mcp] @ git+https://github.com/niansia/PSG.git@v1.1.4" && psg setup
 ```
 
 然后在 Git 项目中运行：
@@ -107,6 +107,21 @@ SHIPPABLE
 所以它测到了 PSG governance 的成本，却没有测到 PSG 的一项主要长期收益：在连续任务、模型切换和多轮 review 之间复用持久项目状态，而不是反复从 chat history 重建理解。
 
 这次测试中的自然语言定位也过于宽泛。所有正确目标都找到了，但推导出的写入边界中位数为七个文件，导致十个 ON 任务中有九个需要范围批准。这是精确度问题，不是放宽边界的理由；当前版本已将检索相关性与写入权限分离，仍需重新进行公平的 A/B 测试。
+
+### 为什么"有 routing"不等于"token 一定会降"
+
+只有当 routed context **取代**了冗余的 repository 阅读时，PSG 才会真的减少模型上下文。在保留下来的 trace 中，agent 有时吃下了 PSG 的 routed context，却仍然照旧做传统探索：枚举整个 repository、把 PSG 的 portable state 或配置当成一般上下文读取，以及在相关 symbol 已经被定位之后，仍重新读取整份源代码文件。
+
+这种情况下，成本是相加而不是替代：
+
+```text
+PSG routing + 传统的大范围探索        ← trace 显示的实况
+PSG routing + 必要时才做的针对性补读   ← 应该要是这样
+```
+
+现在的 Skill 把 PSG 视为主要的检索路径：从 Task Contract 与 routed symbol 出发，读取最小必要的代码区域，只有在现有证据不足以安全完成改动时才扩大阅读。整文件读取仍然是被允许的退路，因为正确性优先于 token 节省。
+
+**这项集成修正对 token 的影响尚未重新测量，因此 PSG 不声称它带来了 token 下降。**
 
 因此当前结果应解读为：
 

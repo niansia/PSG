@@ -56,6 +56,42 @@ These notes summarize the aspects most relevant to PSG / PSG. Reported results b
 
 **PSG implication:** The Skill and runtime have different jobs. `SKILL.md` teaches an agent when and how to use PSG; the MCP server performs deterministic reads and writes against the graph.
 
+## Persistent state and agent memory
+
+### Cognitive Architectures for Language Agents (CoALA)
+
+**Reference:** Sumers et al. (2023), arXiv:2309.02427. [Paper](https://arxiv.org/abs/2309.02427)
+
+**Relevant framing:** CoALA describes language agents in terms of modular memory components and a structured action space, giving a vocabulary for separating what an agent knows from what it does.
+
+**PSG implication:** PSG's graph is a deliberately narrow instance of durable agent memory. It stores decisions, constraints, task boundaries, and evidence—not conversation—and keeps them in a repository-local, human-readable projection so a person can audit and a different model can reuse them.
+
+### MemGPT: Towards LLMs as Operating Systems
+
+**Reference:** Packer et al. (2023), arXiv:2310.08560. [Paper](https://arxiv.org/abs/2310.08560)
+
+**Relevant mechanism:** MemGPT manages tiered memory so an agent can operate beyond a fixed context window, borrowing the idea of a memory hierarchy from operating systems.
+
+**PSG implication:** PSG shares the premise that useful state must outlive one context window, and differs in where that state lives. PSG keeps it in Git-adjacent project files under user control rather than in a model-managed store, because its purpose is governance and auditability, not context extension.
+
+## Why self-assessment is not evidence
+
+### Large Language Models Cannot Self-Correct Reasoning Yet
+
+**Reference:** Huang et al. (2024), ICLR 2024, arXiv:2310.01798. [Paper](https://arxiv.org/abs/2310.01798)
+
+**Relevant result:** The paper reports that LLMs struggle to self-correct without external feedback, and that performance can degrade after intrinsic self-correction.
+
+**PSG implication:** This is the direct basis for PSG's rule that a model's own claim of completion is not evidence. The ship gate is a deterministic predicate over runtime-attested checks and worktree-bound evidence precisely because intrinsic self-assessment is unreliable.
+
+### Is the Cure Worse Than the Disease? Overfitting in Automated Program Repair
+
+**Reference:** Smith et al. (2015), ESEC/FSE 2015. [Paper](https://doi.org/10.1145/2786805.2786825)
+
+**Relevant result:** Evaluated against tests held out from the repair process, generated patches overfit the tests used to produce them; on well-tested programs the studied tools were about as likely to break tests as to fix them, and patch quality tracked the coverage of the suite used during repair.
+
+**PSG implication:** A green check is not automatically a correct change. PSG therefore binds evidence to a specific worktree fingerprint, distinguishes a policy pass from a functional check, and treats a stale or unattested pass as insufficient. PSG does not solve overfitting; it refuses to hide it behind a self-reported success.
+
 ## Evaluation, verification, and convergence
 
 ### SWE-bench: Can Language Models Resolve Real-World GitHub Issues?

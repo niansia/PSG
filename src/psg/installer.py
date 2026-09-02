@@ -42,7 +42,7 @@ def psg_version() -> str:
     try:
         return version("psg-runtime")
     except PackageNotFoundError:
-        return "1.1.3-dev"
+        return "1.1.4-dev"
 
 
 def global_home() -> Path:

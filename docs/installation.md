@@ -7,13 +7,13 @@ PSG has two installed parts: the Python runtime (`psg` and `psg-mcp`) and the co
 ### Windows
 
 ```powershell
-python -m pip install "psg-runtime[mcp] @ git+https://github.com/niansia/PSG.git@v1.1.3"; psg setup
+python -m pip install "psg-runtime[mcp] @ git+https://github.com/niansia/PSG.git@v1.1.4"; psg setup
 ```
 
 ### macOS / Linux
 
 ```bash
-python3 -m pip install "psg-runtime[mcp] @ git+https://github.com/niansia/PSG.git@v1.1.3" && psg setup
+python3 -m pip install "psg-runtime[mcp] @ git+https://github.com/niansia/PSG.git@v1.1.4" && psg setup
 ```
 
 `psg setup` detects installed Codex, Claude Code, and Gemini CLI executables. For every detected host it:
@@ -120,7 +120,7 @@ When an Agent presents one of these proposals, review it before using the matchi
 From the bundled wheel:
 
 ```powershell
-python -m pip install ".\psg_runtime-1.1.3-py3-none-any.whl[mcp]"; psg setup
+python -m pip install ".\psg_runtime-1.1.4-py3-none-any.whl[mcp]"; psg setup
 ```
 
 From a source checkout:

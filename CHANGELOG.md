@@ -2,6 +2,52 @@
 
 All notable changes to PSG are recorded here. Versions follow [semantic versioning](https://semver.org/).
 
+## [1.1.4] — 2026-09-02
+
+A retrieval-integration and citation fix. No runtime behavior changed.
+
+### Changed
+
+- **PSG routed context is now the primary retrieval path, not an extra layer.** The preserved
+  agentic traces showed the agent consuming PSG's routed context and then performing its
+  ordinary broad exploration anyway: enumerating the repository, reading
+  `.psg/state/project.yaml` and configuration as ordinary coding context, and rereading whole
+  source files after a symbol had already been localized. PSG retrieval was being *added* to
+  that exploration instead of *replacing* it, so the two costs summed. The Skill now states
+  that routed context is the retrieval result to work from, and names the governance files an
+  agent should not read as ordinary context — while still allowing direct inspection for
+  diagnosis, a reported tamper, or an explicit user request.
+- **Smallest-sufficient reads are the default.** A `Symbol` context item already carries
+  `source.path` plus `summary.qualname`, `summary.line_start`, and `summary.line_end`, so the
+  Skill now asks for that range first and widens only for concrete dependencies, control flow,
+  interfaces, tests, or a failing check. Whole-file reads remain an allowed fallback:
+  correctness outranks token economy.
+- The token impact of this integration change **has not been re-measured**, and no
+  token-saving claim is made from it. The superseded OFF/ON run stays superseded.
+
+### Fixed
+
+- **Two documented claims did not match the code or data.** `docs/acceptance.md` described the
+  approval gate as a CLI-level check, but it lives in the runtime below the CLI — importing
+  `psg.runtime` and calling an approval method directly hits the same terminal check. It also
+  cited a benchmark result file without noting that the superseded file predates two renames
+  (`out_of_scope_edits` → `non_target_edits`) and has no `provenance` block. Both are now
+  stated accurately.
+
+### Research
+
+- **Two of PSG's central claims had no citation.** "A model's own claim of completion is not
+  evidence" now cites Huang et al., *Large Language Models Cannot Self-Correct Reasoning Yet*
+  (ICLR 2024), and Smith et al., *Is the Cure Worse Than the Disease?* (ESEC/FSE 2015) on
+  patches that overfit their own tests. "Persistent, model-independent project state" now cites
+  CoALA (Sumers et al.) and MemGPT (Packer et al.), which also sharpens what is actually novel
+  here: not that agents should have memory, but that this state is repository-local,
+  human-inspectable, and enforced rather than advisory.
+- Four entries that were cited as arXiv preprints are now recorded with the venue where they
+  were published — RepoCoder (EMNLP 2023), SWE-bench (ICLR 2024), SWE-agent (NeurIPS 2024),
+  and AutoCodeRover (ISSTA 2024). CodePlan stays a preprint citation because its arXiv page
+  lists no venue.
+
 ## [1.1.3] — 2026-09-02
 
 The release-identity correction and runtime approval hardening release. The existing v1.1.2
@@ -258,6 +304,7 @@ to expansion by review.
   policy engine, verification and trust tiers, convergence and ship gate, installable
   Skill bundle, and the `psg` CLI plus `psg-mcp` server.
 
+[1.1.4]: https://github.com/niansia/PSG/releases/tag/v1.1.4
 [1.1.3]: https://github.com/niansia/PSG/releases/tag/v1.1.3
 [1.1.2]: https://github.com/niansia/PSG/releases/tag/v1.1.2
 [1.1.1]: https://github.com/niansia/PSG/releases/tag/v1.1.1

@@ -19,12 +19,14 @@ When `.psg/config.yaml` exists and PSG is enabled, govern ordinary repository wo
 8. Non-blocking improvements do not prevent shipping.
 9. MCP input is `CLAIMED`. It cannot promote itself to `USER_APPROVED`, `RUNTIME_ATTESTED`, or `EXTERNAL_ATTESTED`.
 10. Runtime evidence outranks model confidence or a self-reported pass.
-11. When the ship gate returns `SHIPPABLE`, stop general review.
+11. Routed context is the primary retrieval path, not an extra layer on top of ordinary exploration.
+12. When the ship gate returns `SHIPPABLE`, stop general review.
 
 ## Govern a change
 
 1. Call `project_status` and `guardrails_get`. Resume the matching active task or call `task_open`, preserving the user's intent, acceptance criteria, constraints, non-goals, risk, target paths, and builder actor without expanding scope.
-2. Call `context_build` before broad reading. It refreshes the incremental index itself. Start with its context items and working set.
+2. Call `context_build` before broad reading. It refreshes the incremental index itself, and its context items and working set are the retrieval result to work from, not a supplement to a separate repository survey. Do not enumerate the whole repository to rediscover what PSG already indexes. Do not read `.psg/state/project.yaml` or anything under `.psg/local/` as ordinary coding context, and do not open `.psg/config.yaml` or `.psg/policies.yaml` merely to understand the task when `project_status`, `guardrails_get`, and the Task Contract already carry that information. Inspect those files directly when diagnosing PSG, investigating a reported tamper or configuration problem, or when the user asks. If the routed result already answered a question, do not fetch the same answer again through shell or file reads.
+2b. Read the smallest sufficient code region. A `Symbol` context item already localizes the code: `source.path` with `summary.qualname`, `summary.line_start`, and `summary.line_end`. Read that range first, then widen only for concrete dependencies, control flow, interfaces, tests, or a failing check. Reading a whole file is a fallback for when localized context is insufficient, not the default. Correctness outranks token economy: if the routed context is genuinely missing something the change needs, broaden the read and say why.
 3. Edit only `WRITE`. Treat `READ_ONLY`, `FORBIDDEN`, `frozen`, symbol locks, and `interface_locked` contracts as hard boundaries.
 4. Call `context_expand` only when concrete evidence shows that additional context is necessary. Expansion widens what you READ; it never widens what you may WRITE.
 4b. A task opens as a DRAFT holding no write authority. `context_build` seals its mutation boundary and hashes it, so seal before editing. If the work turns out to need a file outside the sealed boundary, say so and propose a new task; never treat added context as added authority. If the seal reports `authorized_write: []` with `ambiguous_localization` or `no_localization_match`, PSG could not tell which file the request means: show the candidates and ask the user which to target, then open a task naming it. Do not start editing without write authority. If PSG reports `requires_scope_approval`, present the derived boundary and stop. Approval commands require an interactive terminal and are the user's to run, never yours.

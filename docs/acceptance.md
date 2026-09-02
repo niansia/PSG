@@ -1,4 +1,4 @@
-# PSG v1.1 acceptance traceability
+# PSG v1.1.x acceptance traceability
 
 This document maps the reviewed completion requirements to implemented behavior and automated evidence. The release is a complete Python-first MVP, not a claim of production maturity across every language or repository.
 
@@ -42,9 +42,9 @@ This document maps the reviewed completion requirements to implemented behavior 
 | Live MCP transport | Git-backed MCP tools answer over real stdio within a bounded time | live stdio MCP regression test |
 | Cross-platform CI | Ubuntu/Windows/macOS on Python 3.10 and Ubuntu on Python 3.13 run tests, wheel build, and clean install smoke | `.github/workflows/ci.yml`, `scripts/build_release.py` |
 | Task-Boundary benchmark | 10 seeded scenarios report blocking precision, recall, and false reopening rate | `benchmarks/results/task-boundary-latest.json` |
-| Matched agentic benchmark | 10 paired tasks, one Codex CLI and model, same prompt and baseline commit, separate clean worktrees, hidden tests, symmetric target disclosure | Harness verified; the published run is **superseded** and is not evidence for this version — a re-run is required |
+| Matched agentic benchmark | 10 paired tasks, one Codex CLI and model, same prompt and baseline commit, separate clean worktrees, hidden tests, symmetric target disclosure | Harness verified; the published run is **superseded** and is not evidence for this version — a re-run is required. That older result file predates two renames: its field is `out_of_scope_edits` (now `non_target_edits`) and it has no `provenance` block |
 | Benchmark provenance | A run aborts unless the Skill the agent loads hashes equal to this checkout, and records commit, runtime version, Skill SHA-256, and CLI version | `_run_provenance()` abort path |
-| Interactive approval | Every CLI action that mints `USER_APPROVED` refuses a non-interactive caller and a piped answer | all-approval-paths and piped-answer tests |
+| Interactive approval | The gate lives in the runtime, below the CLI, so importing `psg.runtime` and calling an approval method directly hits the same terminal check. A non-interactive caller and a piped answer are both refused | all-approval-paths and piped-answer tests |
 | Retrieval is not authority | A lexical match makes a file readable, not writable; an ambiguous or weak match grants no write authority at all | confident-match, ambiguous, and weak-match tests |
 | Mechanics regression benchmark | 12 tasks; full selected-file contents plus tool payload counted; frozen mutation blocked | `benchmarks/results/latest.json` |
 
