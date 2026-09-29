@@ -17,13 +17,13 @@ PSG gives coding agents a persistent task boundary and project state instead of 
 ### Windows
 
 ```powershell
-python -m pip install "psg-runtime[mcp] @ git+https://github.com/niansia/PSG.git@v1.1.4"; psg setup
+python -m pip install "psg-runtime[mcp] @ git+https://github.com/niansia/PSG.git@v1.1.5"; psg setup
 ```
 
 ### macOS / Linux
 
 ```bash
-python3 -m pip install "psg-runtime[mcp] @ git+https://github.com/niansia/PSG.git@v1.1.4" && psg setup
+python3 -m pip install "psg-runtime[mcp] @ git+https://github.com/niansia/PSG.git@v1.1.5" && psg setup
 ```
 
 Then, inside a Git project:
