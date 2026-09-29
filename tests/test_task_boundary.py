@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import sqlite3
 import sys
+from contextlib import closing
 
 import pytest
 
@@ -216,7 +217,7 @@ def test_legacy_database_migrates_and_defaults_findings_to_follow_up(
         "    relation_to_task TEXT NOT NULL DEFAULT 'unrelated',\n", ""
     ).replace("    evidence_sufficient INTEGER NOT NULL DEFAULT 0,\n", "")
     assert "relation_to_task" not in legacy_schema
-    with sqlite3.connect(database) as connection:
+    with closing(sqlite3.connect(database)) as connection:
         connection.executescript(legacy_schema)
         connection.execute("INSERT INTO meta(key, value) VALUES('schema_version', '1')")
         connection.execute("INSERT INTO meta(key, value) VALUES('graph_revision', '0')")
@@ -243,6 +244,7 @@ def test_legacy_database_migrates_and_defaults_findings_to_follow_up(
             status,created_at,updated_at) VALUES(?,?,?,?,?,?,?,?,?)""",
             ("I-0001", "T-0001", "blocker", "legacy", "{}", "[]", "open", "t", "t"),
         )
+        connection.commit()
 
     store = Store(database, events)
     store.initialize()

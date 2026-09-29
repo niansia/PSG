@@ -1,7 +1,8 @@
 from __future__ import annotations
 
 import sqlite3
-from collections.abc import Iterable
+from collections.abc import Iterable, Iterator
+from contextlib import contextmanager
 from pathlib import Path
 from typing import Any
 
@@ -122,12 +123,23 @@ class Store:
         self.database = database
         self.event_log = event_log
 
-    def connect(self) -> sqlite3.Connection:
+    @contextmanager
+    def connect(self) -> Iterator[sqlite3.Connection]:
+        """Yield a connection for one unit of work; commit or roll back, then close.
+
+        ``with sqlite3.connect(...)`` only ends the transaction. On newer Pythons an
+        unclosed connection lingers until the cyclic garbage collector runs, and on
+        Windows that open handle keeps the database file from being deleted.
+        """
         connection = sqlite3.connect(self.database)
-        connection.row_factory = sqlite3.Row
-        connection.execute("PRAGMA foreign_keys = ON")
-        connection.execute("PRAGMA journal_mode = WAL")
-        return connection
+        try:
+            connection.row_factory = sqlite3.Row
+            connection.execute("PRAGMA foreign_keys = ON")
+            connection.execute("PRAGMA journal_mode = WAL")
+            with connection:
+                yield connection
+        finally:
+            connection.close()
 
     def initialize(self) -> None:
         self.database.parent.mkdir(parents=True, exist_ok=True)
@@ -196,21 +208,16 @@ class Store:
             )
 
     def bump_graph_revision(self, connection: sqlite3.Connection | None = None) -> int:
-        owns = connection is None
-        connection = connection or self.connect()
-        try:
-            connection.execute(
-                "UPDATE meta SET value = CAST(value AS INTEGER) + 1 WHERE key='graph_revision'"
-            )
-            row = connection.execute(
-                "SELECT value FROM meta WHERE key='graph_revision'"
-            ).fetchone()
-            if owns:
-                connection.commit()
-            return int(row[0])
-        finally:
-            if owns:
-                connection.close()
+        if connection is None:
+            with self.connect() as owned:
+                return self.bump_graph_revision(owned)
+        connection.execute(
+            "UPDATE meta SET value = CAST(value AS INTEGER) + 1 WHERE key='graph_revision'"
+        )
+        row = connection.execute(
+            "SELECT value FROM meta WHERE key='graph_revision'"
+        ).fetchone()
+        return int(row[0])
 
     def event(
         self, event_type: str, payload: dict[str, Any], actor: str = "runtime"
