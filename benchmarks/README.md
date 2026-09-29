@@ -163,6 +163,41 @@ It does not count only file names, summaries, or graph-node labels. Per-task gra
 tokens, selected-source tokens, selected source count, gate summaries, and aggregate
 calculations are stored in `results/latest.json`.
 
+### Current result
+
+The run is deterministic. Apart from the generated repository's commit hash, a re-run on
+the same runtime reproduces `results/latest.json` exactly.
+
+| Metric | All-files baseline | PSG routed |
+| --- | ---: | ---: |
+| File reads | 456 | 47 |
+| Estimated context tokens | 15,948 | 11,592 |
+
+That is an **89.69%** file-read reduction and a **27.31%** context-token reduction, with
+12/12 tasks `SHIPPABLE`, the frozen mutation blocked, and review stopped at its budget.
+
+### Superseded token figure
+
+The **32.41%** token reduction (10,779 PSG tokens) cited through v1.1.4 was measured on
+v1.1.0 (`75eb4b9`) and was not re-measured after the runtime changed. It is superseded.
+
+The next runtime commit to touch this path, `b81395e` ("Seal write authority into the Task
+Contract", first released in v1.1.1), made `context_build` return the sealed contract as
+`task_contract_seal`: the authorized write paths, contract hash, contract state, and
+scope-approval status. Because this benchmark counts the complete serialized payload, that
+block adds about 270 characters, or 67–68 estimated tokens, to every task: 813 tokens
+across the 12 tasks. Running the benchmark at each runtime-changing commit since v1.1.0
+confirms that `b81395e` is the only one that moves the result. File reads, graph-context
+tokens, selected-source tokens, and every gate outcome are identical before and after it.
+
+The smaller reduction therefore reflects PSG returning its authority boundary with the
+context, which is intended, not a change in which files are routed. The v1.1.0 result file is kept in
+history and can be reproduced from that commit:
+
+```powershell
+git show 75eb4b9:benchmarks/results/latest.json
+```
+
 ### What the run also exercises
 
 - initialization and first index;

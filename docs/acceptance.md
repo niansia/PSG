@@ -57,7 +57,8 @@ This document maps the reviewed completion requirements to implemented behavior 
 - Matched agentic OFF/ON benchmark: **superseded, not current evidence.** The published run was measured while the agent loaded a pre-v1.1.1 global Skill, and localization has since changed, so its numbers describe different software. The data is kept and labelled rather than deleted. A re-run is required before any OFF/ON claim.
 - Localization precision on the same ten benchmark intents after the retrieval/authority split: **10/10 seal exactly the correct single target file**, **0/10 need manual scope approval** (previously 1-8 files, median 7, with 9/10 needing approval).
 - Benchmark file-read reduction: **89.69%** versus disclosed all-files baseline.
-- Benchmark context-token reduction: **32.41%**, counting the serialized context payload and actual contents of every selected source file.
+- Benchmark context-token reduction: **27.31%**, counting the serialized context payload and actual contents of every selected source file.
+- Superseded context-token figure: the **32.41%** cited for v1.1.0 through v1.1.4 was measured on v1.1.0 and is **not evidence for later versions**. From v1.1.1 on, `context_build` also returns the sealed Task Contract (`task_contract_seal`), which the benchmark counts as payload: about 68 estimated tokens per task, 813 across the run. File reads, selected-source tokens, and gate results are unchanged. See [the benchmark notes](../benchmarks/README.md#superseded-token-figure).
 - Unauthorized frozen mutation: **blocked**.
 - Review stopping rule: **stopped at configured budget**.
 

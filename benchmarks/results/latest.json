@@ -6,7 +6,7 @@
       "errors": [],
       "indexed": 39,
       "removed": 0,
-      "revision": "3ef63f62a0538042c0a346053a9c2c05ce0e657e",
+      "revision": "59106af367817941099a6ee19c2bf39ac5bea425",
       "scanned": 39,
       "symbols": 37,
       "unchanged": 0,
@@ -19,11 +19,11 @@
     "baseline_token_estimate": 15948,
     "file_read_reduction_percent": 89.69,
     "psg_file_reads": 47,
-    "psg_token_estimate": 10779,
+    "psg_token_estimate": 11592,
     "review_rounds": 2,
     "review_stopped_at_budget": true,
     "tasks_shippable": 12,
-    "total_context_token_reduction_percent": 32.41,
+    "total_context_token_reduction_percent": 27.31,
     "unauthorized_frozen_mutation_blocked": true
   },
   "task_count": 12,
@@ -36,7 +36,7 @@
       "psg_file_reads": 3,
       "psg_graph_context_tokens": 361,
       "psg_selected_source_tokens": 79,
-      "psg_token_estimate": 782,
+      "psg_token_estimate": 849,
       "ship_acceptance_summary": {
         "failed_or_pending": [],
         "mandatory_total": 1,
@@ -67,7 +67,7 @@
       "psg_file_reads": 4,
       "psg_graph_context_tokens": 404,
       "psg_selected_source_tokens": 116,
-      "psg_token_estimate": 899,
+      "psg_token_estimate": 967,
       "ship_acceptance_summary": {
         "failed_or_pending": [],
         "mandatory_total": 1,
@@ -98,7 +98,7 @@
       "psg_file_reads": 4,
       "psg_graph_context_tokens": 404,
       "psg_selected_source_tokens": 125,
-      "psg_token_estimate": 908,
+      "psg_token_estimate": 976,
       "ship_acceptance_summary": {
         "failed_or_pending": [],
         "mandatory_total": 1,
@@ -129,7 +129,7 @@
       "psg_file_reads": 4,
       "psg_graph_context_tokens": 404,
       "psg_selected_source_tokens": 125,
-      "psg_token_estimate": 908,
+      "psg_token_estimate": 976,
       "ship_acceptance_summary": {
         "failed_or_pending": [],
         "mandatory_total": 1,
@@ -160,7 +160,7 @@
       "psg_file_reads": 4,
       "psg_graph_context_tokens": 404,
       "psg_selected_source_tokens": 125,
-      "psg_token_estimate": 908,
+      "psg_token_estimate": 976,
       "ship_acceptance_summary": {
         "failed_or_pending": [],
         "mandatory_total": 1,
@@ -191,7 +191,7 @@
       "psg_file_reads": 4,
       "psg_graph_context_tokens": 404,
       "psg_selected_source_tokens": 125,
-      "psg_token_estimate": 908,
+      "psg_token_estimate": 976,
       "ship_acceptance_summary": {
         "failed_or_pending": [],
         "mandatory_total": 1,
@@ -222,7 +222,7 @@
       "psg_file_reads": 4,
       "psg_graph_context_tokens": 404,
       "psg_selected_source_tokens": 125,
-      "psg_token_estimate": 908,
+      "psg_token_estimate": 976,
       "ship_acceptance_summary": {
         "failed_or_pending": [],
         "mandatory_total": 1,
@@ -253,7 +253,7 @@
       "psg_file_reads": 4,
       "psg_graph_context_tokens": 404,
       "psg_selected_source_tokens": 125,
-      "psg_token_estimate": 908,
+      "psg_token_estimate": 976,
       "ship_acceptance_summary": {
         "failed_or_pending": [],
         "mandatory_total": 1,
@@ -284,7 +284,7 @@
       "psg_file_reads": 4,
       "psg_graph_context_tokens": 404,
       "psg_selected_source_tokens": 125,
-      "psg_token_estimate": 908,
+      "psg_token_estimate": 976,
       "ship_acceptance_summary": {
         "failed_or_pending": [],
         "mandatory_total": 1,
@@ -315,7 +315,7 @@
       "psg_file_reads": 4,
       "psg_graph_context_tokens": 405,
       "psg_selected_source_tokens": 126,
-      "psg_token_estimate": 911,
+      "psg_token_estimate": 978,
       "ship_acceptance_summary": {
         "failed_or_pending": [],
         "mandatory_total": 1,
@@ -346,7 +346,7 @@
       "psg_file_reads": 4,
       "psg_graph_context_tokens": 408,
       "psg_selected_source_tokens": 126,
-      "psg_token_estimate": 915,
+      "psg_token_estimate": 982,
       "ship_acceptance_summary": {
         "failed_or_pending": [],
         "mandatory_total": 1,
@@ -377,7 +377,7 @@
       "psg_file_reads": 4,
       "psg_graph_context_tokens": 409,
       "psg_selected_source_tokens": 126,
-      "psg_token_estimate": 916,
+      "psg_token_estimate": 984,
       "ship_acceptance_summary": {
         "failed_or_pending": [],
         "mandatory_total": 1,
