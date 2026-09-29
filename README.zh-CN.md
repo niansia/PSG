@@ -17,13 +17,13 @@ PSG 为 coding agent 提供持久的任务边界与项目状态，不再让每�
 ### Windows
 
 ```powershell
-python -m pip install "psg-runtime[mcp] @ git+https://github.com/niansia/PSG.git@v1.1.4"; psg setup
+python -m pip install "psg-runtime[mcp] @ git+https://github.com/niansia/PSG.git@v1.1.5"; psg setup
 ```
 
 ### macOS / Linux
 
 ```bash
-python3 -m pip install "psg-runtime[mcp] @ git+https://github.com/niansia/PSG.git@v1.1.4" && psg setup
+python3 -m pip install "psg-runtime[mcp] @ git+https://github.com/niansia/PSG.git@v1.1.5" && psg setup
 ```
 
 然后在 Git 项目中运行：

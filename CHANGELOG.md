@@ -2,12 +2,20 @@
 
 All notable changes to PSG are recorded here. Versions follow [semantic versioning](https://semver.org/).
 
-## [Unreleased]
+## [1.1.5] — 2026-09-30
 
-A benchmark-evidence correction. No runtime behavior changed.
+A resource-handling fix for Windows on newer Pythons, and a corrected benchmark citation.
+Query results and the benchmark's own output are unchanged.
 
 ### Fixed
 
+- **The Store now closes every SQLite connection it opens.** `with sqlite3.connect(...)` only
+  commits or rolls back; it never closes. Python 3.10 happened to free the connection at once,
+  but on Python 3.13 it stays open until the garbage collector runs, and on Windows that open
+  handle keeps `.psg/local/psg.db` from being deleted. Deleting a temporary PSG project then
+  failed with `PermissionError: [WinError 32]`, which broke both seeded benchmarks and the
+  Task Boundary benchmark test. `Store.connect()` is now a context manager that commits or
+  rolls back and then closes, and CI runs Windows with Python 3.13.
 - **The published mechanics-benchmark token reduction did not match the code.**
   `docs/acceptance.md` cited a 32.41% context-token reduction for v1.1.0 through v1.1.4, but
   that figure was measured on v1.1.0 and never re-measured. Since `b81395e` (first released in
@@ -320,6 +328,7 @@ to expansion by review.
   policy engine, verification and trust tiers, convergence and ship gate, installable
   Skill bundle, and the `psg` CLI plus `psg-mcp` server.
 
+[1.1.5]: https://github.com/niansia/PSG/releases/tag/v1.1.5
 [1.1.4]: https://github.com/niansia/PSG/releases/tag/v1.1.4
 [1.1.3]: https://github.com/niansia/PSG/releases/tag/v1.1.3
 [1.1.2]: https://github.com/niansia/PSG/releases/tag/v1.1.2
