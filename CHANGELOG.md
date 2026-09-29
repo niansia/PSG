@@ -4,8 +4,8 @@ All notable changes to PSG are recorded here. Versions follow [semantic versioni
 
 ## [1.1.5] — 2026-09-30
 
-A resource-handling fix for Windows on newer Pythons. Query results and benchmark numbers are
-unchanged.
+A resource-handling fix for Windows on newer Pythons, and a corrected benchmark citation.
+Query results and the benchmark's own output are unchanged.
 
 ### Fixed
 
@@ -16,6 +16,15 @@ unchanged.
   failed with `PermissionError: [WinError 32]`, which broke both seeded benchmarks and the
   Task Boundary benchmark test. `Store.connect()` is now a context manager that commits or
   rolls back and then closes, and CI runs Windows with Python 3.13.
+- **The published mechanics-benchmark token reduction did not match the code.**
+  `docs/acceptance.md` cited a 32.41% context-token reduction for v1.1.0 through v1.1.4, but
+  that figure was measured on v1.1.0 and never re-measured. Since `b81395e` (first released in
+  v1.1.1), `context_build` also returns the sealed Task Contract as `task_contract_seal`, and
+  the benchmark counts the complete serialized payload, so every task carries 67–68 more
+  estimated tokens: 813 across the run. `benchmarks/results/latest.json` is regenerated on the
+  current runtime and reports **27.31%**. File reads (89.69% fewer), selected-source tokens, and
+  every gate outcome are unchanged. The 32.41% figure is labelled superseded rather than
+  deleted, and the v1.1.0 result file remains in Git history.
 
 ## [1.1.4] — 2026-09-02
 
